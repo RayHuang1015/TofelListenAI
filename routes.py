@@ -4,6 +4,8 @@ from models import User, ContentSource, Question, PracticeSession, Answer, Score
 from services.content_integration import ContentIntegrationService
 from services.ai_question_generator import AIQuestionGenerator
 from services.scoring_engine import ScoringEngine
+from services.tpo_management_system import TPOManagementSystem
+from services.ai_feedback_service import AIFeedbackService
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import logging

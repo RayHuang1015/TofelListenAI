@@ -178,19 +178,14 @@ class TPOImportService:
         
         try:
             question = Question(
-                content_source_id=content_source.id,
+                content_id=content_source.id,
                 question_text=question_data['question'],
                 question_type=q_type,
                 options=json.dumps(question_data['options']),
                 correct_answer=question_data['answer'],
                 explanation=question_data['explanation'],
-                difficulty_level=content_source.difficulty_level,
-                metadata=json.dumps({
-                    'question_number': q_num,
-                    'timestamp': q_num * 30.0,  # 模擬時間戳
-                    'tpo_format': True,
-                    'content_type': content_type
-                })
+                difficulty=content_source.difficulty_level,
+                audio_timestamp=q_num * 30.0
             )
             
             db.session.add(question)
