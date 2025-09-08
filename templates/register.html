@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Register - TOEFL Listening Practice{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Create Your Account
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <input type="text" class="form-control" id="username" name="username" required 
+                                   minlength="3" maxlength="64" 
+                                   pattern="[a-zA-Z0-9_]+" 
+                                   title="Username must be 3-64 characters long and contain only letters, numbers, and underscores">
+                        </div>
+                        <div class="form-text">3-64 characters, letters, numbers, and underscores only</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-envelope"></i>
+                            </span>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input type="password" class="form-control" id="password" name="password" required 
+                                   minlength="6" 
+                                   title="Password must be at least 6 characters long">
+                        </div>
+                        <div class="form-text">Minimum 6 characters</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="terms" required>
+                        <label class="form-check-label" for="terms">
+                            I agree to the terms and conditions
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">
+                    Already have an account? 
+                    <a href="{{ url_for('login') }}" class="text-decoration-none">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Platform Benefits -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card bg-primary">
+            <div class="card-body text-white text-center">
+                <h5 class="card-title">Start Your TOEFL Journey Today!</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <i class="fas fa-graduation-cap fa-3x mb-2"></i>
+                        <h6>Official TPO Tests</h6>
+                        <p class="small">Practice with authentic TOEFL materials (TPO 01-75)</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-robot fa-3x mb-2"></i>
+                        <h6>AI-Generated Questions</h6>
+                        <p class="small">Get unlimited practice with smart AI-powered questions</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-chart-pie fa-3x mb-2"></i>
+                        <h6>Real-time Feedback</h6>
+                        <p class="small">Instant scoring and detailed performance analysis</p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="fas fa-globe fa-3x mb-2"></i>
+                        <h6>Diverse Content</h6>
+                        <p class="small">TED talks, news, podcasts from CNN, BBC, ABC</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Password confirmation validation
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    
+    if (password !== confirmPassword) {
+        this.setCustomValidity('Passwords do not match');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('Passwords do not match. Please check and try again.');
+        return false;
+    }
+    
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('Password must be at least 6 characters long.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

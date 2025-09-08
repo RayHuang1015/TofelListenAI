@@ -5,6 +5,7 @@ from services.content_integration import ContentIntegrationService
 from services.ai_question_generator import AIQuestionGenerator
 from services.scoring_engine import ScoringEngine
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 import logging
 
 @app.route('/')
@@ -221,7 +222,7 @@ def complete_session(session_id):
     if practice_session.total_questions > 0:
         practice_session.score_percentage = (practice_session.correct_answers / practice_session.total_questions) * 100
     
-    practice_session.completed_at = db.datetime.utcnow()
+    practice_session.completed_at = datetime.utcnow()
     
     # Generate detailed feedback using scoring engine
     scoring_engine = ScoringEngine()
