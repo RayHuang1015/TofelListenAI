@@ -187,12 +187,12 @@ class AIQuestionGenerator:
                     'question': 'Listen again to part of the lecture. Why does the professor say this: "Now, this might surprise you, but..."',
                     'type': 'replay',
                     'options': [
-                        'To introduce information that contradicts common assumptions',
-                        'To ask students to pay closer attention',
-                        'To indicate that the material is difficult',
-                        'To transition to a new topic'
+                        'A. To introduce information that contradicts common assumptions',
+                        'B. To ask students to pay closer attention',
+                        'C. To indicate that the material is difficult',
+                        'D. To transition to a new topic'
                     ],
-                    'answer': 'To introduce information that contradicts common assumptions',
+                    'answer': 'A. To introduce information that contradicts common assumptions',
                     'explanation': 'This phrase signals that the professor is about to present information that may be unexpected or contrary to what students might think.',
                     'difficulty': 'advanced',
                     'timestamp': 180.0
