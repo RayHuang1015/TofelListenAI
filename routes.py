@@ -45,7 +45,7 @@ def register():
         # Create new user
         try:
             password_hash = generate_password_hash(password)
-            user = User(username=username, email=email, password_hash=password_hash)
+            user = User(username=username, email=email, password_hash=password_hash, created_at=datetime.utcnow())
             db.session.add(user)
             db.session.commit()
             
@@ -137,23 +137,35 @@ def content_library():
     
     query = ContentSource.query
     
+    # 特殊處理TPO過濾 - 使用type欄位而不是name
     if source_type:
-        query = query.filter(ContentSource.name.contains(source_type))
+        if source_type.upper() == 'TPO':
+            query = query.filter_by(type='tpo')
+        else:
+            query = query.filter(ContentSource.name.contains(source_type))
+    
     if difficulty:
         query = query.filter_by(difficulty_level=difficulty)
     if topic:
         query = query.filter(ContentSource.topic.contains(topic))
     
-    content_items = query.all()
+    content_items = query.order_by(ContentSource.name.desc()).all()
     
-    # Get unique values for filters
-    sources = db.session.query(ContentSource.name).distinct().all()
+    # 獲取過濾選項 - 為TPO提供統一的選項
+    content_types = ['TPO']  # 手動添加TPO作為主要類型
+    
+    # 獲取其他唯一來源類型
+    other_sources = db.session.query(ContentSource.name).filter(
+        ~ContentSource.type.in_(['tpo'])
+    ).distinct().all()
+    content_types.extend([s[0] for s in other_sources if s[0]])
+    
     difficulties = db.session.query(ContentSource.difficulty_level).distinct().all()
     topics = db.session.query(ContentSource.topic).distinct().all()
     
     return render_template('content_library.html',
                          content_items=content_items,
-                         sources=[s[0] for s in sources if s[0]],
+                         sources=content_types,
                          difficulties=[d[0] for d in difficulties if d[0]],
                          topics=[t[0] for t in topics if t[0]])
 
