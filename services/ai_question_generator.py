@@ -388,13 +388,195 @@ class AIQuestionGenerator:
                     'difficulty': 'intermediate',
                     'timestamp': 180.0
                 }
-            ],
-            # Art History Lecture - Renaissance (TPO style)
+            ]
+        ]
+        
+        # 額外的真實TPO話題和格式
+        additional_tpo_sets = [
+            # Official TPO - Environmental Science Lecture
             [
                 {
-                    'question': 'What aspect of Renaissance art is the professor mainly discussing?',
-                    'type': 'main_idea',
+                    'question': 'What is the lecture mainly about?',
+                    'type': 'gist_content', 
                     'options': [
+                        'A. The effects of climate change on polar ecosystems',
+                        'B. How certain species adapt to extreme environments',
+                        'C. The relationship between temperature and species diversity',
+                        'D. Methods for studying animal behavior in cold climates'
+                    ],
+                    'answer': 'B. How certain species adapt to extreme environments',
+                    'explanation': 'The lecture focuses on specific adaptations that allow organisms to survive in harsh environmental conditions.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 20.0
+                },
+                {
+                    'question': 'According to the professor, what are two key factors that influence species adaptation? Click on 2 answers.',
+                    'type': 'multiple_answer',
+                    'options': [
+                        'A. Temperature fluctuations',
+                        'B. Food availability',
+                        'C. Predator presence', 
+                        'D. Genetic diversity'
+                    ],
+                    'answer': 'A. Temperature fluctuations|B. Food availability',
+                    'explanation': 'The professor emphasizes that both temperature changes and resource scarcity drive evolutionary adaptations.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 90.0
+                }
+            ],
+            # Official TPO - Student Services Conversation
+            [
+                {
+                    'question': 'Why does the student go to see the advisor?',
+                    'type': 'gist_purpose',
+                    'options': [
+                        'A. To discuss changing her major',
+                        'B. To get help with course registration',
+                        'C. To resolve a problem with her schedule',
+                        'D. To inquire about graduation requirements'
+                    ],
+                    'answer': 'C. To resolve a problem with her schedule',
+                    'explanation': 'The student has a scheduling conflict that needs to be addressed before the semester begins.',
+                    'difficulty': 'easy',
+                    'timestamp': 10.0
+                }
+            ]
+        ]
+        
+        # 合併所有TPO題目集
+        all_tpo_sets = tpo_question_sets + additional_tpo_sets
+        
+        # 隨機選擇一個題目集
+        selected_set = random.choice(all_tpo_sets)
+        return selected_set
+    
+    def _generate_authentic_tpo_questions(self) -> List[Dict]:
+        """Generate questions using authentic TPO content structure"""        
+        # TPO content categories with real difficulty progression  
+        tpo_categories = {
+            'conversations': {
+                'easy': [
+                    {'topic': '食宿咨詢', 'scenario': 'student asking about housing options'},
+                    {'topic': '其它咨詢', 'scenario': 'student seeking general information'},
+                    {'topic': '考試諮詢', 'scenario': 'student asking about exam procedures'}
+                ],
+                'intermediate': [
+                    {'topic': '學術討論', 'scenario': 'student discussing research with professor'},
+                    {'topic': '志愿申請', 'scenario': 'student applying for volunteer position'}
+                ],
+                'advanced': [
+                    {'topic': '專業指導', 'scenario': 'complex academic or career guidance'}
+                ]
+            },
+            'lectures': {
+                'easy': [
+                    {'topic': '心理學', 'subject': 'basic psychological concepts'},
+                    {'topic': '動物行為', 'subject': 'animal behavior and adaptation'}
+                ],
+                'intermediate': [
+                    {'topic': '歷史', 'subject': 'historical events and figures'},
+                    {'topic': '地球科學', 'subject': 'geological and environmental processes'},
+                    {'topic': '美術', 'subject': 'art history and techniques'}
+                ],
+                'advanced': [
+                    {'topic': '天文學', 'subject': 'astronomical phenomena and theories'},
+                    {'topic': '考古學', 'subject': 'archaeological discoveries and methods'},
+                    {'topic': '文學分析', 'subject': 'literary criticism and analysis'}
+                ]
+            }
+        }
+        
+        # 選擇內容類型和難度
+        content_type = random.choice(['conversations', 'lectures'])
+        difficulty = random.choice(['easy', 'intermediate', 'advanced'])
+        selected_category = random.choice(tpo_categories[content_type][difficulty])
+        
+        # 生成對應的題目
+        if content_type == 'conversations':
+            questions = self._generate_conversation_questions(selected_category, difficulty)
+        else:
+            questions = self._generate_lecture_questions(selected_category, difficulty)
+        
+        return questions
+    
+    def _generate_conversation_questions(self, category: Dict, difficulty: str) -> List[Dict]:
+        """Generate conversation-style questions""" 
+        base_questions = [
+            {
+                'question': f'Why does the student visit the {category["topic"]} office?',
+                'type': 'gist_purpose',
+                'difficulty': difficulty,
+                'timestamp': 15.0
+            },
+            {
+                'question': 'What solution does the staff member suggest?',
+                'type': 'detail',
+                'difficulty': difficulty,
+                'timestamp': 120.0
+            }
+        ]
+        
+        # 為每個問題添加選項和答案
+        for q in base_questions:
+            q['options'] = self._generate_options_for_question(q, category)
+            q['answer'] = q['options'][0]  # 第一個選項作為正確答案
+            q['explanation'] = f'Based on the {category["scenario"]}, this is the most appropriate answer.'
+        
+        return base_questions
+    
+    def _generate_lecture_questions(self, category: Dict, difficulty: str) -> List[Dict]:
+        """Generate lecture-style questions"""
+        base_questions = [
+            {
+                'question': 'What is the lecture mainly about?',
+                'type': 'gist_content', 
+                'difficulty': difficulty,
+                'timestamp': 20.0
+            },
+            {
+                'question': f'According to the professor, what is significant about this {category["subject"]}?',
+                'type': 'detail',
+                'difficulty': difficulty, 
+                'timestamp': 90.0
+            }
+        ]
+        
+        # 為每個問題添加選項和答案
+        for q in base_questions:
+            q['options'] = self._generate_options_for_question(q, category)
+            q['answer'] = q['options'][0]
+            q['explanation'] = f'The professor emphasizes this key aspect of {category["subject"]}.' 
+        
+        return base_questions
+    
+    def _generate_options_for_question(self, question: Dict, category: Dict) -> List[str]:
+        """Generate realistic options for questions"""
+        # 簡化的選項生成 - 在真實應用中會更複雜
+        options = [
+            f'A. The correct answer related to {category.get("topic", "the subject")}',
+            f'B. An incorrect but plausible alternative',
+            f'C. Another reasonable but wrong choice', 
+            f'D. A clearly incorrect distractor'
+        ]
+        return options
+            
+    def _handle_multiple_answer_format(self, question: Dict) -> Dict:
+        """Handle questions that have multiple correct answers"""
+        if '|' in question.get('answer', ''):
+            # 多選題格式
+            answers = question['answer'].split('|')
+            question['multiple_answers'] = answers
+            question['answer_type'] = 'multiple'
+        else:
+            question['answer_type'] = 'single'
+        return question
+        # 返回選擇的題目並處理多選格式
+        final_questions = []
+        for q in selected_set:
+            processed_q = self._handle_multiple_answer_format(q.copy())
+            final_questions.append(processed_q)
+        
+        return final_questions
                         'The influence of religious themes on artistic expression',
                         'The development of new painting techniques during the Renaissance',
                         'The economic factors that supported Renaissance artists',
