@@ -9,10 +9,16 @@ class AIQuestionGenerator:
     def __init__(self):
         self.api_key = os.getenv('UTSM_AI_API_KEY', 'demo_key')
         self.api_url = os.getenv('UTSM_AI_API_URL', 'https://api.utsm.ai/v1/generate')
+        # Use fallback questions by default since AI API is not available
+        self.use_fallback = True
     
     def generate_questions(self, content_source) -> List[Dict]:
         """Generate TOEFL-style listening questions for given content"""
         try:
+            # Use fallback questions directly since AI API is not accessible
+            if self.use_fallback:
+                return self._generate_fallback_questions(content_source)
+            
             # Prepare the content for AI processing
             content_text = self._prepare_content(content_source)
             
