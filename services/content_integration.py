@@ -42,8 +42,8 @@ class ContentIntegrationService:
                         else:
                             difficulty = 'advanced'  # Later TPOs are advanced
                         
-                        # For demo purposes, use a sample audio URL - in production this would be actual TPO audio
-                        audio_url = 'https://www.learningenglish.voanews.com/mp3/1695708199.mp3'
+                        # Use working sample audio - in production this would be actual TPO audio files
+                        audio_url = 'https://filesamples.com/samples/audio/mp3/SampleAudio_0.4mb_mp3.mp3'
                         
                         content = ContentSource(
                             name=section_name,
@@ -142,7 +142,7 @@ class ContentIntegrationService:
                 content = ContentSource(
                     name='TED',
                     type='video',
-                    url='https://www.learningenglish.voanews.com/mp3/1695708199.mp3',  # Sample audio for demo
+                    url='https://filesamples.com/samples/audio/mp3/SampleAudio_0.4mb_mp3.mp3',
                     description=f'TED Talk: {title}',
                     difficulty_level=difficulty,
                     duration=900,
@@ -181,7 +181,7 @@ class ContentIntegrationService:
                         content = ContentSource(
                             name=source.upper().replace('-', ' '),
                             type='audio',
-                            url='https://www.learningenglish.voanews.com/mp3/1695708199.mp3',  # Sample audio
+                            url='https://filesamples.com/samples/audio/mp3/SampleAudio_0.4mb_mp3.mp3',
                             description=article['title'],
                             difficulty_level='advanced',  # News content mimics advanced TPO level
                             duration=300,  # 5 minutes average

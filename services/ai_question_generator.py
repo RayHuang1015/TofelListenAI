@@ -101,34 +101,91 @@ class AIQuestionGenerator:
         return fallback_questions
     
     def _generate_tpo_questions(self) -> List[Dict]:
-        """Generate TPO-style questions"""
+        """Generate authentic TPO-style questions"""
         return [
             {
-                'question': 'What is the main topic of the lecture?',
-                'type': 'multiple_choice',
-                'options': ['A) Historical events', 'B) Scientific discoveries', 'C) Literature analysis', 'D) Economic theories'],
-                'answer': 'B) Scientific discoveries',
-                'explanation': 'The professor focuses primarily on recent scientific breakthroughs.',
+                'question': 'What is the lecture mainly about?',
+                'type': 'main_idea',
+                'options': [
+                    'The process of photosynthesis in plants',
+                    'Different types of plant adaptation',
+                    'The evolution of plant species', 
+                    'Environmental factors affecting plant growth'
+                ],
+                'answer': 'The process of photosynthesis in plants',
+                'explanation': 'The professor spends most of the lecture explaining how plants convert light energy into chemical energy through photosynthesis.',
                 'difficulty': 'intermediate',
-                'timestamp': 30.0
+                'timestamp': 15.0
             },
             {
-                'question': 'According to the professor, what are the key factors mentioned?',
-                'type': 'multiple_choice',
-                'options': ['A) Time and resources', 'B) Technology and funding', 'C) Research and development', 'D) All of the above'],
-                'answer': 'D) All of the above',
-                'explanation': 'The professor mentions all these factors as important.',
+                'question': 'According to the professor, what role does chlorophyll play in photosynthesis?',
+                'type': 'detail',
+                'options': [
+                    'It stores the energy produced by the plant',
+                    'It absorbs light energy and converts it to chemical energy',
+                    'It transports water from roots to leaves',
+                    'It protects the plant from harmful UV radiation'
+                ],
+                'answer': 'It absorbs light energy and converts it to chemical energy',
+                'explanation': 'Chlorophyll is the pigment that captures light energy and initiates the photosynthetic process.',
+                'difficulty': 'intermediate',
+                'timestamp': 45.0
+            },
+            {
+                'question': 'Why does the professor mention the experiment with the aquatic plant?',
+                'type': 'function',
+                'options': [
+                    'To demonstrate how oxygen is released during photosynthesis',
+                    'To show that water plants grow faster than land plants',
+                    'To explain why some plants live underwater',
+                    'To illustrate the importance of carbon dioxide'
+                ],
+                'answer': 'To demonstrate how oxygen is released during photosynthesis',
+                'explanation': 'The experiment with bubbles shows visible evidence of oxygen production during photosynthesis.',
                 'difficulty': 'intermediate',
                 'timestamp': 120.0
             },
             {
-                'question': 'What conclusion does the speaker draw?',
-                'type': 'multiple_choice',
-                'options': ['A) More research is needed', 'B) The results are conclusive', 'C) Further funding is required', 'D) The project should be discontinued'],
-                'answer': 'A) More research is needed',
-                'explanation': 'The speaker emphasizes the need for additional investigation.',
-                'difficulty': 'intermediate',
-                'timestamp': 200.0
+                'question': 'What can be inferred about plants that grow in shaded areas?',
+                'type': 'inference',
+                'options': [
+                    'They cannot perform photosynthesis effectively',
+                    'They have developed alternative ways to obtain energy',
+                    'They have adapted to use limited light more efficiently',
+                    'They grow slower than plants in sunny areas'
+                ],
+                'answer': 'They have adapted to use limited light more efficiently',
+                'explanation': 'The professor implies that shade plants have evolved mechanisms to maximize photosynthesis with less light.',
+                'difficulty': 'advanced',
+                'timestamp': 180.0
+            },
+            {
+                'question': 'Listen again to part of the lecture. What does the professor mean when she says this: "Now, this might seem counterintuitive, but..."',
+                'type': 'function',
+                'options': [
+                    'She is about to present information that contradicts common beliefs',
+                    'She wants students to ask questions about the topic',
+                    'She is going to repeat information from earlier',
+                    'She is introducing a completely new topic'
+                ],
+                'answer': 'She is about to present information that contradicts common beliefs',
+                'explanation': 'This phrase typically signals that the professor will present surprising or unexpected information.',
+                'difficulty': 'advanced',
+                'timestamp': 240.0
+            },
+            {
+                'question': 'Based on the lecture, what would most likely happen if a plant were kept in complete darkness for several weeks?',
+                'type': 'inference',
+                'options': [
+                    'The plant would grow taller to search for light',
+                    'The plant would produce more chlorophyll',
+                    'The plant would eventually die from lack of energy',
+                    'The plant would develop stronger root systems'
+                ],
+                'answer': 'The plant would eventually die from lack of energy',
+                'explanation': 'Without light for photosynthesis, the plant cannot produce the energy it needs to survive.',
+                'difficulty': 'advanced',
+                'timestamp': 300.0
             }
         ]
     
