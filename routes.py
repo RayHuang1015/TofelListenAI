@@ -30,21 +30,33 @@ def register():
         email = request.form['email']
         password = request.form['password']
         
-        # Check if user exists
+        # Check if username already exists
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
             flash('Username already exists', 'error')
             return redirect(url_for('register'))
         
-        # Create new user
-        password_hash = generate_password_hash(password)
-        user = User(username=username, email=email, password_hash=password_hash)
-        db.session.add(user)
-        db.session.commit()
+        # Check if email already exists
+        existing_email = User.query.filter_by(email=email).first()
+        if existing_email:
+            flash('Email address already registered', 'error')
+            return redirect(url_for('register'))
         
-        session['user_id'] = user.id
-        flash('Registration successful!', 'success')
-        return redirect(url_for('dashboard'))
+        # Create new user
+        try:
+            password_hash = generate_password_hash(password)
+            user = User(username=username, email=email, password_hash=password_hash)
+            db.session.add(user)
+            db.session.commit()
+            
+            session['user_id'] = user.id
+            flash('Registration successful!', 'success')
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Registration error: {e}")
+            flash('Registration failed. Please try again.', 'error')
+            return redirect(url_for('register'))
     
     return render_template('register.html')
 
