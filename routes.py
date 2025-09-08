@@ -257,8 +257,10 @@ def sync_content():
         ted_count = content_service.sync_ted_content()
         news_count = content_service.sync_news_content()
         podcast_count = content_service.sync_podcast_content()
+        discovery_count = content_service.sync_discovery_content()
+        natgeo_count = content_service.sync_national_geographic_content()
         
-        flash(f'Content synced: TPO({tpo_count}), TED({ted_count}), News({news_count}), Podcasts({podcast_count})', 'success')
+        flash(f'Content synced: TPO({tpo_count}), TED({ted_count}), News({news_count}), Podcasts({podcast_count}), Discovery({discovery_count}), NatGeo({natgeo_count})', 'success')
         
     except Exception as e:
         logging.error(f"Error syncing content: {e}")
