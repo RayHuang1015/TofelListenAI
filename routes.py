@@ -166,9 +166,24 @@ def practice(content_id):
     # Get questions for this content
     questions = Question.query.filter_by(content_id=content_id).all()
     
+    # Convert questions to JSON-serializable format
+    questions_data = []
+    for q in questions:
+        questions_data.append({
+            'id': q.id,
+            'question_text': q.question_text,
+            'question_type': q.question_type,
+            'options': q.options or [],
+            'correct_answer': q.correct_answer,
+            'explanation': q.explanation or '',
+            'difficulty': q.difficulty or 'intermediate',
+            'audio_timestamp': q.audio_timestamp or 0.0
+        })
+    
     return render_template('practice.html', 
                          content=content, 
                          questions=questions,
+                         questions_data=questions_data,
                          session_id=practice_session.id)
 
 @app.route('/submit_answer', methods=['POST'])

@@ -265,7 +265,7 @@
     const sessionData = {
         sessionId: {{ session_id }},
         totalQuestions: {{ questions|length }},
-        questions: {{ questions|tojson }},
+        questions: {{ questions_data|tojson }},
         currentQuestion: 1,
         answers: {},
         startTime: new Date(),
