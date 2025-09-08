@@ -101,93 +101,120 @@ class AIQuestionGenerator:
         return fallback_questions
     
     def _generate_tpo_questions(self) -> List[Dict]:
-        """Generate authentic TPO-style questions"""
-        return [
-            {
-                'question': 'What is the lecture mainly about?',
-                'type': 'main_idea',
-                'options': [
-                    'The process of photosynthesis in plants',
-                    'Different types of plant adaptation',
-                    'The evolution of plant species', 
-                    'Environmental factors affecting plant growth'
-                ],
-                'answer': 'The process of photosynthesis in plants',
-                'explanation': 'The professor spends most of the lecture explaining how plants convert light energy into chemical energy through photosynthesis.',
-                'difficulty': 'intermediate',
-                'timestamp': 15.0
-            },
-            {
-                'question': 'According to the professor, what role does chlorophyll play in photosynthesis?',
-                'type': 'detail',
-                'options': [
-                    'It stores the energy produced by the plant',
-                    'It absorbs light energy and converts it to chemical energy',
-                    'It transports water from roots to leaves',
-                    'It protects the plant from harmful UV radiation'
-                ],
-                'answer': 'It absorbs light energy and converts it to chemical energy',
-                'explanation': 'Chlorophyll is the pigment that captures light energy and initiates the photosynthetic process.',
-                'difficulty': 'intermediate',
-                'timestamp': 45.0
-            },
-            {
-                'question': 'Why does the professor mention the experiment with the aquatic plant?',
-                'type': 'function',
-                'options': [
-                    'To demonstrate how oxygen is released during photosynthesis',
-                    'To show that water plants grow faster than land plants',
-                    'To explain why some plants live underwater',
-                    'To illustrate the importance of carbon dioxide'
-                ],
-                'answer': 'To demonstrate how oxygen is released during photosynthesis',
-                'explanation': 'The experiment with bubbles shows visible evidence of oxygen production during photosynthesis.',
-                'difficulty': 'intermediate',
-                'timestamp': 120.0
-            },
-            {
-                'question': 'What can be inferred about plants that grow in shaded areas?',
-                'type': 'inference',
-                'options': [
-                    'They cannot perform photosynthesis effectively',
-                    'They have developed alternative ways to obtain energy',
-                    'They have adapted to use limited light more efficiently',
-                    'They grow slower than plants in sunny areas'
-                ],
-                'answer': 'They have adapted to use limited light more efficiently',
-                'explanation': 'The professor implies that shade plants have evolved mechanisms to maximize photosynthesis with less light.',
-                'difficulty': 'advanced',
-                'timestamp': 180.0
-            },
-            {
-                'question': 'Listen again to part of the lecture. What does the professor mean when she says this: "Now, this might seem counterintuitive, but..."',
-                'type': 'function',
-                'options': [
-                    'She is about to present information that contradicts common beliefs',
-                    'She wants students to ask questions about the topic',
-                    'She is going to repeat information from earlier',
-                    'She is introducing a completely new topic'
-                ],
-                'answer': 'She is about to present information that contradicts common beliefs',
-                'explanation': 'This phrase typically signals that the professor will present surprising or unexpected information.',
-                'difficulty': 'advanced',
-                'timestamp': 240.0
-            },
-            {
-                'question': 'Based on the lecture, what would most likely happen if a plant were kept in complete darkness for several weeks?',
-                'type': 'inference',
-                'options': [
-                    'The plant would grow taller to search for light',
-                    'The plant would produce more chlorophyll',
-                    'The plant would eventually die from lack of energy',
-                    'The plant would develop stronger root systems'
-                ],
-                'answer': 'The plant would eventually die from lack of energy',
-                'explanation': 'Without light for photosynthesis, the plant cannot produce the energy it needs to survive.',
-                'difficulty': 'advanced',
-                'timestamp': 300.0
-            }
+        """Generate TPO-style questions (Note: Due to copyright restrictions, these are similar but not identical to actual TPO questions)"""
+        
+        # Different question sets based on academic topics commonly found in TPO
+        question_sets = [
+            # Biology/Life Sciences set
+            [
+                {
+                    'question': 'What is the main purpose of the lecture?',
+                    'type': 'main_idea',
+                    'options': [
+                        'A) To describe the structure of cellular components',
+                        'B) To explain the process of energy conversion in living organisms',
+                        'C) To compare different species of plants',
+                        'D) To discuss environmental impacts on growth'
+                    ],
+                    'answer': 'B) To explain the process of energy conversion in living organisms',
+                    'explanation': 'The professor focuses on explaining how organisms convert energy from one form to another.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 12.0
+                },
+                {
+                    'question': 'According to the professor, what is the primary function of chloroplasts?',
+                    'type': 'detail',
+                    'options': [
+                        'A) To store water for the plant',
+                        'B) To capture sunlight and produce energy',
+                        'C) To transport nutrients throughout the plant',
+                        'D) To protect the plant from diseases'
+                    ],
+                    'answer': 'B) To capture sunlight and produce energy',
+                    'explanation': 'Chloroplasts contain chlorophyll which captures light energy for photosynthesis.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 45.0
+                },
+                {
+                    'question': 'Why does the professor mention the experiment with pond plants?',
+                    'type': 'function',
+                    'options': [
+                        'A) To show how plants produce oxygen',
+                        'B) To demonstrate plant growth rates',
+                        'C) To explain aquatic plant adaptations',
+                        'D) To illustrate water absorption methods'
+                    ],
+                    'answer': 'A) To show how plants produce oxygen',
+                    'explanation': 'The experiment demonstrates visible oxygen bubbles being produced during photosynthesis.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 95.0
+                },
+                {
+                    'question': 'What can be inferred about plants in low-light environments?',
+                    'type': 'inference',
+                    'options': [
+                        'A) They cannot survive without artificial light',
+                        'B) They have evolved specialized adaptations for efficiency',
+                        'C) They grow faster than plants in bright light',
+                        'D) They produce less oxygen than other plants'
+                    ],
+                    'answer': 'B) They have evolved specialized adaptations for efficiency',
+                    'explanation': 'The professor suggests these plants have developed ways to maximize light use efficiency.',
+                    'difficulty': 'advanced',
+                    'timestamp': 165.0
+                },
+                {
+                    'question': 'Listen again to part of the lecture. Why does the professor say this: [Replay: "This is where it gets interesting..."]',
+                    'type': 'replay',
+                    'options': [
+                        'A) To introduce a surprising discovery',
+                        'B) To signal a change in topics',
+                        'C) To emphasize student participation',
+                        'D) To review previous material'
+                    ],
+                    'answer': 'A) To introduce a surprising discovery',
+                    'explanation': 'This phrase typically introduces unexpected or counterintuitive information.',
+                    'difficulty': 'advanced',
+                    'timestamp': 210.0
+                }
+            ],
+            # Psychology/Social Sciences set  
+            [
+                {
+                    'question': 'What aspect of human behavior is the professor primarily discussing?',
+                    'type': 'main_idea',
+                    'options': [
+                        'A) How people make decisions under pressure',
+                        'B) The development of social skills in children',
+                        'C) Methods of treating psychological disorders',
+                        'D) The relationship between memory and learning'
+                    ],
+                    'answer': 'D) The relationship between memory and learning',
+                    'explanation': 'The lecture focuses on how memory processes affect our ability to learn new information.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 18.0
+                },
+                {
+                    'question': 'According to the professor, what happens during the encoding process?',
+                    'type': 'detail',
+                    'options': [
+                        'A) Information is permanently stored in long-term memory',
+                        'B) New information is transformed into a format the brain can process',
+                        'C) Previously learned material is recalled from storage',
+                        'D) Connections between neurons are weakened'
+                    ],
+                    'answer': 'B) New information is transformed into a format the brain can process',
+                    'explanation': 'Encoding is the process of converting sensory input into a form that can be stored in memory.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 52.0
+                }
+            ]
         ]
+        
+        # Select a random question set or rotate based on content
+        import random
+        selected_set = random.choice(question_sets)
+        return selected_set[:4]  # Return first 4 questions from the set
     
     def _generate_ted_questions(self) -> List[Dict]:
         """Generate TED talk-style questions"""
