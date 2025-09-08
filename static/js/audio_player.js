@@ -52,6 +52,13 @@ class AudioPlayerController {
             this.currentTime = 0;
             this.updateTimeDisplay();
             console.log('Audio playback ended');
+            
+            // Show questions after audio finishes (TPO style)
+            if (typeof showQuestionsAfterAudio === 'function') {
+                setTimeout(() => {
+                    showQuestionsAfterAudio();
+                }, 500); // Small delay for better UX
+            }
         });
 
         // Audio play event
