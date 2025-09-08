@@ -301,17 +301,21 @@
         if (listeningSpinner) listeningSpinner.style.display = 'none';
         
         sessionData.audioFinished = true;
-        showQuestion(1);
-        startTimer();
+        // Initialize practice session and show first question
+        if (typeof initializePracticeSession === 'function') {
+            initializePracticeSession(sessionData);
+        } else if (typeof goToQuestion === 'function') {
+            goToQuestion(1);
+        } else {
+            // Fallback: show first question manually
+            const firstQuestion = document.querySelector('.question-card');
+            if (firstQuestion) firstQuestion.style.display = 'block';
+        }
     }
     
-    // Start session timer
-    startSessionTimer();
-    
-    // Initialize audio player
+    // Initialize audio player first
     initializeAudioPlayer();
     
-    // Update progress
-    updateProgress();
+    // Only initialize practice session after audio ends (it will be done in showQuestionsAfterAudio)
 </script>
 {% endblock %}
