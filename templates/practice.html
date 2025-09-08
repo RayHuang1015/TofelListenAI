@@ -50,10 +50,12 @@
                 <!-- Audio Player Controls -->
                 <div class="audio-controls mb-3">
                     <audio id="audio-player" controls class="w-100" preload="metadata">
-                        <!-- Use a sample audio file for testing -->
-                        <source src="https://www.learningenglish.voanews.com/mp3/1695708199.mp3" type="audio/mpeg">
-                        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+bwrVkXDDaRvt/0nnEfCCeB5/3hdC8MGHbD7uGJPwkXb7zN+pR1IgkzjdPzwnkpBStVq9nNxWs2CUW949v3k2kdES+Jw+vfizAKEGG4yOqabSICLZPVzN91PAMO" type="audio/wav">
-                        <p>Your browser does not support the audio element. <br>For demo purposes, please imagine audio is playing.</p>
+                        <source src="{{ content.url }}" type="audio/mpeg">
+                        <!-- Fallback to sample audio with actual content -->
+                        <source src="https://sample-videos.com/zip/10/mp3/SampleAudio_0.4mb_mp3.mp3" type="audio/mpeg">
+                        <!-- Another fallback -->
+                        <source src="https://filesamples.com/samples/audio/mp3/SampleAudio_0.4mb_mp3.mp3" type="audio/mpeg">
+                        <p>Your browser does not support the audio element. <br>Audio loading may take a moment...</p>
                     </audio>
                 </div>
                 
