@@ -107,25 +107,39 @@ class AIQuestionGenerator:
         return fallback_questions
     
     def _generate_tpo_questions(self) -> List[Dict]:
-        """Generate authentic TPO-style questions based on official TPO format"""
+        """Generate authentic TPO-style questions based on official Koolearn TPO format"""
         
-        # Authentic TPO question sets - these follow the exact format and style of official TPO questions
+        # Official TPO question sets - based on real New Oriental Koolearn TPO questions
         tpo_question_sets = [
-            # Biology Lecture - Photosynthesis (TPO style)
+            # Biology Lecture - Official 33 Lecture 3 style (Notothenioids fish)
             [
                 {
                     'question': 'What is the lecture mainly about?',
-                    'type': 'main_idea',
+                    'type': 'gist_content',
                     'options': [
-                        'The basic process of photosynthesis and its importance',
-                        'Different types of plants and their characteristics',
-                        'The history of botanical research',
-                        'Methods for studying plant biology'
+                        'A. How various proteins function in marine organisms',
+                        'B. How certain fish became the dominant species in polar waters',
+                        'C. An example that contradicts the theory of adaptive radiation',
+                        'D. Changes in ocean habitats caused by continental drift'
                     ],
-                    'answer': 'The basic process of photosynthesis and its importance',
-                    'explanation': 'The professor discusses the fundamental process by which plants convert light energy into chemical energy.',
-                    'difficulty': 'intermediate',
-                    'timestamp': 10.0
+                    'answer': 'B. How certain fish became the dominant species in polar waters',
+                    'explanation': 'The lecture explains how Notothenioids fish came to dominate the Southern Ocean through adaptive radiation.',
+                    'difficulty': 'advanced',
+                    'timestamp': 15.0
+                },
+                {
+                    'question': 'According to the professor, what adaptation allows certain fish to survive in Antarctic waters?',
+                    'type': 'detail',
+                    'options': [
+                        'A. Thick insulating layers around their organs',
+                        'B. Special proteins that prevent ice crystal formation',
+                        'C. Modified gills that filter cold water efficiently',
+                        'D. Enhanced metabolism in low temperatures'
+                    ],
+                    'answer': 'B. Special proteins that prevent ice crystal formation',
+                    'explanation': 'The professor explains that antifreeze proteins bind to ice crystals to prevent them from growing larger.',
+                    'difficulty': 'advanced',
+                    'timestamp': 180.0
                 },
                 {
                     'question': 'According to the professor, chlorophyll is important because it',
@@ -183,64 +197,78 @@ class AIQuestionGenerator:
                     'difficulty': 'advanced',
                     'timestamp': 180.0
                 }
-            ],
-            # Psychology Lecture - Memory and Learning (TPO style)
-            [
                 {
-                    'question': 'What is the main topic of the lecture?',
-                    'type': 'main_idea',
-                    'options': [
-                        'Different types of memory disorders',
-                        'The relationship between memory and learning',
-                        'Techniques for improving memory',
-                        'The history of memory research'
-                    ],
-                    'answer': 'The relationship between memory and learning',
-                    'explanation': 'The professor focuses on how memory processes influence our ability to acquire and retain new information.',
-                    'difficulty': 'intermediate',
-                    'timestamp': 15.0
-                },
-                {
-                    'question': 'According to the professor, what happens during the encoding stage of memory?',
-                    'type': 'detail',
-                    'options': [
-                        'Information is retrieved from long-term storage',
-                        'New information is converted into a storable format',
-                        'Memories are permanently consolidated',
-                        'Old memories are replaced by new ones'
-                    ],
-                    'answer': 'New information is converted into a storable format',
-                    'explanation': 'Encoding is the first stage of memory formation where sensory information is transformed into a code that can be processed and stored.',
-                    'difficulty': 'intermediate',
-                    'timestamp': 60.0
-                },
-                {
-                    'question': 'The professor mentions the study about students and textbooks to',
-                    'type': 'function',
-                    'options': [
-                        'show that reading is more effective than listening',
-                        'illustrate the importance of active learning strategies',
-                        'prove that memory techniques do not work',
-                        'demonstrate the difference between short-term and long-term memory'
-                    ],
-                    'answer': 'illustrate the importance of active learning strategies',
-                    'explanation': 'The study shows how students who actively engage with material remember it better than those who passively read.',
-                    'difficulty': 'intermediate',
-                    'timestamp': 120.0
-                },
-                {
-                    'question': 'What does the professor imply about forgetting?',
+                    'question': 'What does the professor say about the ecological environment that allowed this diversification?',
                     'type': 'inference',
                     'options': [
-                        'It is always detrimental to learning',
-                        'It can actually be beneficial for memory function',
-                        'It only occurs when information is not important',
-                        'It happens more quickly in younger people'
+                        'A. It was highly competitive with many predator species',
+                        'B. It provided limited food sources for most species',
+                        'C. It functioned as an ecological vacuum with little competition',
+                        'D. It required constant adaptation to changing temperatures'
                     ],
-                    'answer': 'It can actually be beneficial for memory function',
-                    'explanation': 'The professor suggests that selective forgetting helps the brain focus on important information and prevents cognitive overload.',
+                    'answer': 'C. It functioned as an ecological vacuum with little competition',
+                    'explanation': 'The professor describes it as an ecological vacuum where these fish had virtually the entire ocean to themselves.',
                     'difficulty': 'advanced',
-                    'timestamp': 200.0
+                    'timestamp': 240.0
+                }
+            ],
+            # Student-Professor Conversation - Official 51 Conversation 1 style
+            [
+                {
+                    'question': 'Why does the student talk with the professor?',
+                    'type': 'gist_purpose',
+                    'options': [
+                        'A. She wants permission to revise an experiment she conducted earlier',
+                        'B. She has a question about the findings of an experiment in the textbook',
+                        'C. She wants to reproduce an experiment that is not in the textbook',
+                        'D. She would like advice about how to study animal behavior'
+                    ],
+                    'answer': 'C. She wants to reproduce an experiment that is not in the textbook',
+                    'explanation': 'The student specifically asks to reproduce an experiment from a journal that is the opposite of what was in their textbook.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 20.0
+                },
+                {
+                    'question': 'What does the professor say about the idea that eyespots look like eyes?',
+                    'type': 'attitude',
+                    'options': [
+                        'A. It is supported by extensive research on bird perception',
+                        'B. It is a commonly held belief but not based on solid research',
+                        'C. It has been recently proven through controlled experiments',
+                        'D. It applies only to certain species of moths and butterflies'
+                    ],
+                    'answer': 'B. It is a commonly held belief but not based on solid research',
+                    'explanation': 'The professor states this idea is just a commonly held belief and notes we can never really know how predators perceive the markings.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 80.0
+                },
+                {
+                    'question': 'What experimental finding does the student mention about eyespots?',
+                    'type': 'detail',
+                    'options': [
+                        'A. Round markings were more effective than other shapes at deterring birds',
+                        'B. Square markings were completely ineffective at scaring predators',
+                        'C. Larger markings were more effective than smaller ones',
+                        'D. Butterfly markings worked better than moth markings'
+                    ],
+                    'answer': 'C. Larger markings were more effective than smaller ones',
+                    'explanation': 'The student explains that researchers determined larger markings are more effective, calling this "visual loudness".',
+                    'difficulty': 'intermediate',
+                    'timestamp': 140.0
+                },
+                {
+                    'question': 'Why does the professor suggest setting up the experiment near a bird feeder?',
+                    'type': 'inference',
+                    'options': [
+                        'A. Bird feeders attract a wider variety of bird species',
+                        'B. Birds near feeders are more likely to approach the experiment',
+                        'C. The experiment requires a controlled feeding environment',
+                        'D. One week is not enough time for natural bird observation'
+                    ],
+                    'answer': 'B. Birds near feeders are more likely to approach the experiment',
+                    'explanation': 'The professor suggests this to maximize observation time since birds will already be attracted to the area.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 180.0
                 }
             ],
             # Art History Lecture - Renaissance (TPO style)
