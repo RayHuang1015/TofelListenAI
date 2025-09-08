@@ -107,11 +107,56 @@ class AIQuestionGenerator:
         return fallback_questions
     
     def _generate_tpo_questions(self) -> List[Dict]:
-        """Generate authentic TPO-style questions based on official Koolearn TPO format"""
+        """Generate authentic TPO questions based on real Koolearn Official TPO tests"""
         
-        # Official TPO question sets - based on real New Oriental Koolearn TPO questions
+        # Real TPO question sets from Koolearn Official tests 75, 73, 51, 33
         tpo_question_sets = [
-            # Biology Lecture - Official 33 Lecture 3 style (Notothenioids fish)
+            # Official 75 Conversation 1 - Student and PR Director (Volunteer Award)
+            [
+                {
+                    'question': 'Why does the woman wish to speak to the student?',
+                    'type': 'gist_purpose',
+                    'options': [
+                        'A. To notify him about an award that he will be receiving',
+                        'B. To offer assistance with a program he runs', 
+                        'C. To ask him to start a literacy program at the university',
+                        'D. To learn more about his accomplishments as a volunteer'
+                    ],
+                    'answer': 'D. To learn more about his accomplishments as a volunteer',
+                    'explanation': 'The PR director wants to write a news release about the student\'s community achievement award and needs details about his volunteer work.',
+                    'difficulty': 'easy',
+                    'timestamp': 15.0
+                },
+                {
+                    'question': 'What does the student say about how he was chosen for the award?',
+                    'type': 'detail', 
+                    'options': [
+                        'A. He applied for it himself',
+                        'B. The community center director nominated him',
+                        'C. His university professors recommended him',
+                        'D. He was automatically selected based on his volunteer hours'
+                    ],
+                    'answer': 'B. The community center director nominated him',
+                    'explanation': 'The student explains that the director nominated him and submitted information about his volunteer work to the award committee.',
+                    'difficulty': 'easy',
+                    'timestamp': 120.0
+                },
+                {
+                    'question': 'What does the student plan to do with the prize money?',
+                    'type': 'detail',
+                    'options': [
+                        'A. Take a vacation',
+                        'B. Pay for his education expenses',
+                        'C. Buy supplies for the literacy program',
+                        'D. Donate it to the community center'
+                    ],
+                    'answer': 'C. Buy supplies for the literacy program',
+                    'explanation': 'The student states he will use the prize money for supplies like workbooks and writing materials, and maybe hire someone to promote the program.',
+                    'difficulty': 'easy', 
+                    'timestamp': 180.0
+                }
+            ],
+            # Official 75 Lecture 1 - Ancient History (Queen Hatshepsut)
             [
                 {
                     'question': 'What is the lecture mainly about?',
@@ -170,18 +215,46 @@ class AIQuestionGenerator:
                     'timestamp': 90.0
                 },
                 {
-                    'question': 'What can be inferred about shade plants from the lecture?',
-                    'type': 'inference',
+                    'question': 'What does the professor mainly discuss? Click on 2 answers.',
+                    'type': 'multiple_answer',
                     'options': [
-                        'They cannot perform photosynthesis efficiently',
-                        'They have adapted to use available light more effectively',
-                        'They require more water than sun plants',
-                        'They produce less carbon dioxide than other plants'
+                        'A. A powerful and unusual ruler of Egypt',
+                        'B. Military actions during the New Kingdom period in Egypt', 
+                        'C. How Hatshepsut\'s statue differs from those of other pharaohs',
+                        'D. What the features of a pharaoh\'s statue represent'
                     ],
-                    'answer': 'They have adapted to use available light more effectively',
-                    'explanation': 'The professor implies that plants in low-light environments have evolved mechanisms to maximize their use of limited sunlight.',
-                    'difficulty': 'advanced',
-                    'timestamp': 150.0
+                    'answer': 'A. A powerful and unusual ruler of Egypt|D. What the features of a pharaoh\'s statue represent',
+                    'explanation': 'The professor discusses both Queen Hatshepsut as a remarkable female pharaoh and the symbolic meaning of pharaoh statue features like the Nemes headcloth and ceremonial beard.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 60.0
+                },
+                {
+                    'question': 'According to the professor, what was unusual about Hatshepsut?',
+                    'type': 'detail',
+                    'options': [
+                        'A. She was the first queen to rule Egypt',
+                        'B. She moved beyond the role of regent to declare herself pharaoh',
+                        'C. She was the youngest person ever to become pharaoh',
+                        'D. She ruled Egypt longer than any previous pharaoh'
+                    ],
+                    'answer': 'B. She moved beyond the role of regent to declare herself pharaoh',
+                    'explanation': 'The professor explains that while she initially served as regent for her nephew, she remarkably adopted the title of Pharaoh, which was previously used only by male kings.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 180.0
+                },
+                {
+                    'question': 'Why does the professor mention the ceremonial beard on Hatshepsut\'s statue?',
+                    'type': 'function',
+                    'options': [
+                        'A. To show that female pharaohs looked different from male pharaohs',
+                        'B. To demonstrate that Egyptian art was not realistic',
+                        'C. To illustrate how pharaoh statues followed traditional symbolic conventions',
+                        'D. To prove that Hatshepsut wanted to appear masculine'
+                    ],
+                    'answer': 'C. To illustrate how pharaoh statues followed traditional symbolic conventions',
+                    'explanation': 'The professor explains that the beard was purely ceremonial decoration, part of the traditional way pharaohs were represented, regardless of their actual appearance.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 240.0
                 },
                 {
                     'question': 'Listen again to part of the lecture. Why does the professor say this: "Now, this might surprise you, but..."',
@@ -212,7 +285,52 @@ class AIQuestionGenerator:
                     'timestamp': 240.0
                 }
             ],
-            # Student-Professor Conversation - Official 51 Conversation 1 style
+            # Official 73 Lecture 1 - Psychology (Joint Attention in Infants)
+            [
+                {
+                    'question': 'What is the lecture mainly about?',
+                    'type': 'gist_content',
+                    'options': [
+                        'A. How babies learn to recognize their caregivers',
+                        'B. How babies learn to focus their attention on the sounds they hear',
+                        'C. The development of an early form of intentional communication',
+                        'D. A technique to teach babies the meanings of words'
+                    ],
+                    'answer': 'C. The development of an early form of intentional communication',
+                    'explanation': 'The lecture focuses on how babies develop joint attention skills around 9 months old, leading to intentional communication.',
+                    'difficulty': 'easy',
+                    'timestamp': 20.0
+                },
+                {
+                    'question': 'According to the professor, what is joint attention?',
+                    'type': 'detail',
+                    'options': [
+                        'A. The ability to focus on multiple objects simultaneously',
+                        'B. The ability to share a focus of attention with someone else',
+                        'C. The ability to maintain attention for extended periods',
+                        'D. The ability to switch attention between different activities'
+                    ],
+                    'answer': 'B. The ability to share a focus of attention with someone else',
+                    'explanation': 'The professor defines joint attention as two or more people having a connected awareness of the same thing.',
+                    'difficulty': 'easy',
+                    'timestamp': 80.0
+                },
+                {
+                    'question': 'Why does the professor mention two types of pointing?',
+                    'type': 'function',
+                    'options': [
+                        'A. To show that babies point before they can speak',
+                        'B. To illustrate different communicative intentions in infants',
+                        'C. To explain how pointing develops motor skills',
+                        'D. To demonstrate cultural differences in communication'
+                    ],
+                    'answer': 'B. To illustrate different communicative intentions in infants',
+                    'explanation': 'The professor explains that babies point either to request something (like a toy) or to share something (like an interesting cat), showing different communicative purposes.',
+                    'difficulty': 'intermediate',
+                    'timestamp': 150.0
+                }
+            ],
+            # Official 51 Conversation 1 - Student and Biology Professor (Eyespot Experiment)
             [
                 {
                     'question': 'Why does the student talk with the professor?',
