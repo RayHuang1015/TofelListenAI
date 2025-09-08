@@ -65,24 +65,25 @@ class TPOImportService:
         
         stats = {'imported_tests': 0, 'imported_questions': 0}
         
-        for range_info in self.tpo_structure['official_ranges']:
-            for test_num in range_info['tests']:
-                # 每個TPO包含2個對話+3個講座
-                self._create_tpo_test(test_num, stats)
+        # 按Koolearn標準匯入TPO：每個TPO有2篇對話(各5題)+3篇講座(各6題)=28題
+        test_sample = [75, 74, 73, 72, 71, 70, 51, 33]  # 重點TPO號碼
+        for test_num in test_sample:
+            # 每個TPO包含2篇校園對話+3篇講座，共28題
+            self._create_tpo_test(test_num, stats)
         
         return stats
     
     def _create_tpo_test(self, test_num: int, stats: Dict):
-        """創建單個TPO測試（2對話+3講座）"""
+        """創建單個TPO測試（2篇校園對話+3篇講座，共28題）"""
         
         test_parts = [
-            # 2個對話
-            {'type': 'conversation', 'part_num': 1, 'questions': 5},
-            {'type': 'conversation', 'part_num': 2, 'questions': 5},
-            # 3個講座
-            {'type': 'lecture', 'part_num': 1, 'questions': 6},
-            {'type': 'lecture', 'part_num': 2, 'questions': 6},
-            {'type': 'lecture', 'part_num': 3, 'questions': 6}
+            # 2篇校園對話，每篇5題
+            {'type': 'conversation', 'part_num': 1, 'questions': 5, 'name': 'Con1'},
+            {'type': 'conversation', 'part_num': 2, 'questions': 5, 'name': 'Con2'},
+            # 3篇講座，每篇6題
+            {'type': 'lecture', 'part_num': 1, 'questions': 6, 'name': 'Lec1'},
+            {'type': 'lecture', 'part_num': 2, 'questions': 6, 'name': 'Lec2'},
+            {'type': 'lecture', 'part_num': 3, 'questions': 6, 'name': 'Lec3'}
         ]
         
         for part in test_parts:
@@ -108,14 +109,14 @@ class TPOImportService:
         
         # 檢查是否已存在
         existing = ContentSource.query.filter_by(
-            name=f"Official {test_num} {part['type'].title()} {part['part_num']}"
+            name=f"Official {test_num} {part['name']}"
         ).first()
         
         if existing:
             return existing
         
         content_source = ContentSource(
-            name=f"Official {test_num} {part['type'].title()} {part['part_num']}",
+            name=f"Official {test_num} {part['name']}",
             type='tpo',
             url=f"https://archive.org/details/toefl-listening/Official_{test_num}_{part['type']}_{part['part_num']}.mp3",
             description=f"TPO {test_num} {part['type']} on {topic}",
