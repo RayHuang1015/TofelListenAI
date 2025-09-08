@@ -42,8 +42,8 @@ class ContentIntegrationService:
                         else:
                             difficulty = 'advanced'  # Later TPOs are advanced
                         
-                        # Use sample audio file for now - in production this would be actual TPO audio
-                        audio_url = f'/static/audio/tpo/sample_tpo_audio.mp3'
+                        # For demo purposes, use a sample audio URL - in production this would be actual TPO audio
+                        audio_url = 'https://www.learningenglish.voanews.com/mp3/1695708199.mp3'
                         
                         content = ContentSource(
                             name=section_name,
@@ -136,12 +136,15 @@ class ContentIntegrationService:
         for title, topic in ted_topics:
             existing = ContentSource.query.filter(ContentSource.description.contains(title)).first()
             if not existing:
+                # Assign TPO-like difficulty levels to TED content
+                difficulty = 'advanced' if topic in ['Physics & Astronomy', 'Medicine & Health', 'Technology & Innovation', 'Environmental Science'] else 'intermediate'
+                
                 content = ContentSource(
                     name='TED',
                     type='video',
-                    url='https://ted.com/sample',
+                    url='https://www.learningenglish.voanews.com/mp3/1695708199.mp3',  # Sample audio for demo
                     description=f'TED Talk: {title}',
-                    difficulty_level='intermediate',
+                    difficulty_level=difficulty,
                     duration=900,
                     topic=topic
                 )
@@ -178,9 +181,9 @@ class ContentIntegrationService:
                         content = ContentSource(
                             name=source.upper().replace('-', ' '),
                             type='audio',
-                            url=article['url'],
+                            url='https://www.learningenglish.voanews.com/mp3/1695708199.mp3',  # Sample audio
                             description=article['title'],
-                            difficulty_level='advanced',
+                            difficulty_level='advanced',  # News content mimics advanced TPO level
                             duration=300,  # 5 minutes average
                             topic='Current Affairs'
                         )
