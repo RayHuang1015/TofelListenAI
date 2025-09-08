@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 from datetime import datetime
 from typing import List, Dict, Optional
 from app import db
@@ -101,7 +102,7 @@ class TPOImportService:
         else:
             topics = self.tpo_structure['topic_categories']['lectures']
         
-        import random
+        # random already imported at top
         topic = random.choice(topics)
         difficulty = random.choice(list(self.tpo_structure['difficulty_levels'].keys()))
         

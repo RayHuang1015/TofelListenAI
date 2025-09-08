@@ -4,7 +4,7 @@ import requests
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from app import db
-from models import Score, Answer, Question, ContentSource, User
+from models import Score, Answer, Question, ContentSource, User, PracticeSession
 
 class AIFeedbackService:
     """
