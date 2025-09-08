@@ -99,7 +99,7 @@
                         </small>
                         <br>
                         <small class="text-muted">
-                            <i class="fas fa-calendar me-1"></i>{{ content.created_at.strftime('%Y-%m-%d') }}
+                            <i class="fas fa-calendar me-1"></i>{{ content.created_at.strftime('%Y-%m-%d') if content.created_at else 'N/A' }}
                         </small>
                     </div>
                     
