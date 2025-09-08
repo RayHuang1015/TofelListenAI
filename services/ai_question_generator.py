@@ -196,7 +196,7 @@ class AIQuestionGenerator:
                     'explanation': 'This phrase signals that the professor is about to present information that may be unexpected or contrary to what students might think.',
                     'difficulty': 'advanced',
                     'timestamp': 180.0
-                }
+                },
                 {
                     'question': 'What does the professor say about the ecological environment that allowed this diversification?',
                     'type': 'inference',
