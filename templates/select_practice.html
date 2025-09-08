@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Select Practice - TOEFL Listening Practice{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="mb-3">
+                <i class="fas fa-play-circle text-primary me-2"></i>
+                選擇練習內容
+            </h1>
+            <p class="lead text-muted">
+                選擇內容來源、主題和難度級別開始你的TOEFL聽力練習
+            </p>
+        </div>
+    </div>
+
+    <!-- Quick Start Options -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="mb-3">快速開始</h3>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-primary h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-graduation-cap fa-3x text-primary mb-3"></i>
+                    <h5>TPO Practice</h5>
+                    <p class="small">Official TOEFL Practice</p>
+                    <a href="{{ url_for('content_library', type='TPO') }}" class="btn btn-primary">
+                        開始TPO練習
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-success h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-lightbulb fa-3x text-success mb-3"></i>
+                    <h5>TED Talks</h5>
+                    <p class="small">Educational Content</p>
+                    <a href="{{ url_for('content_library', type='TED') }}" class="btn btn-success">
+                        練習TED演講
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-info h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-newspaper fa-3x text-info mb-3"></i>
+                    <h5>News Sources</h5>
+                    <p class="small">CNN, BBC, ABC</p>
+                    <a href="{{ url_for('content_library', type='News') }}" class="btn btn-info">
+                        練習新聞聽力
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-warning h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-podcast fa-3x text-warning mb-3"></i>
+                    <h5>Podcasts</h5>
+                    <p class="small">Educational Podcasts</p>
+                    <a href="{{ url_for('content_library', type='Podcast') }}" class="btn btn-warning">
+                        練習播客聽力
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Selection -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-sliders-h me-2"></i>
+                        自定義練習選擇
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('content_library') }}" method="GET">
+                        <div class="row g-3">
+                            <!-- Content Source Selection -->
+                            <div class="col-md-4">
+                                <label for="source-select" class="form-label">內容來源</label>
+                                <select name="type" id="source-select" class="form-select">
+                                    <option value="">所有來源</option>
+                                    {% for group_name, sources in source_groups.items() %}
+                                        {% if sources %}
+                                            <optgroup label="{{ group_name }}">
+                                                {% for source in sources %}
+                                                <option value="{{ source }}">{{ source }}</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Topic Selection -->
+                            <div class="col-md-4">
+                                <label for="topic-select" class="form-label">學術主題</label>
+                                <select name="topic" id="topic-select" class="form-select">
+                                    <option value="">所有主題</option>
+                                    {% for topic in topics %}
+                                    <option value="{{ topic }}">{{ topic }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Difficulty Selection -->
+                            <div class="col-md-4">
+                                <label for="difficulty-select" class="form-label">難度級別</label>
+                                <select name="difficulty" id="difficulty-select" class="form-select">
+                                    <option value="">所有難度</option>
+                                    {% for difficulty in difficulties %}
+                                    <option value="{{ difficulty }}">
+                                        {% if difficulty == 'beginner' %}初級
+                                        {% elif difficulty == 'intermediate' %}中級
+                                        {% elif difficulty == 'advanced' %}高級
+                                        {% else %}{{ difficulty.title() }}
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="col-12 text-center">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i class="fas fa-search me-2"></i>
+                                    查找練習內容
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Topics Overview -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tags me-2"></i>
+                        可用學術主題
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="text-primary mb-2">STEM領域</h6>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-primary">Biology & Life Sciences</span>
+                                <span class="badge bg-primary">Physics & Astronomy</span>
+                                <span class="badge bg-primary">Environmental Science</span>
+                                <span class="badge bg-primary">Medicine & Health</span>
+                                <span class="badge bg-primary">Engineering & Technology</span>
+                                <span class="badge bg-primary">Technology & Innovation</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-success mb-2">人文社科</h6>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-success">History & Archaeology</span>
+                                <span class="badge bg-success">Psychology & Social Science</span>
+                                <span class="badge bg-success">Arts & Literature</span>
+                                <span class="badge bg-success">Political Science</span>
+                                <span class="badge bg-success">Linguistics & Languages</span>
+                                <span class="badge bg-success">Anthropology & Cultural Studies</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-info mb-2">商業應用</h6>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-info">Business & Economics</span>
+                                <span class="badge bg-info">Education & Learning</span>
+                            </div>
+                            <h6 class="text-warning mb-2 mt-3">其他領域</h6>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-warning">Geography & Earth Sciences</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add some interactivity to the form
+    const sourceSelect = document.getElementById('source-select');
+    const topicSelect = document.getElementById('topic-select');
+    const difficultySelect = document.getElementById('difficulty-select');
+    
+    // Update form when selections change
+    function updateSelections() {
+        console.log('Source:', sourceSelect.value);
+        console.log('Topic:', topicSelect.value);
+        console.log('Difficulty:', difficultySelect.value);
+    }
+    
+    sourceSelect.addEventListener('change', updateSelections);
+    topicSelect.addEventListener('change', updateSelections);
+    difficultySelect.addEventListener('change', updateSelections);
+});
+</script>
+{% endblock %}

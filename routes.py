@@ -92,6 +92,28 @@ def dashboard():
                          avg_score=avg_score,
                          scores=scores)
 
+@app.route('/select_practice')
+def select_practice():
+    """Practice selection interface with source and topic filters"""
+    # Get unique values for filters
+    sources = db.session.query(ContentSource.name).distinct().all()
+    difficulties = db.session.query(ContentSource.difficulty_level).distinct().all()
+    topics = db.session.query(ContentSource.topic).distinct().all()
+    
+    # Group sources by type for better organization
+    source_groups = {
+        'TPO Tests': [s[0] for s in sources if 'TPO' in s[0]],
+        'TED Talks': [s[0] for s in sources if 'TED' in s[0]],
+        'News Sources': [s[0] for s in sources if s[0] in ['CNN', 'BBC', 'ABC']],
+        'Podcasts': [s[0] for s in sources if 'Podcast' in s[0]],
+        'Educational': [s[0] for s in sources if s[0] in ['Discovery', 'National Geographic']]
+    }
+    
+    return render_template('select_practice.html',
+                         source_groups=source_groups,
+                         difficulties=[d[0] for d in difficulties if d[0]],
+                         topics=[t[0] for t in topics if t[0]])
+
 @app.route('/content')
 def content_library():
     """Browse available content sources"""
