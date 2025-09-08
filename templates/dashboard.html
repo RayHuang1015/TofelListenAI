@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - TOEFL Listening Practice{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-primary">
+            <div class="card-body text-white">
+                <h2 class="card-title">
+                    <i class="fas fa-user me-2"></i>
+                    Welcome back, {{ user.username }}!
+                </h2>
+                <p class="card-text">
+                    Track your progress and continue improving your TOEFL listening skills.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Overview -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-play-circle fa-3x text-primary mb-3"></i>
+                <h3 class="text-primary">{{ total_sessions }}</h3>
+                <p class="card-text">Practice Sessions</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                <h3 class="text-success">{{ "%.1f"|format(avg_score) }}%</h3>
+                <p class="card-text">Average Score</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-trophy fa-3x text-warning mb-3"></i>
+                <h3 class="text-warning">
+                    {% set high_scores = scores|selectattr('score', 'ge', 80)|list %}
+                    {{ high_scores|length }}
+                </h3>
+                <p class="card-text">High Scores (80%+)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar fa-3x text-info mb-3"></i>
+                <h3 class="text-info">
+                    {% if recent_sessions %}
+                    {{ (recent_sessions[0].started_at.date() - user.created_at.date()).days + 1 }}
+                    {% else %}
+                    1
+                    {% endif %}
+                </h3>
+                <p class="card-text">Days Active</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Charts -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area me-2"></i>
+                    Score Progress Over Time
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="progressChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Performance by Source
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="sourceChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Sessions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Recent Practice Sessions
+                </h5>
+                <a href="{{ url_for('content_library') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>New Session
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_sessions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Content</th>
+                                <th>Source</th>
+                                <th>Score</th>
+                                <th>Questions</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in recent_sessions %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-headphones text-primary me-2"></i>
+                                        <div>
+                                            <div class="fw-bold">{{ session.content.description[:50] }}...</div>
+                                            <small class="text-muted">{{ session.content.topic }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ session.content.name }}</span>
+                                </td>
+                                <td>
+                                    {% if session.score_percentage is not none %}
+                                    <span class="badge bg-{% if session.score_percentage >= 80 %}success{% elif session.score_percentage >= 60 %}warning{% else %}danger{% endif %}">
+                                        {{ "%.1f"|format(session.score_percentage) }}%
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">In Progress</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.total_questions %}
+                                    {{ session.correct_answers or 0 }} / {{ session.total_questions }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ session.started_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </td>
+                                <td>
+                                    {% if session.completed_at %}
+                                    <i class="fas fa-check-circle text-success" title="Completed"></i>
+                                    {% else %}
+                                    <a href="{{ url_for('practice', content_id=session.content_id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-play me-1"></i>Continue
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-headphones fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No practice sessions yet</h5>
+                    <p class="text-muted">Start your first practice session to see your progress here.</p>
+                    <a href="{{ url_for('content_library') }}" class="btn btn-primary">
+                        <i class="fas fa-play me-2"></i>Start Practicing
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Analysis -->
+{% if scores %}
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-thumbs-up me-2"></i>
+                    Your Strengths
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set latest_score = scores[-1] %}
+                {% if latest_score.strengths %}
+                <ul class="list-unstyled">
+                    {% for strength in latest_score.strengths %}
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        {{ strength }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Complete more practice sessions to see your strengths.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bullseye me-2"></i>
+                    Areas for Improvement
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if latest_score.weaknesses %}
+                <ul class="list-unstyled">
+                    {% for weakness in latest_score.weaknesses %}
+                    <li class="mb-2">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        {{ weakness }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Great job! No major weaknesses identified.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommendations -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Personalized Recommendations
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if latest_score.recommendations %}
+                <div class="row">
+                    {% for recommendation in latest_score.recommendations %}
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-arrow-right text-primary me-2 mt-1"></i>
+                            <div>{{ recommendation }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Complete a practice session to get personalized recommendations.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Progress Chart
+const progressCtx = document.getElementById('progressChart').getContext('2d');
+const progressData = {
+    labels: [
+        {% for score in scores[-10:] %}
+        '{{ score.created_at.strftime('%m/%d') }}'{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ],
+    datasets: [{
+        label: 'Score %',
+        data: [
+            {% for score in scores[-10:] %}
+            {{ score.score }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ],
+        borderColor: 'rgb(13, 110, 253)',
+        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+        tension: 0.1,
+        fill: true
+    }]
+};
+
+new Chart(progressCtx, {
+    type: 'line',
+    data: progressData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Source Performance Chart
+const sourceCtx = document.getElementById('sourceChart').getContext('2d');
+{% set source_stats = {} %}
+{% for score in scores %}
+    {% if score.content_source not in source_stats %}
+        {% set _ = source_stats.update({score.content_source: []}) %}
+    {% endif %}
+    {% set _ = source_stats[score.content_source].append(score.score) %}
+{% endfor %}
+
+const sourceData = {
+    labels: [
+        {% for source in source_stats.keys() %}
+        '{{ source }}'{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ],
+    datasets: [{
+        data: [
+            {% for source, scores_list in source_stats.items() %}
+            {{ (scores_list|sum / scores_list|length)|round(1) }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ],
+        backgroundColor: [
+            'rgba(13, 110, 253, 0.8)',
+            'rgba(25, 135, 84, 0.8)',
+            'rgba(255, 193, 7, 0.8)',
+            'rgba(220, 53, 69, 0.8)',
+            'rgba(13, 202, 240, 0.8)'
+        ]
+    }]
+};
+
+new Chart(sourceCtx, {
+    type: 'doughnut',
+    data: sourceData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Home - TOEFL Listening Practice{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row mb-5">
+    <div class="col-lg-8 mx-auto text-center">
+        <h1 class="display-4 mb-4">
+            <i class="fas fa-headphones text-primary me-3"></i>
+            TOEFL Listening Practice Platform
+        </h1>
+        <p class="lead mb-4">
+            Master TOEFL listening with AI-generated questions from TPO tests, TED talks, news sources, and podcasts. 
+            Get real-time feedback and personalized improvement recommendations.
+        </p>
+        {% if not session.user_id %}
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg me-md-2">
+                <i class="fas fa-user-plus me-2"></i>Get Started
+            </a>
+            <a href="{{ url_for('content_library') }}" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-book me-2"></i>Browse Content
+            </a>
+        </div>
+        {% else %}
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg me-md-2">
+                <i class="fas fa-chart-line me-2"></i>View Dashboard
+            </a>
+            <a href="{{ url_for('content_library') }}" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-play me-2"></i>Start Practice
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Platform Features</h2>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-robot fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">AI-Generated Questions</h5>
+                <p class="card-text">
+                    UTSM AI automatically generates TOEFL-style questions based on audio content, 
+                    ensuring relevant and challenging practice material.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-pie fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Real-time Feedback</h5>
+                <p class="card-text">
+                    Get immediate scoring and detailed feedback on your performance, 
+                    with analysis of strengths and areas for improvement.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-globe fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Diverse Content Sources</h5>
+                <p class="card-text">
+                    Practice with TPO tests, TED talks, CNN/BBC/ABC news, 
+                    National Geographic, Discovery, and podcast content.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Sources -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Content Sources</h2>
+    </div>
+    <div class="col-lg-10 mx-auto">
+        <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <i class="fas fa-graduation-cap fa-2x text-primary mb-2"></i>
+                        <h6>TPO 01-75</h6>
+                        <small class="text-muted">Official Practice Tests</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <i class="fas fa-lightbulb fa-2x text-success mb-2"></i>
+                        <h6>TED Talks</h6>
+                        <small class="text-muted">Educational Content</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <i class="fas fa-newspaper fa-2x text-info mb-2"></i>
+                        <h6>News Sources</h6>
+                        <small class="text-muted">CNN, BBC, ABC</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <i class="fas fa-podcast fa-2x text-warning mb-2"></i>
+                        <h6>Podcasts</h6>
+                        <small class="text-muted">Various Topics</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Content -->
+{% if recent_content %}
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Recent Content</h2>
+    </div>
+    {% for content in recent_content %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-secondary">{{ content.name }}</span>
+                    <span class="badge bg-primary">{{ content.difficulty_level }}</span>
+                </div>
+                <h6 class="card-title">{{ content.description[:50] }}...</h6>
+                <p class="card-text">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>{{ content.duration // 60 }} min
+                        <span class="ms-2">
+                            <i class="fas fa-tag me-1"></i>{{ content.topic }}
+                        </span>
+                    </small>
+                </p>
+                {% if session.user_id %}
+                <a href="{{ url_for('practice', content_id=content.id) }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-play me-1"></i>Start Practice
+                </a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm">
+                    Login to Practice
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Recent Scores for logged-in users -->
+{% if session.user_id and recent_scores %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Your Recent Performance</h2>
+    </div>
+    {% for score in recent_scores %}
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">{{ score.content_source }}</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="h4 mb-0">{{ "%.1f"|format(score.score) }}%</span>
+                    <span class="badge bg-{% if score.score >= 80 %}success{% elif score.score >= 60 %}warning{% else %}danger{% endif %}">
+                        {% if score.score >= 80 %}Excellent{% elif score.score >= 60 %}Good{% else %}Needs Work{% endif %}
+                    </span>
+                </div>
+                <small class="text-muted">{{ score.created_at.strftime('%Y-%m-%d') }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Call to Action -->
+{% if not session.user_id %}
+<div class="row mt-5">
+    <div class="col-lg-8 mx-auto text-center">
+        <div class="card bg-primary">
+            <div class="card-body">
+                <h3 class="card-title text-white">Ready to Start Your TOEFL Journey?</h3>
+                <p class="card-text text-white">
+                    Join thousands of students improving their listening skills with our AI-powered platform.
+                </p>
+                <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-rocket me-2"></i>Get Started Free
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

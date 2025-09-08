@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Content Library - TOEFL Listening Practice{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <h1 class="mb-3">
+            <i class="fas fa-book me-2"></i>
+            Content Library
+        </h1>
+        <p class="lead">
+            Choose from our extensive collection of TOEFL listening materials including official TPO tests, 
+            TED talks, news broadcasts, and podcasts.
+        </p>
+    </div>
+    <div class="col-lg-4 text-lg-end">
+        <a href="{{ url_for('sync_content') }}" class="btn btn-outline-primary">
+            <i class="fas fa-sync me-2"></i>Sync New Content
+        </a>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="type" class="form-label">Content Source</label>
+                        <select name="type" id="type" class="form-select">
+                            <option value="">All Sources</option>
+                            {% for source in sources %}
+                            <option value="{{ source }}" {% if request.args.get('type') == source %}selected{% endif %}>
+                                {{ source }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="difficulty" class="form-label">Difficulty Level</label>
+                        <select name="difficulty" id="difficulty" class="form-select">
+                            <option value="">All Levels</option>
+                            {% for difficulty in difficulties %}
+                            <option value="{{ difficulty }}" {% if request.args.get('difficulty') == difficulty %}selected{% endif %}>
+                                {{ difficulty.title() }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="topic" class="form-label">Topic</label>
+                        <select name="topic" id="topic" class="form-select">
+                            <option value="">All Topics</option>
+                            {% for topic in topics %}
+                            <option value="{{ topic }}" {% if request.args.get('topic') == topic %}selected{% endif %}>
+                                {{ topic }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Grid -->
+<div class="row">
+    {% if content_items %}
+        {% for content in content_items %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-secondary">{{ content.name }}</span>
+                        <span class="badge bg-{% if content.difficulty_level == 'beginner' %}success{% elif content.difficulty_level == 'intermediate' %}warning{% else %}danger{% endif %}">
+                            {{ content.difficulty_level.title() }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">{{ content.description[:80] }}{% if content.description|length > 80 %}...{% endif %}</h6>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-tag me-1"></i>{{ content.topic }}
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>{{ content.duration // 60 }} min {{ content.duration % 60 }} sec
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>{{ content.created_at.strftime('%Y-%m-%d') }}
+                        </small>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        {% if session.user_id %}
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('practice', content_id=content.id) }}" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i>Start Practice
+                            </a>
+                            {% if content.url and 'http' in content.url %}
+                            <a href="{{ content.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-external-link-alt me-1"></i>View Source
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="text-center">
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login to Practice
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No content found</h4>
+                <p class="text-muted">
+                    {% if request.args.get('type') or request.args.get('difficulty') or request.args.get('topic') %}
+                    Try adjusting your filters to see more content.
+                    {% else %}
+                    No content is currently available. Please sync content or try again later.
+                    {% endif %}
+                </p>
+                {% if request.args.get('type') or request.args.get('difficulty') or request.args.get('topic') %}
+                <a href="{{ url_for('content_library') }}" class="btn btn-primary">
+                    <i class="fas fa-times me-2"></i>Clear Filters
+                </a>
+                {% else %}
+                <a href="{{ url_for('sync_content') }}" class="btn btn-primary">
+                    <i class="fas fa-sync me-2"></i>Sync Content
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Content Stats -->
+{% if content_items %}
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 class="text-primary">{{ content_items|length }}</h4>
+                        <small class="text-muted">Content Items Shown</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-success">{{ sources|length }}</h4>
+                        <small class="text-muted">Different Sources</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-info">{{ topics|length }}</h4>
+                        <small class="text-muted">Topics Available</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">{{ difficulties|length }}</h4>
+                        <small class="text-muted">Difficulty Levels</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Content Sources Info -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    About Our Content Sources
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6><i class="fas fa-graduation-cap text-primary me-2"></i>TPO Tests (01-75)</h6>
+                        <p class="small text-muted mb-0">
+                            Official TOEFL Practice Online tests from ETS. These are the most authentic practice materials available.
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6><i class="fas fa-lightbulb text-success me-2"></i>TED Talks</h6>
+                        <p class="small text-muted mb-0">
+                            Educational talks covering technology, science, and innovation - perfect for academic listening practice.
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6><i class="fas fa-newspaper text-info me-2"></i>News Sources</h6>
+                        <p class="small text-muted mb-0">
+                            Current affairs from CNN, BBC, and ABC News to practice with real-world English content.
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6><i class="fas fa-podcast text-warning me-2"></i>Podcasts</h6>
+                        <p class="small text-muted mb-0">
+                            Educational podcasts covering various topics to improve comprehension of informal speech.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

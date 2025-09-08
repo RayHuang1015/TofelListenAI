@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Practice - {{ content.name }} - TOEFL Listening{% endblock %}
+
+{% block extra_head %}
+<style>
+    .audio-player {
+        background: var(--bs-dark);
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+    .question-card {
+        transition: all 0.3s ease;
+    }
+    .question-card.answered {
+        opacity: 0.7;
+    }
+    .progress-indicator {
+        height: 4px;
+        background: var(--bs-gray-300);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+    .progress-bar-custom {
+        height: 100%;
+        background: var(--bs-primary);
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Audio Player Section -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-headphones me-2"></i>
+                        {{ content.description }}
+                    </h5>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-secondary me-2">{{ content.name }}</span>
+                        <span class="badge bg-primary">{{ content.difficulty_level }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body audio-player">
+                <!-- Audio Player Controls -->
+                <div class="audio-controls mb-3">
+                    <audio id="audio-player" controls class="w-100" preload="metadata">
+                        <source src="{{ content.url }}" type="audio/mpeg">
+                        <p>Your browser does not support the audio element. Please try a different browser.</p>
+                    </audio>
+                </div>
+                
+                <!-- Player Controls -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="audio-info">
+                        <span id="current-time">0:00</span> / <span id="duration">{{ (content.duration // 60) }}:{{ "%02d"|format(content.duration % 60) }}</span>
+                    </div>
+                    <div class="audio-speed">
+                        <label for="speed-control" class="form-label mb-0 me-2">Speed:</label>
+                        <select id="speed-control" class="form-select form-select-sm" style="width: auto;">
+                            <option value="0.5">0.5x</option>
+                            <option value="0.75">0.75x</option>
+                            <option value="1" selected>1x</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                        </select>
+                    </div>
+                    <div class="audio-actions">
+                        <button id="replay-10" class="btn btn-outline-secondary btn-sm me-2">
+                            <i class="fas fa-undo me-1"></i>-10s
+                        </button>
+                        <button id="forward-10" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-redo me-1"></i>+10s
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Practice Session Info -->
+    <div class="col-12 mb-4">
+        <div class="card bg-info">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h6 class="text-white mb-2">Practice Session Progress</h6>
+                        <div class="progress-indicator">
+                            <div class="progress-bar-custom" id="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end text-white">
+                        <span id="question-counter">0 / {{ questions|length }}</span> Questions
+                        <br>
+                        <small>Time: <span id="session-timer">00:00</span></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Questions Section -->
+    <div class="col-lg-8">
+        <div id="questions-container">
+            {% for question in questions %}
+            <div class="card question-card mb-4" id="question-{{ loop.index }}" style="{% if loop.index > 1 %}display: none;{% endif %}">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        Question {{ loop.index }} of {{ questions|length }}
+                        {% if question.audio_timestamp %}
+                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="seekToTimestamp({{ question.audio_timestamp }})">
+                            <i class="fas fa-clock me-1"></i>{{ "%.0f"|format(question.audio_timestamp) }}s
+                        </button>
+                        {% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="question-text">{{ question.question_text }}</p>
+                    
+                    {% if question.question_type == 'multiple_choice' %}
+                    <div class="options-container">
+                        {% for option in question.options %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" 
+                                   name="question_{{ loop.index0 }}" 
+                                   id="q{{ loop.index0 }}_option{{ loop.index }}" 
+                                   value="{{ option }}">
+                            <label class="form-check-label" for="q{{ loop.index0 }}_option{{ loop.index }}">
+                                {{ option }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <textarea class="form-control" rows="3" 
+                                  name="question_{{ loop.index0 }}" 
+                                  placeholder="Type your answer here..."></textarea>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between">
+                        {% if loop.index > 1 %}
+                        <button class="btn btn-outline-secondary" onclick="previousQuestion()">
+                            <i class="fas fa-arrow-left me-1"></i>Previous
+                        </button>
+                        {% else %}
+                        <div></div>
+                        {% endif %}
+                        
+                        <button class="btn btn-primary" onclick="submitAnswer({{ loop.index0 }}, {{ question.id }})">
+                            {% if loop.index == questions|length %}
+                            <i class="fas fa-check me-1"></i>Finish
+                            {% else %}
+                            <i class="fas fa-arrow-right me-1"></i>Next
+                            {% endif %}
+                        </button>
+                    </div>
+                    
+                    <!-- Answer feedback (hidden initially) -->
+                    <div class="answer-feedback mt-3" style="display: none;">
+                        <div class="alert" role="alert">
+                            <h6 class="alert-heading"></h6>
+                            <p class="mb-0"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Navigation Panel -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Question Navigation
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2" id="question-nav">
+                    {% for question in questions %}
+                    <div class="col-3">
+                        <button class="btn btn-outline-secondary btn-sm w-100 question-nav-btn" 
+                                data-question="{{ loop.index }}"
+                                onclick="goToQuestion({{ loop.index }})">
+                            {{ loop.index }}
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Instructions
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-play text-primary me-2"></i>
+                        Listen to the audio carefully
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-redo text-success me-2"></i>
+                        You can replay sections as needed
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-warning me-2"></i>
+                        Take your time with each question
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-info me-2"></i>
+                        Review your answers before finishing
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Session Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Session Stats
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary mb-0" id="correct-count">0</h4>
+                        <small class="text-muted">Correct</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-danger mb-0" id="incorrect-count">0</h4>
+                        <small class="text-muted">Incorrect</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for session data -->
+<form id="session-form" style="display: none;">
+    <input type="hidden" name="session_id" value="{{ session_id }}">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/audio_player.js') }}"></script>
+<script src="{{ url_for('static', filename='js/practice.js') }}"></script>
+<script>
+    // Initialize practice session
+    const sessionData = {
+        sessionId: {{ session_id }},
+        totalQuestions: {{ questions|length }},
+        questions: {{ questions|tojson }},
+        currentQuestion: 1,
+        answers: {},
+        startTime: new Date(),
+        correctCount: 0,
+        incorrectCount: 0
+    };
+    
+    // Start session timer
+    startSessionTimer();
+    
+    // Initialize audio player
+    initializeAudioPlayer();
+    
+    // Update progress
+    updateProgress();
+</script>
+{% endblock %}

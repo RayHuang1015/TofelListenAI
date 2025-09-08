@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Practice Results - TOEFL Listening{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Results Header -->
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <div class="card bg-{% if session.score_percentage >= 80 %}success{% elif session.score_percentage >= 60 %}warning{% else %}danger{% endif %}">
+            <div class="card-body text-white">
+                <h1 class="display-4 mb-2">{{ "%.1f"|format(session.score_percentage) }}%</h1>
+                <h3 class="mb-3">
+                    {% if session.score_percentage >= 80 %}
+                    <i class="fas fa-trophy me-2"></i>Excellent Work!
+                    {% elif session.score_percentage >= 60 %}
+                    <i class="fas fa-thumbs-up me-2"></i>Good Job!
+                    {% else %}
+                    <i class="fas fa-chart-line me-2"></i>Keep Practicing!
+                    {% endif %}
+                </h3>
+                <p class="mb-0">
+                    You answered {{ session.correct_answers }} out of {{ session.total_questions }} questions correctly
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Summary -->
+<div class="row mb-4">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Session Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Content Information</h6>
+                        <p><strong>Source:</strong> {{ session.content.name }}</p>
+                        <p><strong>Topic:</strong> {{ session.content.topic }}</p>
+                        <p><strong>Difficulty:</strong> <span class="badge bg-{% if session.content.difficulty_level == 'beginner' %}success{% elif session.content.difficulty_level == 'intermediate' %}warning{% else %}danger{% endif %}">{{ session.content.difficulty_level.title() }}</span></p>
+                        <p><strong>Description:</strong> {{ session.content.description }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Performance Metrics</h6>
+                        <p><strong>Score:</strong> {{ "%.1f"|format(session.score_percentage) }}%</p>
+                        <p><strong>Correct Answers:</strong> {{ session.correct_answers }} / {{ session.total_questions }}</p>
+                        <p><strong>Performance Level:</strong> {{ feedback.performance_level }}</p>
+                        <p><strong>Session Date:</strong> {{ session.started_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Analysis -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Question Type Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if feedback.question_type_analysis %}
+                <canvas id="questionTypeChart" height="200"></canvas>
+                {% else %}
+                <p class="text-muted text-center">No question type data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Timing Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if feedback.timing_analysis %}
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ "%.1f"|format(feedback.timing_analysis.average_time) }}s</h4>
+                        <small class="text-muted">Average per Question</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ feedback.timing_analysis.total_time }}s</h4>
+                        <small class="text-muted">Total Time</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Fastest:</strong> {{ feedback.timing_analysis.fastest }}s</p>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Slowest:</strong> {{ feedback.timing_analysis.slowest }}s</p>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No timing data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Strengths and Weaknesses -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-thumbs-up me-2"></i>
+                    Your Strengths
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if feedback.strengths %}
+                <ul class="list-unstyled">
+                    {% for strength in feedback.strengths %}
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        {{ strength }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Keep practicing to identify your strengths!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Areas for Improvement
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if feedback.weaknesses %}
+                <ul class="list-unstyled">
+                    {% for weakness in feedback.weaknesses %}
+                    <li class="mb-2">
+                        <i class="fas fa-arrow-right text-warning me-2"></i>
+                        {{ weakness }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Great job! No major weaknesses identified.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommendations -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Personalized Recommendations
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if feedback.recommendations %}
+                <div class="row">
+                    {% for recommendation in feedback.recommendations %}
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 30px; height: 30px; font-size: 14px;">
+                                {{ loop.index }}
+                            </div>
+                            <div>
+                                <p class="mb-0">{{ recommendation }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No specific recommendations available. Keep practicing regularly!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row">
+    <div class="col-12 text-center">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">What's Next?</h5>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('practice', content_id=session.content_id) }}" class="btn btn-primary me-md-2">
+                        <i class="fas fa-redo me-2"></i>Practice Again
+                    </a>
+                    <a href="{{ url_for('content_library') }}" class="btn btn-success me-md-2">
+                        <i class="fas fa-book me-2"></i>Try Different Content
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-info">
+                        <i class="fas fa-chart-line me-2"></i>View Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Motivation -->
+<div class="row mt-4">
+    <div class="col-lg-8 mx-auto">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title">
+                    <i class="fas fa-rocket me-2"></i>
+                    Keep Up the Great Work!
+                </h6>
+                <p class="card-text">
+                    {% if session.score_percentage >= 80 %}
+                    You're performing excellently! Consider challenging yourself with more difficult content.
+                    {% elif session.score_percentage >= 60 %}
+                    You're making good progress. Continue practicing to reach the next level.
+                    {% else %}
+                    Remember, improvement comes with consistent practice. You're on the right track!
+                    {% endif %}
+                </p>
+                <small class="text-muted">
+                    <i class="fas fa-quote-left me-1"></i>
+                    "Success is the sum of small efforts repeated day in and day out."
+                    <i class="fas fa-quote-right ms-1"></i>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Question Type Performance Chart
+{% if feedback.question_type_analysis %}
+const questionTypeCtx = document.getElementById('questionTypeChart').getContext('2d');
+const questionTypeData = {
+    labels: [
+        {% for q_type in feedback.question_type_analysis.keys() %}
+        '{{ q_type.replace("_", " ").title() }}'{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ],
+    datasets: [{
+        label: 'Accuracy %',
+        data: [
+            {% for q_type, stats in feedback.question_type_analysis.items() %}
+            {{ stats.accuracy }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ],
+        backgroundColor: [
+            'rgba(13, 110, 253, 0.8)',
+            'rgba(25, 135, 84, 0.8)',
+            'rgba(255, 193, 7, 0.8)',
+            'rgba(220, 53, 69, 0.8)',
+            'rgba(13, 202, 240, 0.8)'
+        ],
+        borderColor: [
+            'rgb(13, 110, 253)',
+            'rgb(25, 135, 84)',
+            'rgb(255, 193, 7)',
+            'rgb(220, 53, 69)',
+            'rgb(13, 202, 240)'
+        ],
+        borderWidth: 2
+    }]
+};
+
+new Chart(questionTypeCtx, {
+    type: 'bar',
+    data: questionTypeData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.parsed.y + '% accuracy';
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}
