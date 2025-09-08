@@ -149,7 +149,7 @@ class KoolearnCompleteImport:
             content = ContentSource(
                 name=name,
                 type='tpo',
-                url=f"https://liuxue.koolearn.com/toefl/listen/{tpo_num}-{part['name']}.html",
+                url=f"https://archive.org/download/TOEFL-Listening/Official_TPO_{tpo_num}_{part['name']}.mp3",
                 description=f"TPO {tpo_num} {part['type']} on {topic} (Koolearn Official)",
                 topic=topic,
                 difficulty_level=difficulty,
