@@ -570,44 +570,6 @@ class AIQuestionGenerator:
         else:
             question['answer_type'] = 'single'
         return question
-        # 返回選擇的題目並處理多選格式
-        final_questions = []
-        for q in selected_set:
-            processed_q = self._handle_multiple_answer_format(q.copy())
-            final_questions.append(processed_q)
-        
-        return final_questions
-                        'The influence of religious themes on artistic expression',
-                        'The development of new painting techniques during the Renaissance',
-                        'The economic factors that supported Renaissance artists',
-                        'The differences between Northern and Italian Renaissance art'
-                    ],
-                    'answer': 'The development of new painting techniques during the Renaissance',
-                    'explanation': 'The lecture focuses on technical innovations like perspective, sfumato, and chiaroscuro that characterized Renaissance painting.',
-                    'difficulty': 'intermediate',
-                    'timestamp': 12.0
-                },
-                {
-                    'question': 'According to the professor, linear perspective was important because it',
-                    'type': 'detail',
-                    'options': [
-                        'made paintings more colorful and vibrant',
-                        'allowed artists to create realistic three-dimensional effects',
-                        'reduced the cost of producing artwork',
-                        'helped artists paint faster than before'
-                    ],
-                    'answer': 'allowed artists to create realistic three-dimensional effects',
-                    'explanation': 'Linear perspective gave artists the ability to represent depth and space realistically on a flat surface.',
-                    'difficulty': 'intermediate',
-                    'timestamp': 50.0
-                }
-            ]
-        ]
-        
-        # Use different question sets to provide variety
-        import random
-        selected_set = random.choice(tpo_question_sets)
-        return selected_set
     
     def _generate_ted_questions(self) -> List[Dict]:
         """Generate TED talk-style questions"""
