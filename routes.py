@@ -480,3 +480,14 @@ def sync_content():
         flash('Error syncing content. Please try again later.', 'error')
     
     return redirect(url_for('content_library'))
+
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handle 404 errors for missing content"""
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors"""
+    db.session.rollback()
+    return render_template('404.html'), 500
