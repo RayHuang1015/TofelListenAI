@@ -164,7 +164,7 @@ def content_library():
             content_items = query.order_by(ContentSource.name.asc()).limit(100).all()
         
         # 獲取過濾選項 - 為TPO提供統一的選項
-        content_types = ['Audio Labs TPO']  # 手動添加Audio Labs TPO作為主要類型
+        content_types = ['Practice TPO Collection']  # 手動添加Practice TPO作為主要類型
         
         # 獲取其他唯一來源類型（限制查詢以提高性能，排除小站TPO相關選項）
         other_sources = db.session.query(ContentSource.name).filter(
