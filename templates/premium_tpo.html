@@ -274,25 +274,27 @@
         {% endif %}
     </div>
 
-    <!-- Pagination -->
+    <!-- Simple Pagination (Fixed Version) -->
     {% if pagination and pagination.pages > 1 %}
     <div class="row mt-4">
         <div class="col-12">
             <nav aria-label="Content pagination">
                 <ul class="pagination justify-content-center">
+                    <!-- Previous Button -->
                     {% if pagination.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('premium_tpo', page=pagination.prev_num, **request.args) }}">
+                        <a class="page-link" href="/premium-tpo?page={{ pagination.prev_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     </li>
                     {% endif %}
                     
-                    {% for page_num in pagination.iter_pages() %}
+                    <!-- Page Numbers -->
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                         {% if page_num %}
                             {% if page_num != pagination.page %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url_for('premium_tpo', page=page_num, **request.args) }}">{{ page_num }}</a>
+                                <a class="page-link" href="/premium-tpo?page={{ page_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">{{ page_num }}</a>
                             </li>
                             {% else %}
                             <li class="page-item active">
@@ -306,15 +308,23 @@
                         {% endif %}
                     {% endfor %}
                     
+                    <!-- Next Button -->
                     {% if pagination.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('premium_tpo', page=pagination.next_num, **request.args) }}">
+                        <a class="page-link" href="/premium-tpo?page={{ pagination.next_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>
                     {% endif %}
                 </ul>
             </nav>
+            
+            <!-- Page Info -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    顯示第 {{ pagination.page }} 頁，共 {{ pagination.pages }} 頁 | 總共 {{ pagination.total }} 個項目
+                </small>
+            </div>
         </div>
     </div>
     {% endif %}
@@ -370,7 +380,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // 統計信息
     const totalItems = {{ content_items|length if content_items else 0 }};
-    const totalCount = {{ total_count or 55 }};
+    const totalCount = {{ total_count or 505 }};
     
     console.log('👑 精選TPO專區載入完成');
     console.log(`顯示了 ${totalItems} 個聽力項目`);
