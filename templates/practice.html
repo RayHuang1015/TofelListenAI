@@ -153,6 +153,20 @@
                         </div>
                         {% endfor %}
                     </div>
+                    {% elif question.question_type == 'multiple_answer' %}
+                    <div class="options-container">
+                        {% for option in question.options %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" 
+                                   name="question_{{ loop.index0 }}" 
+                                   id="q{{ loop.index0 }}_option{{ loop.index }}" 
+                                   value="{{ option }}">
+                            <label class="form-check-label" for="q{{ loop.index0 }}_option{{ loop.index }}">
+                                {{ option }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
                     {% else %}
                     <div class="mb-3">
                         <textarea class="form-control" rows="3" 

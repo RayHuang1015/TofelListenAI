@@ -291,7 +291,16 @@ def submit_answer():
     time_taken = int(request.form.get('time_taken', 0))
     
     question = Question.query.get(question_id)
-    is_correct = user_answer.strip().lower() == question.correct_answer.strip().lower()
+    
+    # Handle multiple answer questions
+    if ',' in question.correct_answer:
+        # Multiple answer question - sort both answers for comparison
+        correct_answers = sorted([a.strip() for a in question.correct_answer.split(',')])
+        user_answers = sorted([a.strip() for a in user_answer.split(',')])
+        is_correct = correct_answers == user_answers
+    else:
+        # Single answer question
+        is_correct = user_answer.strip().lower() == question.correct_answer.strip().lower()
     
     # Save answer
     answer = Answer(

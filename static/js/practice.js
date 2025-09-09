@@ -154,21 +154,33 @@ class PracticeSessionController {
         const questionCard = document.getElementById(`question-${questionIndex + 1}`);
         if (!questionCard) return;
 
-        // Get user answer
-        const answerElement = questionCard.querySelector(`[name="question_${questionIndex}"]`);
+        // Get user answer - handle both single and multiple choice
+        const radioInputs = questionCard.querySelectorAll(`input[name="question_${questionIndex}"][type="radio"]`);
+        const checkboxInputs = questionCard.querySelectorAll(`input[name="question_${questionIndex}"][type="checkbox"]`);
         let userAnswer = '';
 
-        if (answerElement) {
-            if (answerElement.type === 'radio') {
-                const checkedOption = questionCard.querySelector(`[name="question_${questionIndex}"]:checked`);
-                userAnswer = checkedOption ? checkedOption.value : '';
-            } else {
-                userAnswer = answerElement.value;
-            }
+        if (radioInputs.length > 0) {
+            // Single choice question
+            const checkedOption = questionCard.querySelector(`input[name="question_${questionIndex}"][type="radio"]:checked`);
+            userAnswer = checkedOption ? checkedOption.value : '';
+        } else if (checkboxInputs.length > 0) {
+            // Multiple choice question
+            const checkedOptions = questionCard.querySelectorAll(`input[name="question_${questionIndex}"][type="checkbox"]:checked`);
+            const answers = Array.from(checkedOptions).map(option => option.value);
+            userAnswer = answers.sort().join(','); // Sort to match expected format
+        } else {
+            // Text input or other
+            const answerElement = questionCard.querySelector(`[name="question_${questionIndex}"]`);
+            userAnswer = answerElement ? answerElement.value : '';
         }
 
         if (!userAnswer.trim()) {
-            this.showNotification('Please select an answer before continuing.', 'warning');
+            // Check if it's a multiple choice question
+            if (checkboxInputs.length > 0) {
+                this.showNotification('Please select at least one answer before continuing.', 'warning');
+            } else {
+                this.showNotification('Please select an answer before continuing.', 'warning');
+            }
             return;
         }
 
