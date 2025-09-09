@@ -49,11 +49,6 @@
                             <i class="fas fa-crown me-1"></i>精選TPO
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('complete_tpo') }}">
-                            <i class="fas fa-archive me-1"></i>完整題庫
-                        </a>
-                    </li>
                     {% if session.user_id %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard') }}">
