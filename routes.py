@@ -223,9 +223,9 @@ def audio_labs():
         logging.error(f"Audio Labs error: {e}")
         return f"Error loading Audio Labs: {str(e)}", 500
 
-@app.route('/koolearn-official')
-def koolearn_official():
-    """新東方Official TOEFL聽力專區"""
+@app.route('/premium-tpo')
+def premium_tpo():
+    """精選TPO聽力專區"""
     try:
         # 分頁處理新東方內容
         page = request.args.get('page', 1, type=int)
@@ -236,8 +236,8 @@ def koolearn_official():
         topic = request.args.get('topic', '')
         official_num = request.args.get('official', '')
         
-        # 構建查詢
-        query = ContentSource.query.filter_by(type='koolearn_official')
+        # 構建查詢 - 更新類型過濾
+        query = ContentSource.query.filter_by(type='tpo_official')
         
         if difficulty:
             query = query.filter_by(difficulty_level=difficulty)
@@ -253,20 +253,20 @@ def koolearn_official():
         content_items = pagination.items
         
         # 統計信息
-        total_count = ContentSource.query.filter_by(type='koolearn_official').count()
-        logging.info(f"KooLearn Official total count: {total_count}")
+        total_count = ContentSource.query.filter_by(type='tpo_official').count()
+        logging.info(f"Premium TPO total count: {total_count}")
         logging.info(f"Current page items: {len(content_items)}")
         
         # 獲取過濾選項
-        difficulties = db.session.query(ContentSource.difficulty_level).filter_by(type='koolearn_official').distinct().all()
-        topics = db.session.query(ContentSource.topic).filter_by(type='koolearn_official').distinct().all()
+        difficulties = db.session.query(ContentSource.difficulty_level).filter_by(type='tpo_official').distinct().all()
+        topics = db.session.query(ContentSource.topic).filter_by(type='tpo_official').distinct().all()
         
         # 獲取Official編號列表
         official_nums = []
         for i in range(65, 76):  # Official 65-75
             official_nums.append(str(i))
         
-        return render_template('koolearn_official.html',
+        return render_template('premium_tpo.html',
                              content_items=content_items,
                              pagination=pagination,
                              difficulties=[d[0] for d in difficulties if d[0]],
@@ -275,8 +275,44 @@ def koolearn_official():
                              total_count=total_count)
     
     except Exception as e:
-        logging.error(f"KooLearn Official error: {e}")
-        return f"Error loading KooLearn Official: {str(e)}", 500
+        logging.error(f"Premium TPO error: {e}")
+        return f"Error loading Premium TPO: {str(e)}", 500
+
+@app.route('/complete-tpo')
+def complete_tpo():
+    """完整TPO 1-75聽力題庫"""
+    try:
+        # 統計總項目數
+        total_items = ContentSource.query.filter(
+            ContentSource.name.like('TPO %')
+        ).count()
+        
+        # 統計唯一學科數量
+        unique_topics = db.session.query(ContentSource.topic).filter(
+            ContentSource.name.like('TPO %'),
+            ContentSource.topic.isnot(None)
+        ).distinct().count()
+        
+        return render_template('complete_tpo.html',
+                             total_items=total_items,
+                             unique_topics=unique_topics)
+    
+    except Exception as e:
+        logging.error(f"Complete TPO error: {e}")
+        return f"Error loading Complete TPO: {str(e)}", 500
+
+@app.route('/api/find-content')
+def find_content():
+    """API: 根據名稱查找content_id"""
+    name = request.args.get('name', '')
+    if not name:
+        return {'error': 'Name parameter required'}, 400
+    
+    content = ContentSource.query.filter_by(name=name).first()
+    if content:
+        return {'content_id': content.id, 'name': content.name}
+    else:
+        return {'error': 'Content not found'}, 404
 
 @app.route('/practice/<int:content_id>')
 def practice(content_id):

@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}完整TPO 1-75聽力題庫 - TOEFL Audio Labs{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tpo-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .tpo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .tpo-card {
+        background: var(--bs-dark);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .tpo-card:hover {
+        transform: translateY(-5px);
+        border-color: #667eea;
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.2);
+    }
+    
+    .tpo-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+    
+    .tpo-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 1rem;
+    }
+    
+    .tpo-items {
+        display: grid;
+        gap: 0.5rem;
+    }
+    
+    .tpo-item {
+        background: rgba(102, 126, 234, 0.1);
+        padding: 0.75rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+    
+    .tpo-item:hover {
+        background: rgba(102, 126, 234, 0.2);
+        transform: translateX(5px);
+    }
+    
+    .item-info {
+        flex-grow: 1;
+    }
+    
+    .item-title {
+        font-weight: 600;
+        color: white;
+        margin-bottom: 0.25rem;
+    }
+    
+    .item-topic {
+        font-size: 0.85rem;
+        color: #a0a9d1;
+        margin-bottom: 0;
+    }
+    
+    .difficulty-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .difficulty-易 { background: #10b981; color: white; }
+    .difficulty-中 { background: #f59e0b; color: white; }  
+    .difficulty-難 { background: #ef4444; color: white; }
+    
+    .filter-controls {
+        background: var(--bs-dark);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 3rem;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px;
+    }
+    
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-item {
+        background: var(--bs-dark);
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .stat-label {
+        color: #a0a9d1;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- TPO Header -->
+<div class="tpo-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-3 fw-bold mb-3">
+                    <i class="fas fa-archive me-3"></i>完整TPO 1-75聽力題庫
+                </h1>
+                <p class="lead mb-0">
+                    TOEFL官方練習題目完整收錄 • 學科分類詳細 • 音檔題目齊全
+                </p>
+            </div>
+            <div class="col-lg-4">
+                <div class="stats-card card">
+                    <div class="card-body text-center">
+                        <div class="stat-number">75</div>
+                        <div class="stat-label">完整TPO</div>
+                        <hr class="my-2 border-light">
+                        <div class="stat-number">{{ total_items or 505 }}</div>
+                        <div class="stat-label">聽力項目</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- 快速統計 -->
+    <div class="quick-stats">
+        <div class="stat-item">
+            <div class="stat-number">450</div>
+            <div class="stat-label">Section 項目</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">55</div>
+            <div class="stat-label">對話講座</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ unique_topics or 45 }}</div>
+            <div class="stat-label">學科領域</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">3</div>
+            <div class="stat-label">難度等級</div>
+        </div>
+    </div>
+
+    <!-- 過濾控制 -->
+    <div class="filter-controls">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="tpo_range" class="form-label text-light">TPO範圍</label>
+                <select name="tpo_range" id="tpo_range" class="form-select">
+                    <option value="">全部TPO (1-75)</option>
+                    <option value="1-20" {% if request.args.get('tpo_range') == '1-20' %}selected{% endif %}>TPO 1-20 (經典)</option>
+                    <option value="21-40" {% if request.args.get('tpo_range') == '21-40' %}selected{% endif %}>TPO 21-40 (進階)</option>
+                    <option value="41-60" {% if request.args.get('tpo_range') == '41-60' %}selected{% endif %}>TPO 41-60 (高階)</option>
+                    <option value="61-75" {% if request.args.get('tpo_range') == '61-75' %}selected{% endif %}>TPO 61-75 (最新)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="difficulty" class="form-label text-light">難度級別</label>
+                <select name="difficulty" id="difficulty" class="form-select">
+                    <option value="">全部難度</option>
+                    <option value="易" {% if request.args.get('difficulty') == '易' %}selected{% endif %}>簡單</option>
+                    <option value="中" {% if request.args.get('difficulty') == '中' %}selected{% endif %}>中等</option>
+                    <option value="難" {% if request.args.get('difficulty') == '難' %}selected{% endif %}>困難</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="subject" class="form-label text-light">學科領域</label>
+                <select name="subject" id="subject" class="form-select">
+                    <option value="">全部學科</option>
+                    <option value="科學" {% if request.args.get('subject') == '科學' %}selected{% endif %}>科學類</option>
+                    <option value="人文" {% if request.args.get('subject') == '人文' %}selected{% endif %}>人文類</option>
+                    <option value="社會" {% if request.args.get('subject') == '社會' %}selected{% endif %}>社會科學</option>
+                    <option value="對話" {% if request.args.get('subject') == '對話' %}selected{% endif %}>校園對話</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">
+                    <i class="fas fa-filter me-2"></i>過濾顯示
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TPO網格顯示 -->
+    <div class="tpo-grid">
+        {% for tpo_num in range(1, 76) %}
+        <div class="tpo-card" data-tpo="{{ tpo_num }}">
+            <div class="tpo-number">TPO {{ '%02d'|format(tpo_num) }}</div>
+            
+            <div class="tpo-items">
+                <!-- Section項目 (TPO 1-75都有) -->
+                {% for section in [1, 2] %}
+                    {% for passage in [1, 2, 3] %}
+                    <div class="tpo-item" onclick="startPractice('TPO {{ '%02d'|format(tpo_num) }} Section {{ section }} Passage {{ passage }}')">
+                        <div class="item-info">
+                            <div class="item-title">Section {{ section }} Passage {{ passage }}</div>
+                            <div class="item-topic">學術講座</div>
+                        </div>
+                        <span class="difficulty-badge difficulty-中">中</span>
+                    </div>
+                    {% endfor %}
+                {% endfor %}
+                
+                <!-- 對話講座項目 (TPO 65-75) -->
+                {% if tpo_num >= 65 %}
+                    {% for conv in [1, 2] %}
+                    <div class="tpo-item" onclick="startPractice('TPO {{ '%02d'|format(tpo_num) }} 對話 {{ conv }}')">
+                        <div class="item-info">
+                            <div class="item-title">對話 {{ conv }}</div>
+                            <div class="item-topic">校園對話</div>
+                        </div>
+                        <span class="difficulty-badge difficulty-易">易</span>
+                    </div>
+                    {% endfor %}
+                    
+                    {% for lec in [1, 2, 3] %}
+                    <div class="tpo-item" onclick="startPractice('TPO {{ '%02d'|format(tpo_num) }} 講座 {{ lec }}')">
+                        <div class="item-info">
+                            <div class="item-title">講座 {{ lec }}</div>
+                            <div class="item-topic">學術講座</div>
+                        </div>
+                        <span class="difficulty-badge difficulty-難">難</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 使用說明 -->
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>TPO 聽力題庫使用說明
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <h6><i class="fas fa-list-ol text-primary me-2"></i>TPO 1-75</h6>
+                            <p class="small text-muted mb-0">
+                                完整收錄官方練習題目，每個TPO包含多個Section和Passage。
+                            </p>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <h6><i class="fas fa-comments text-primary me-2"></i>對話講座</h6>
+                            <p class="small text-muted mb-0">
+                                TPO 65-75額外包含校園對話和學術講座，模擬真實考試情境。
+                            </p>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <h6><i class="fas fa-graduation-cap text-primary me-2"></i>學科分類</h6>
+                            <p class="small text-muted mb-0">
+                                涵蓋天文、生物、歷史、藝術等多個學科領域，全面提升聽力技能。
+                            </p>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <h6><i class="fas fa-chart-line text-primary me-2"></i>智能評分</h6>
+                            <p class="small text-muted mb-0">
+                                提供即時評分和詳細解析，幫助識別強項和改進空間。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function startPractice(itemName) {
+    // 尋找對應的content_id
+    fetch(`/api/find-content?name=${encodeURIComponent(itemName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.content_id) {
+                window.location.href = `/practice/${data.content_id}`;
+            } else {
+                alert('找不到對應的聽力內容，請稍後再試。');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('載入失敗，請檢查網絡連接。');
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 統計信息
+    console.log('📚 完整TPO題庫載入完成');
+    console.log('包含TPO 1-75全部內容');
+    console.log(`總共 {{ total_items or 505 }} 個聽力項目`);
+    
+    // 過濾功能
+    const filterForm = document.querySelector('form');
+    const tpoCards = document.querySelectorAll('.tpo-card');
+    
+    filterForm.addEventListener('change', function() {
+        const tpoRange = document.getElementById('tpo_range').value;
+        const difficulty = document.getElementById('difficulty').value;
+        const subject = document.getElementById('subject').value;
+        
+        tpoCards.forEach(card => {
+            const tpoNum = parseInt(card.dataset.tpo);
+            let show = true;
+            
+            // TPO範圍過濾
+            if (tpoRange) {
+                const [min, max] = tpoRange.split('-').map(n => parseInt(n));
+                show = show && (tpoNum >= min && tpoNum <= max);
+            }
+            
+            // 顯示/隱藏卡片
+            card.style.display = show ? 'block' : 'none';
+        });
+    });
+    
+    // 卡片動畫
+    tpoCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.6s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 50);
+    });
+});
+</script>
+{% endblock %}

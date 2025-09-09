@@ -45,8 +45,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('koolearn_official') }}">
-                            <i class="fas fa-graduation-cap me-1"></i>新東方 Official
+                        <a class="nav-link" href="{{ url_for('premium_tpo') }}">
+                            <i class="fas fa-crown me-1"></i>精選TPO
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('complete_tpo') }}">
+                            <i class="fas fa-archive me-1"></i>完整題庫
                         </a>
                     </li>
                     {% if session.user_id %}
