@@ -130,6 +130,36 @@
     {% endif %}
 </div>
 
+<!-- Page Summary -->
+{% if content_items %}
+<div class="row mt-4 mb-3">
+    <div class="col-12">
+        <div class="alert alert-light text-center">
+            <h6 class="mb-2">
+                <i class="fas fa-info-circle me-2"></i>完整TPO瀏覽指南
+            </h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <a href="{{ url_for('smallstation', page=1) }}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-play me-1"></i>第1頁: TPO 75-51
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{{ url_for('smallstation', page=2) }}" class="btn btn-outline-success btn-sm w-100">
+                        <i class="fas fa-play me-1"></i>第2頁: TPO 50-26
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{{ url_for('smallstation', page=3) }}" class="btn btn-outline-warning btn-sm w-100">
+                        <i class="fas fa-play me-1"></i>第3頁: TPO 25-1
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Pagination -->
 {% if pagination and pagination.pages > 1 %}
 <div class="row mt-4">
