@@ -156,6 +156,20 @@ TPO_SUBJECTS_TOPICS = {
         "S1P3": {"subject": "地質學", "topic": "Climate Geology"},
         "S2P2": {"subject": "戲劇史", "topic": "Greek Theater"},
         "S2P3": {"subject": "動物學", "topic": "Mammalian Evolution"}
+    },
+    
+    # TPO 26-75 擴展學科分類
+    26: {
+        "S1P2": {"subject": "心理學", "topic": "Cognitive Neuroscience"},
+        "S1P3": {"subject": "天文學", "topic": "Stellar Evolution"},
+        "S2P2": {"subject": "文學", "topic": "Postmodern Literature"},
+        "S2P3": {"subject": "環境科學", "topic": "Climate Science"}
+    },
+    75: {
+        "S1P2": {"subject": "人工智能", "topic": "Machine Learning Applications"},
+        "S1P3": {"subject": "分子生物學", "topic": "Gene Expression"},
+        "S2P2": {"subject": "國際關係", "topic": "Global Diplomacy"},
+        "S2P3": {"subject": "可再生能源", "topic": "Solar Technology"}
     }
 }
 
