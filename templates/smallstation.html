@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}小站TPO - TOEFL Listening Practice{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <h1 class="mb-3">
+            <i class="fas fa-graduation-cap me-2"></i>
+            小站TPO聽力練習
+        </h1>
+        <p class="lead">
+            小站TOEFL聽力練習，包含TPO 1-75完整題庫。每個TPO包含6題，分為2個部分：
+            每部分第一題為師生討論，第二、三題為學術講座。
+        </p>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>結構說明：</strong>每個TPO分2個section，每section包含1個對話+2個講座，共6題。
+        </div>
+    </div>
+    <div class="col-lg-4 text-lg-end">
+        <a href="{{ url_for('content_library') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>返回內容庫
+        </a>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-primary">75</h4>
+                <small class="text-muted">TPO測試</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-success">450</h4>
+                <small class="text-muted">練習題目</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-warning">150</h4>
+                <small class="text-muted">師生對話</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-info">300</h4>
+                <small class="text-muted">學術講座</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Grid -->
+<div class="row">
+    {% if content_items %}
+        {% for content in content_items %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-primary">{{ content.name }}</span>
+                        <span class="badge bg-success">{{ content.difficulty_level.title() }}</span>
+                    </div>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">{{ content.description }}</h6>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-tag me-1"></i>{{ content.topic }}
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>{{ content.duration // 60 }} 分 {{ content.duration % 60 }} 秒
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-volume-up me-1"></i>
+                            {% if 'passage1_1' in content.url or 'passage2_1' in content.url %}
+                                師生對話
+                            {% else %}
+                                學術講座
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        {% if session.user_id %}
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('practice', content_id=content.id) }}" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i>開始練習
+                            </a>
+                            {% if content.url and 'http' in content.url %}
+                            <a href="{{ content.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-external-link-alt me-1"></i>音檔連結
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="text-center">
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>登入後練習
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-warning text-center">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                暫無小站TPO內容可用
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Pagination -->
+{% if content_items %}
+<div class="row mt-4">
+    <div class="col-12">
+        <nav aria-label="小站TPO分頁">
+            <ul class="pagination justify-content-center">
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('smallstation', page=1) }}">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('smallstation', page=2) }}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                <li class="page-item active">
+                    <span class="page-link">第 1 頁</span>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('smallstation', page=2) }}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('小站TPO頁面載入完成');
+    
+    // 統計信息
+    const tpoCount = document.querySelectorAll('.card .card-header h5').length;
+    console.log(`顯示了 ${tpoCount} 個TPO`);
+});
+</script>
+{% endblock %}
