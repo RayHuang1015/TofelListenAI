@@ -142,6 +142,8 @@ def content_library():
         if source_type:
             if source_type.upper() == 'TPO':
                 query = query.filter_by(type='tpo')
+            elif source_type.upper() == 'SMALLSTATION_TPO':
+                query = query.filter_by(type='smallstation_tpo')
             else:
                 query = query.filter(ContentSource.name.contains(source_type))
         
@@ -151,10 +153,10 @@ def content_library():
             query = query.filter(ContentSource.topic.contains(topic))
         
         # 限制TPO內容數量，避免性能問題
-        if source_type and source_type.upper() == 'TPO':
-            # 分頁處理TPO內容，每頁最多50項
+        if source_type and source_type.upper() in ['TPO', 'SMALLSTATION_TPO']:
+            # 分頁處理TPO內容，每頁最多60項（顯示10個TPO，每個6題）
             page = request.args.get('page', 1, type=int)
-            per_page = 50
+            per_page = 60
             
             content_items = query.order_by(ContentSource.id.desc()).paginate(
                 page=page, per_page=per_page, error_out=False
@@ -163,11 +165,11 @@ def content_library():
             content_items = query.order_by(ContentSource.name.asc()).limit(100).all()
         
         # 獲取過濾選項 - 為TPO提供統一的選項
-        content_types = ['TPO']  # 手動添加TPO作為主要類型
+        content_types = ['smallstation_TPO']  # 手動添加小站TPO作為主要類型
         
         # 獲取其他唯一來源類型（限制查詢以提高性能）
         other_sources = db.session.query(ContentSource.name).filter(
-            ~ContentSource.type.in_(['tpo'])
+            ~ContentSource.type.in_(['tpo', 'smallstation_tpo'])
         ).distinct().limit(20).all()
         content_types.extend([s[0] for s in other_sources if s[0]])
         
