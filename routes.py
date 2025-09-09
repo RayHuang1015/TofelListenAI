@@ -140,8 +140,9 @@ def content_library():
         
         # 特殊處理TPO過濾 - 使用type欄位而不是name
         if source_type:
-            if source_type.upper() == 'TPO':
-                query = query.filter_by(type='tpo')
+            if source_type.upper() == 'TPO' or source_type == 'Audio Labs TPO':
+                # 同時查詢tpo和smallstation_tpo類型
+                query = query.filter(ContentSource.type.in_(['tpo', 'smallstation_tpo']))
             else:
                 query = query.filter(ContentSource.name.contains(source_type))
         
@@ -151,7 +152,7 @@ def content_library():
             query = query.filter(ContentSource.topic.contains(topic))
         
         # 限制TPO內容數量，避免性能問題
-        if source_type and source_type.upper() == 'TPO':
+        if source_type and (source_type.upper() == 'TPO' or source_type == 'Audio Labs TPO'):
             # 分頁處理TPO內容，每頁最多50項
             page = request.args.get('page', 1, type=int)
             per_page = 50
@@ -163,11 +164,12 @@ def content_library():
             content_items = query.order_by(ContentSource.name.asc()).limit(100).all()
         
         # 獲取過濾選項 - 為TPO提供統一的選項
-        content_types = ['TPO']  # 手動添加TPO作為主要類型
+        content_types = ['Audio Labs TPO']  # 手動添加Audio Labs TPO作為主要類型
         
-        # 獲取其他唯一來源類型（限制查詢以提高性能）
+        # 獲取其他唯一來源類型（限制查詢以提高性能，排除小站TPO相關選項）
         other_sources = db.session.query(ContentSource.name).filter(
-            ~ContentSource.type.in_(['tpo'])
+            ~ContentSource.type.in_(['tpo', 'smallstation_tpo']),
+            ~ContentSource.name.like('%小站TPO%')
         ).distinct().limit(20).all()
         content_types.extend([s[0] for s in other_sources if s[0]])
         
