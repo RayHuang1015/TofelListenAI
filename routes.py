@@ -249,8 +249,12 @@ def premium_tpo():
         if official_num:
             query = query.filter(ContentSource.name.contains(f'TPO {official_num}'))
         
-        # 分頁處理 - 按TPO編號降序排列
-        pagination = query.order_by(ContentSource.name.desc()).paginate(
+        # 分頁處理 - 按TPO編號數值降序排列
+        # 使用 CAST 和 REGEXP_REPLACE 提取數字並按數值排序
+        from sqlalchemy import text
+        pagination = query.order_by(
+            text("CAST(REGEXP_REPLACE(name, '[^0-9]', '', 'g') AS INTEGER) DESC, name DESC")
+        ).paginate(
             page=page, per_page=per_page, error_out=False
         )
         content_items = pagination.items
