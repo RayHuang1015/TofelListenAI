@@ -234,9 +234,20 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('小站TPO頁面載入完成');
     
-    // 統計信息
-    const tpoCount = document.querySelectorAll('.card .card-header h5').length;
-    console.log(`顯示了 ${tpoCount} 個TPO`);
+    // 統計信息 - 修正選擇器為實際存在的卡片元素
+    const tpoCards = document.querySelectorAll('.card.h-100');
+    console.log(`顯示了 ${tpoCards.length} 個TPO`);
+    
+    // 統計學科分類
+    const subjects = new Set();
+    document.querySelectorAll('.card .fas.fa-tag').forEach(icon => {
+        const topicText = icon.parentElement.textContent.trim();
+        if (topicText.includes(' - ')) {
+            const subject = topicText.split(' - ')[0];
+            subjects.add(subject);
+        }
+    });
+    console.log(`包含 ${subjects.size} 個不同學科領域`);
 });
 </script>
 {% endblock %}
