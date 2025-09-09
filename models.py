@@ -23,6 +23,7 @@ class ContentSource(db.Model):
     difficulty_level = db.Column(db.String(20))  # beginner, intermediate, advanced
     duration = db.Column(db.Integer)  # in seconds
     topic = db.Column(db.String(100))
+    content_metadata = db.Column(JSON)  # For storing additional metadata like TPO structure
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships

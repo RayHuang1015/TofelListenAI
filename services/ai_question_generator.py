@@ -97,9 +97,9 @@ class AIQuestionGenerator:
         
         # Generate basic TOEFL-style questions based on content type
         if 'TPO' in content_source.name:
-            # 檢查是否為小站TPO，如果是則根據metadata生成對應問題
-            if content_source.type == 'smallstation_tpo' and content_source.metadata:
-                fallback_questions = self._generate_smallstation_tpo_questions(content_source.metadata)
+            # 檢查是否為小站TPO，如果是則根據名稱和URL解析信息生成對應問題
+            if content_source.type == 'smallstation_tpo':
+                fallback_questions = self._generate_smallstation_tpo_questions_from_name(content_source)
             else:
                 fallback_questions = self._generate_tpo_questions()
         elif content_source.name == 'TED':
@@ -111,8 +111,43 @@ class AIQuestionGenerator:
         
         return fallback_questions
     
+    def _generate_smallstation_tpo_questions_from_name(self, content_source) -> List[Dict]:
+        """從小站TPO的名稱和URL中解析信息生成對應問題"""
+        import re
+        
+        # 從URL中解析TPO信息： tpo{number}_listening_passage{section}_{part}.mp3
+        url_match = re.search(r'tpo(\d+)_listening_passage(\d+)_(\d+)\.mp3', content_source.url)
+        if url_match:
+            tpo_num = int(url_match.group(1))
+            section = int(url_match.group(2))
+            part = int(url_match.group(3))
+        else:
+            # 如果URL解析失敗，從名稱中解析： 小站TPO {num} S{section}P{part}
+            name_match = re.search(r'小站TPO (\d+) S(\d+)P(\d+)', content_source.name)
+            if name_match:
+                tpo_num = int(name_match.group(1))
+                section = int(name_match.group(2))
+                part = int(name_match.group(3))
+            else:
+                # 如果都解析不了，使用默認值
+                tpo_num, section, part = 1, 1, 1
+        
+        # 判斷內容類型：part 1 是對話，part 2-3 是講座
+        content_type = '師生討論' if part == 1 else '學術講座'
+        
+        # 基於TPO結構生成適當的問題
+        if content_type == '師生討論':
+            return self._generate_smallstation_conversation_questions(tpo_num, section, part)
+        else:
+            return self._generate_smallstation_lecture_questions(tpo_num, section, part)
+    
     def _generate_smallstation_tpo_questions(self, metadata) -> List[Dict]:
         """根據小站TPO的metadata生成對應的問題"""
+        # 處理metadata為None或不是字典的情況
+        if not metadata or not isinstance(metadata, dict):
+            # 如果沒有metadata，使用通用TPO問題
+            return self._generate_tpo_questions()
+            
         tpo_num = metadata.get('tpo_number', 1)
         section = metadata.get('section', 1)
         part = metadata.get('part', 1)
@@ -120,11 +155,11 @@ class AIQuestionGenerator:
         
         # 基於TPO結構生成適當的問題
         if content_type == '師生討論':
-            return self._generate_conversation_questions(tpo_num, section, part)
+            return self._generate_smallstation_conversation_questions(tpo_num, section, part)
         else:
-            return self._generate_lecture_questions(tpo_num, section, part)
+            return self._generate_smallstation_lecture_questions(tpo_num, section, part)
     
-    def _generate_conversation_questions(self, tpo_num, section, part) -> List[Dict]:
+    def _generate_smallstation_conversation_questions(self, tpo_num, section, part) -> List[Dict]:
         """生成師生對話類型的問題"""
         base_questions = [
             {
@@ -158,7 +193,7 @@ class AIQuestionGenerator:
         ]
         return base_questions
     
-    def _generate_lecture_questions(self, tpo_num, section, part) -> List[Dict]:
+    def _generate_smallstation_lecture_questions(self, tpo_num, section, part) -> List[Dict]:
         """生成學術講座類型的問題"""
         base_questions = [
             {

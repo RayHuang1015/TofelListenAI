@@ -54,7 +54,7 @@ def generate_smallstation_tpo_data():
                     'topic': topic,
                     'difficulty_level': 'intermediate',
                     'duration': 240 if part == 1 else 300,  # 師生討論4分鐘，學術講座5分鐘
-                    'metadata': {
+                    'content_metadata': {
                         'tpo_number': tpo_num,
                         'section': section,
                         'part': part,
@@ -118,7 +118,7 @@ def import_smallstation_tpo():
                 topic=item['topic'],
                 difficulty_level=item['difficulty_level'],
                 duration=item['duration'],
-                metadata=item['metadata'],
+                content_metadata=item['content_metadata'],
                 created_at=datetime.utcnow()
             )
             
