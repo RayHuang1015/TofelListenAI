@@ -157,7 +157,51 @@
             </div>
         </div>
         {% endfor %}
-    {% elif request.args.get('type') != 'TPO' %}
+    {% elif request.args.get('type') == 'TPO' %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-graduation-cap fa-4x text-success mb-4"></i>
+                <h3 class="text-primary mb-3">使用小站TPO練習TOEFL聽力</h3>
+                <p class="lead text-muted mb-4">
+                    小站TPO包含完整的TPO 1-75題庫，每個TPO分6題練習<br>
+                    使用正確的音檔格式，提供最佳的TOEFL練習體驗
+                </p>
+                
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h5 class="card-title text-success mb-2">
+                                            <i class="fas fa-star me-2"></i>小站TPO練習平台
+                                        </h5>
+                                        <ul class="list-unstyled text-start mb-0">
+                                            <li><i class="fas fa-check text-success me-2"></i>450個官方TPO練習（TPO 1-75）</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>每個TPO 6個問題，分2個section</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>正確的音檔格式匹配</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>AI生成的對應問題</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <a href="{{ url_for('smallstation') }}" class="btn btn-success btn-lg">
+                                            <i class="fas fa-play me-2"></i>開始練習
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('content_library') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>查看其他內容
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% elif request.args.get('type') != 'TPO' %>
         <div class="col-12">
             <div class="text-center py-5">
                 <i class="fas fa-search fa-3x text-muted mb-3"></i>
