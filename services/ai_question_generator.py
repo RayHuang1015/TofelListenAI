@@ -112,8 +112,9 @@ class AIQuestionGenerator:
         return fallback_questions
     
     def _generate_smallstation_tpo_questions_from_name(self, content_source) -> List[Dict]:
-        """從小站TPO的名稱和URL中解析信息生成對應問題"""
+        """從小站TPO的名稱和URL中解析信息，優先使用原本題目"""
         import re
+        from data.smallstation_tpo_questions import get_tpo_questions, generate_missing_tpo_questions
         
         # 從URL中解析TPO信息： tpo{number}_listening_passage{section}_{part}.mp3
         url_match = re.search(r'tpo(\d+)_listening_passage(\d+)_(\d+)\.mp3', content_source.url)
@@ -135,11 +136,15 @@ class AIQuestionGenerator:
         # 判斷內容類型：part 1 是對話，part 2-3 是講座
         content_type = '師生討論' if part == 1 else '學術講座'
         
-        # 基於TPO結構生成適當的問題
-        if content_type == '師生討論':
-            return self._generate_smallstation_conversation_questions(tpo_num, section, part)
-        else:
-            return self._generate_smallstation_lecture_questions(tpo_num, section, part)
+        # 優先使用原本的小站TPO題目
+        original_questions = get_tpo_questions(tpo_num, section, part)
+        if original_questions:
+            print(f"✅ 使用原本小站TPO題目: TPO {tpo_num} S{section}P{part}")
+            return original_questions
+        
+        # 如果沒有原本題目，使用通用題目模板
+        print(f"⚠️ 沒有原本題目，使用通用模板: TPO {tpo_num} S{section}P{part}")
+        return generate_missing_tpo_questions(tpo_num, section, part, content_type)
     
     def _generate_smallstation_tpo_questions(self, metadata) -> List[Dict]:
         """根據小站TPO的metadata生成對應的問題"""
