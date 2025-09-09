@@ -136,6 +136,210 @@ SMALLSTATION_TPO_QUESTIONS = {
                 ]
             }
         }
+    },
+    
+    # TPO 3
+    3: {
+        "section_1": {
+            "part_1": {
+                "questions": [
+                    {
+                        "question": "What does the student need help with?",
+                        "options": ["A. Understanding assignment instructions", "B. Finding research materials", "C. Choosing a topic", "D. Meeting requirements"],
+                        "answer": "A",
+                        "type": "gist_purpose"
+                    }
+                ]
+            },
+            "part_2": {
+                "questions": [
+                    {
+                        "question": "What is the professor's main point about the topic?",
+                        "options": ["A. It's complex but important", "B. It's simple to master", "C. It's outdated", "D. It's controversial"],
+                        "answer": "A",
+                        "type": "main_idea"
+                    }
+                ]
+            },
+            "part_3": {
+                "questions": [
+                    {
+                        "question": "What example does the professor use to illustrate the concept?",
+                        "options": ["A. Historical events", "B. Scientific experiments", "C. Literary works", "D. Personal experiences"],
+                        "answer": "B",
+                        "type": "detail"
+                    }
+                ]
+            }
+        },
+        "section_2": {
+            "part_1": {
+                "questions": [
+                    {
+                        "question": "What is the student's main concern?",
+                        "options": ["A. Course difficulty", "B. Time management", "C. Grade requirements", "D. Professor expectations"],
+                        "answer": "B",
+                        "type": "gist_purpose"
+                    }
+                ]
+            },
+            "part_2": {
+                "questions": [
+                    {
+                        "question": "According to the lecture, what is most significant?",
+                        "options": ["A. Theoretical understanding", "B. Practical application", "C. Historical context", "D. Future implications"],
+                        "answer": "A",
+                        "type": "attitude"
+                    }
+                ]
+            },
+            "part_3": {
+                "questions": [
+                    {
+                        "question": "What can be concluded from the information presented?",
+                        "options": ["A. More research is needed", "B. The theory is proven", "C. Results are inconclusive", "D. Previous studies were wrong"],
+                        "answer": "A",
+                        "type": "inference"
+                    }
+                ]
+            }
+        }
+    },
+    
+    # TPO 4
+    4: {
+        "section_1": {
+            "part_1": {
+                "questions": [
+                    {
+                        "question": "Why does the student go to see the professor?",
+                        "options": ["A. To discuss course content", "B. To ask about assignments", "C. To clarify requirements", "D. To request extensions"],
+                        "answer": "C",
+                        "type": "gist_purpose"
+                    }
+                ]
+            },
+            "part_2": {
+                "questions": [
+                    {
+                        "question": "What is the main focus of today's lecture?",
+                        "options": ["A. Recent discoveries", "B. Classical theories", "C. Research methods", "D. Future trends"],
+                        "answer": "A",
+                        "type": "main_idea"
+                    }
+                ]
+            },
+            "part_3": {
+                "questions": [
+                    {
+                        "question": "What does the professor emphasize about the subject?",
+                        "options": ["A. Its complexity", "B. Its importance", "C. Its applications", "D. Its limitations"],
+                        "answer": "B",
+                        "type": "attitude"
+                    }
+                ]
+            }
+        },
+        "section_2": {
+            "part_1": {
+                "questions": [
+                    {
+                        "question": "What problem is the student trying to solve?",
+                        "options": ["A. Academic difficulties", "B. Technical issues", "C. Schedule conflicts", "D. Resource availability"],
+                        "answer": "A",
+                        "type": "gist_purpose"
+                    }
+                ]
+            },
+            "part_2": {
+                "questions": [
+                    {
+                        "question": "How does the professor organize the information?",
+                        "options": ["A. Chronologically", "B. By importance", "C. By categories", "D. By difficulty"],
+                        "answer": "C",
+                        "type": "organization"
+                    }
+                ]
+            },
+            "part_3": {
+                "questions": [
+                    {
+                        "question": "What will probably be discussed in the next class?",
+                        "options": ["A. Advanced concepts", "B. Review material", "C. Case studies", "D. Exam preparation"],
+                        "answer": "A",
+                        "type": "connecting_content"
+                    }
+                ]
+            }
+        }
+    },
+    
+    # TPO 5
+    5: {
+        "section_1": {
+            "part_1": {
+                "questions": [
+                    {
+                        "question": "What is the purpose of the student's visit?",
+                        "options": ["A. To get advice", "B. To submit work", "C. To ask questions", "D. To make requests"],
+                        "answer": "A",
+                        "type": "gist_purpose"
+                    }
+                ]
+            },
+            "part_2": {
+                "questions": [
+                    {
+                        "question": "What point does the professor make about the topic?",
+                        "options": ["A. It requires careful study", "B. It's widely misunderstood", "C. It's rapidly changing", "D. It's practically useful"],
+                        "answer": "A",
+                        "type": "attitude"
+                    }
+                ]
+            },
+            "part_3": {
+                "questions": [
+                    {
+                        "question": "According to the lecture, what is true about the phenomenon?",
+                        "options": ["A. It's recently discovered", "B. It's well documented", "C. It's still being studied", "D. It's completely understood"],
+                        "answer": "C",
+                        "type": "detail"
+                    }
+                ]
+            }
+        },
+        "section_2": {
+            "part_1": {
+                "questions": [
+                    {
+                        "question": "What does the student want to know about?",
+                        "options": ["A. Course policies", "B. Assignment details", "C. Study strategies", "D. Resource locations"],
+                        "answer": "B",
+                        "type": "gist_purpose"
+                    }
+                ]
+            },
+            "part_2": {
+                "questions": [
+                    {
+                        "question": "What is the professor's attitude toward the subject?",
+                        "options": ["A. Enthusiastic", "B. Cautious", "C. Critical", "D. Neutral"],
+                        "answer": "A",
+                        "type": "attitude"
+                    }
+                ]
+            },
+            "part_3": {
+                "questions": [
+                    {
+                        "question": "What can be inferred from the professor's comments?",
+                        "options": ["A. More evidence is needed", "B. The topic is settled", "C. Further research is planned", "D. Current methods are adequate"],
+                        "answer": "C",
+                        "type": "inference"
+                    }
+                ]
+            }
+        }
     }
 }
 
