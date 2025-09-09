@@ -236,15 +236,18 @@ def premium_tpo():
         topic = request.args.get('topic', '')
         official_num = request.args.get('official', '')
         
-        # 構建查詢 - 更新類型過濾
-        query = ContentSource.query.filter_by(type='tpo_official')
+        # 構建查詢 - 包含所有TPO內容
+        query = ContentSource.query.filter(
+            (ContentSource.type == 'tpo_official') | 
+            (ContentSource.type == 'smallstation_tpo')
+        )
         
         if difficulty:
             query = query.filter_by(difficulty_level=difficulty)
         if topic:
             query = query.filter(ContentSource.topic.contains(topic))
         if official_num:
-            query = query.filter(ContentSource.name.contains(f'Official {official_num}'))
+            query = query.filter(ContentSource.name.contains(f'TPO {official_num}'))
         
         # 分頁處理
         pagination = query.order_by(ContentSource.id.desc()).paginate(
@@ -252,18 +255,27 @@ def premium_tpo():
         )
         content_items = pagination.items
         
-        # 統計信息
-        total_count = ContentSource.query.filter_by(type='tpo_official').count()
+        # 統計信息 - 包含所有TPO內容
+        total_count = ContentSource.query.filter(
+            (ContentSource.type == 'tpo_official') | 
+            (ContentSource.type == 'smallstation_tpo')
+        ).count()
         logging.info(f"Premium TPO total count: {total_count}")
         logging.info(f"Current page items: {len(content_items)}")
         
-        # 獲取過濾選項
-        difficulties = db.session.query(ContentSource.difficulty_level).filter_by(type='tpo_official').distinct().all()
-        topics = db.session.query(ContentSource.topic).filter_by(type='tpo_official').distinct().all()
+        # 獲取過濾選項 - 包含所有TPO內容
+        difficulties = db.session.query(ContentSource.difficulty_level).filter(
+            (ContentSource.type == 'tpo_official') | 
+            (ContentSource.type == 'smallstation_tpo')
+        ).distinct().all()
+        topics = db.session.query(ContentSource.topic).filter(
+            (ContentSource.type == 'tpo_official') | 
+            (ContentSource.type == 'smallstation_tpo')
+        ).distinct().all()
         
-        # 獲取Official編號列表
+        # 獲取TPO編號列表
         official_nums = []
-        for i in range(65, 76):  # Official 65-75
+        for i in range(1, 76):  # TPO 1-75
             official_nums.append(str(i))
         
         return render_template('premium_tpo.html',
