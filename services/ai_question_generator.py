@@ -97,7 +97,11 @@ class AIQuestionGenerator:
         
         # Generate basic TOEFL-style questions based on content type
         if 'TPO' in content_source.name:
-            fallback_questions = self._generate_tpo_questions()
+            # 檢查是否為小站TPO，如果是則根據metadata生成對應問題
+            if content_source.type == 'smallstation_tpo' and content_source.metadata:
+                fallback_questions = self._generate_smallstation_tpo_questions(content_source.metadata)
+            else:
+                fallback_questions = self._generate_tpo_questions()
         elif content_source.name == 'TED':
             fallback_questions = self._generate_ted_questions()
         elif content_source.topic == 'Current Affairs':
@@ -106,6 +110,115 @@ class AIQuestionGenerator:
             fallback_questions = self._generate_general_questions()
         
         return fallback_questions
+    
+    def _generate_smallstation_tpo_questions(self, metadata) -> List[Dict]:
+        """根據小站TPO的metadata生成對應的問題"""
+        tpo_num = metadata.get('tpo_number', 1)
+        section = metadata.get('section', 1)
+        part = metadata.get('part', 1)
+        content_type = metadata.get('content_type', '師生討論')
+        
+        # 基於TPO結構生成適當的問題
+        if content_type == '師生討論':
+            return self._generate_conversation_questions(tpo_num, section, part)
+        else:
+            return self._generate_lecture_questions(tpo_num, section, part)
+    
+    def _generate_conversation_questions(self, tpo_num, section, part) -> List[Dict]:
+        """生成師生對話類型的問題"""
+        base_questions = [
+            {
+                'question': f'這段對話的主要目的是什麼？（TPO {tpo_num} S{section}P{part}）',
+                'type': 'gist_purpose',
+                'options': [
+                    'A. 學生想要得到課程建議',
+                    'B. 學生需要解決學術問題',
+                    'C. 學生尋求行政方面的幫助',
+                    'D. 學生想要討論課外活動'
+                ],
+                'answer': 'B. 學生需要解決學術問題',
+                'explanation': '這是校園對話的典型情況，學生通常會向老師或工作人員尋求學術相關的幫助。',
+                'difficulty': 'easy',
+                'timestamp': 15.0
+            },
+            {
+                'question': f'根據對話內容，學生最可能會采取什麼行動？（TPO {tpo_num} S{section}P{part}）',
+                'type': 'connecting_content',
+                'options': [
+                    'A. 修改課程計劃',
+                    'B. 與教授預約面談',
+                    'C. 查找更多資料',
+                    'D. 參加額外的輔導課'
+                ],
+                'answer': 'C. 查找更多資料',
+                'explanation': '基於對話的發展，學生通常會被建議進行進一步的研究或資料收集。',
+                'difficulty': 'intermediate',
+                'timestamp': 120.0
+            }
+        ]
+        return base_questions
+    
+    def _generate_lecture_questions(self, tpo_num, section, part) -> List[Dict]:
+        """生成學術講座類型的問題"""
+        base_questions = [
+            {
+                'question': f'這個講座的主題是什麼？（TPO {tpo_num} S{section}P{part}）',
+                'type': 'gist_content',
+                'options': [
+                    'A. 一個科學理論的發展',
+                    'B. 歷史事件的分析',
+                    'C. 文學作品的解讀',
+                    'D. 社會現象的研究'
+                ],
+                'answer': 'A. 一個科學理論的發展',
+                'explanation': '學術講座通常聚焦於特定主題的深入探討，科學理論發展是常見的講座內容。',
+                'difficulty': 'easy',
+                'timestamp': 20.0
+            },
+            {
+                'question': f'教授提到了哪個重要概念？（TPO {tpo_num} S{section}P{part}）',
+                'type': 'detail',
+                'options': [
+                    'A. 實驗方法的重要性',
+                    'B. 理論與實踐的結合',
+                    'C. 歷史背景的影響',
+                    'D. 未來發展的趨勢'
+                ],
+                'answer': 'B. 理論與實踐的結合',
+                'explanation': '在學術講座中，教授經常強調理論知識與實際應用之間的聯繫。',
+                'difficulty': 'intermediate',
+                'timestamp': 180.0
+            },
+            {
+                'question': f'根據講座內容，以下哪個說法是正確的？（TPO {tpo_num} S{section}P{part}）',
+                'type': 'inference',
+                'options': [
+                    'A. 這個理論已經完全被驗證',
+                    'B. 還需要更多的研究來支持',
+                    'C. 這個理論已經被推翻',
+                    'D. 這個理論沒有實際應用價值'
+                ],
+                'answer': 'B. 還需要更多的研究來支持',
+                'explanation': '在學術領域，理論通常需要持續的研究和驗證過程。',
+                'difficulty': 'hard',
+                'timestamp': 240.0
+            },
+            {
+                'question': f'教授的態度可以用哪個詞來描述？（TPO {tpo_num} S{section}P{part}）',
+                'type': 'attitude',
+                'options': [
+                    'A. 懷疑的',
+                    'B. 樂觀的',
+                    'C. 中立客觀的',
+                    'D. 批判的'
+                ],
+                'answer': 'C. 中立客觀的',
+                'explanation': '學術講座中，教授通常保持客觀中立的態度來介紹理論和概念。',
+                'difficulty': 'intermediate',
+                'timestamp': 300.0
+            }
+        ]
+        return base_questions
     
     def _generate_tpo_questions(self) -> List[Dict]:
         """Generate authentic TPO questions based on real Koolearn Official TPO tests"""
