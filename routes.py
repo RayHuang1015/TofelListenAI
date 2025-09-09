@@ -237,10 +237,9 @@ def premium_tpo():
         topic = request.args.get('topic', '')
         official_num = request.args.get('official', '')
         
-        # 構建查詢 - 查詢所有TPO內容作為官方精選
+        # 構建查詢 - 只查詢新東方官方TPO內容
         query = ContentSource.query.filter(
-            (ContentSource.type == 'tpo_official') | 
-            (ContentSource.type == 'smallstation_tpo')
+            ContentSource.type == 'tpo_official'
         )
         
         if difficulty:
@@ -256,22 +255,19 @@ def premium_tpo():
         )
         content_items = pagination.items
         
-        # 統計信息 - 包含所有TPO內容
+        # 統計信息 - 只包含新東方官方TPO內容
         total_count = ContentSource.query.filter(
-            (ContentSource.type == 'tpo_official') | 
-            (ContentSource.type == 'smallstation_tpo')
+            ContentSource.type == 'tpo_official'
         ).count()
         logging.info(f"Official TPO total count: {total_count}")
         logging.info(f"Current page items: {len(content_items)}")
         
-        # 獲取過濾選項 - 包含所有TPO內容
+        # 獲取過濾選項 - 只包含新東方官方TPO內容
         difficulties = db.session.query(ContentSource.difficulty_level).filter(
-            (ContentSource.type == 'tpo_official') | 
-            (ContentSource.type == 'smallstation_tpo')
+            ContentSource.type == 'tpo_official'
         ).distinct().all()
         topics = db.session.query(ContentSource.topic).filter(
-            (ContentSource.type == 'tpo_official') | 
-            (ContentSource.type == 'smallstation_tpo')
+            ContentSource.type == 'tpo_official'
         ).distinct().all()
         
         # 獲取TPO編號列表
