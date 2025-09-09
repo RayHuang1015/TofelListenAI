@@ -230,7 +230,7 @@ def premium_tpo():
     try:
         # 分頁處理新東方官方內容
         page = request.args.get('page', 1, type=int)
-        per_page = 30  # 每頁顯示30個項目
+        per_page = 60  # 每頁顯示10個TPO（60個項目）
         
         # 獲取難度和話題過濾
         difficulty = request.args.get('difficulty', '')
@@ -249,8 +249,8 @@ def premium_tpo():
         if official_num:
             query = query.filter(ContentSource.name.contains(f'TPO {official_num}'))
         
-        # 分頁處理
-        pagination = query.order_by(ContentSource.id.desc()).paginate(
+        # 分頁處理 - 按TPO編號降序排列
+        pagination = query.order_by(ContentSource.name.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
         content_items = pagination.items
