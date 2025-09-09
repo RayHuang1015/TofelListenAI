@@ -152,12 +152,16 @@ def content_library():
     # TPO內容按數字降序排列，其他內容按名稱排序
     if source_type and source_type.upper() == 'TPO':
         # 獲取TPO內容並按數字排序
-        content_items = query.all()
-        import re
-        def extract_tpo_number(content):
-            match = re.search(r'Official (\d+)', content.name)
-            return int(match.group(1)) if match else 0
-        content_items.sort(key=extract_tpo_number, reverse=True)
+        try:
+            content_items = query.all()
+            import re
+            def extract_tpo_number(content):
+                match = re.search(r'Official (\d+)', content.name)
+                return int(match.group(1)) if match else 0
+            content_items.sort(key=extract_tpo_number, reverse=True)
+        except Exception as e:
+            logging.error(f"TPO sorting error: {e}")
+            content_items = query.order_by(ContentSource.name.asc()).all()
     else:
         content_items = query.order_by(ContentSource.name.asc()).all()
     
