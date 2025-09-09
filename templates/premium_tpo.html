@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}精選TPO聽力專區 - TOEFL Audio Labs{% endblock %}
+{% block title %}Official TPO Collection - Koolearn Premium{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -78,22 +78,22 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1 class="display-4 fw-bold mb-3">
-                    <i class="fas fa-crown me-3"></i>精選TPO聽力專區
+                    <i class="fas fa-crown me-3"></i>Official TPO Collection
                 </h1>
                 <p class="lead mb-0">
-                    完整TPO 1-75聽力題庫 • 詳細學科分類 • 專業難度分級
+                    新東方Koolearn官方TPO精選 • 高質量聽力內容 • 專業題型分析
                 </p>
             </div>
             <div class="col-md-4 text-md-end">
                 <div class="stats-card card">
                     <div class="card-body text-center">
-                        <h3 class="mb-1">{{ total_count or 505 }}</h3>
-                        <small>精選聽力項目</small>
+                        <h3 class="mb-1">{{ total_count or 55 }}</h3>
+                        <small>官方聽力項目</small>
                         <hr class="my-2 border-light">
-                        <small>TPO 1-75</small>
+                        <small>Koolearn專業版</small>
                         <hr class="my-2 border-light">
                         <div class="premium-badge">
-                            <i class="fas fa-star me-1"></i>精選版
+                            <i class="fas fa-certificate me-1"></i>官方版
                         </div>
                     </div>
                 </div>
@@ -110,15 +110,15 @@
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h5 class="alert-heading mb-1">
-                            <i class="fas fa-flask text-primary me-2"></i>探索Audio Labs版本？
+                            <i class="fas fa-flask text-primary me-2"></i>探索Practice Collection？
                         </h5>
                         <p class="mb-0">
-                            這裡是精選的TPO 1-75聽力內容，包含完整的TOEFL聽力題庫。
+                            這裡是新東方官方精選TPO內容，需要更多練習？前往小站TPO練習專區。
                         </p>
                     </div>
                     <div class="col-md-4 text-md-end">
                         <a href="{{ url_for('audio_labs') }}" class="btn btn-success btn-lg">
-                            <i class="fas fa-flask me-2"></i>Audio Labs
+                            <i class="fas fa-dumbbell me-2"></i>Practice Collection
                         </a>
                     </div>
                 </div>
@@ -337,15 +337,15 @@
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-crown me-2"></i>精選TPO聽力專區特色
+                        <i class="fas fa-crown me-2"></i>Official TPO Collection特色
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-lg-3 col-md-6 mb-3">
-                            <h6><i class="premium-icon fas fa-star"></i>高質量內容</h6>
+                            <h6><i class="premium-icon fas fa-certificate"></i>官方品質</h6>
                             <p class="small text-muted mb-0">
-                                精選的TPO聽力材料，包含校園對話和學術講座兩大類型。
+                                新東方Koolearn官方精選TPO聽力材料，品質保證。
                             </p>
                         </div>
                         <div class="col-lg-3 col-md-6 mb-3">
@@ -361,9 +361,9 @@
                             </p>
                         </div>
                         <div class="col-lg-3 col-md-6 mb-3">
-                            <h6><i class="premium-icon fas fa-flask"></i>Audio Labs</h6>
+                            <h6><i class="premium-icon fas fa-dumbbell"></i>Practice Collection</h6>
                             <p class="small text-muted mb-0">
-                                可前往Audio Labs瀏覽更多TPO內容，滿足不同學習需求。
+                                可前往Practice Collection瀏覽小站TPO內容，進行大量練習。
                             </p>
                         </div>
                     </div>

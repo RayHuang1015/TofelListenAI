@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}TOEFL Audio Labs - Advanced Listening Practice{% endblock %}
+{% block title %}Practice TPO Collection - SmallStation Training{% endblock %}
 
 {% block content %}
 <!-- Header Section -->
 <div class="row mb-4">
     <div class="col-lg-8">
         <h1 class="mb-3">
-            <i class="fas fa-graduation-cap me-2"></i>
-            TOEFL Audio Labs 🎧
+            <i class="fas fa-dumbbell me-2"></i>
+            Practice TPO Collection 🎯
         </h1>
         <p class="lead">
-            專業TOEFL聽力訓練平台，包含TPO 1-75完整題庫。每個TPO包含6題，分為2個部分：
-            每部分第一題為師生討論，第二、三題為學術講座。
+            小站TPO練習專區，包含TPO 1-75大量練習題庫。專注於題型訓練，
+            每個TPO包含6題，分為2個部分：對話+講座組合練習。
         </p>
         <div class="alert alert-info">
             <i class="fas fa-info-circle me-2"></i>
-            <strong>結構說明：</strong>每個TPO分2個section，每section包含1個對話+2個講座，共6題。
+            <strong>練習說明：</strong>來自小站的TPO練習內容，專注大量訓練和題型熟悉。
         </div>
     </div>
     <div class="col-lg-4 text-lg-end">
@@ -124,7 +124,7 @@
         <div class="col-12">
             <div class="alert alert-warning text-center">
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                暫無Audio Labs內容可用
+                暫無Practice Collection內容可用
             </div>
         </div>
     {% endif %}
@@ -136,7 +136,7 @@
     <div class="col-12">
         <div class="alert alert-light text-center">
             <h6 class="mb-2">
-                <i class="fas fa-info-circle me-2"></i>完整TPO瀏覽指南
+                <i class="fas fa-info-circle me-2"></i>Practice Collection瀏覽指南
             </h6>
             <div class="row">
                 <div class="col-md-4">
@@ -164,7 +164,7 @@
 {% if pagination and pagination.pages > 1 %}
 <div class="row mt-4">
     <div class="col-12">
-        <nav aria-label="Audio Labs分頁">
+        <nav aria-label="Practice Collection分頁">
             <ul class="pagination justify-content-center">
                 <!-- 第一頁 -->
                 <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
@@ -232,7 +232,7 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎧 Audio Labs載入完成');
+    console.log('🎯 Practice Collection載入完成');
     
     // 統計信息 - 修正選擇器為實際存在的卡片元素
     const tpoCards = document.querySelectorAll('.col-lg-4.col-md-6.mb-4');
