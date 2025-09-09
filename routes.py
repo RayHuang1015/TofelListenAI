@@ -227,36 +227,41 @@ def practice(content_id):
     db.session.add(practice_session)
     db.session.commit()
     
-    # Generate questions using AI
-    try:
-        ai_generator = AIQuestionGenerator()
-        questions = ai_generator.generate_questions(content)
-        
-        # Save generated questions
-        for q_data in questions:
-            question = Question(
-                content_id=content_id,
-                question_text=q_data['question'],
-                question_type=q_data['type'],
-                options=q_data.get('options'),
-                correct_answer=q_data['answer'],
-                explanation=q_data.get('explanation'),
-                difficulty=q_data.get('difficulty', 'intermediate'),
-                audio_timestamp=q_data.get('timestamp')
-            )
-            db.session.add(question)
-        
-        db.session.commit()
-        practice_session.total_questions = len(questions)
-        db.session.commit()
-        
-    except Exception as e:
-        logging.error(f"Error generating questions: {e}")
-        flash('Error generating questions. Please try again.', 'error')
-        return redirect(url_for('content_library'))
-    
-    # Get questions for this content
+    # Get existing questions for this content first
     questions = Question.query.filter_by(content_id=content_id).all()
+    
+    # Only generate questions if none exist
+    if not questions:
+        try:
+            ai_generator = AIQuestionGenerator()
+            generated_questions = ai_generator.generate_questions(content)
+            
+            # Save generated questions
+            for q_data in generated_questions:
+                question = Question(
+                    content_id=content_id,
+                    question_text=q_data['question'],
+                    question_type=q_data.get('question_type', q_data['type']),
+                    options=q_data.get('options'),
+                    correct_answer=q_data['answer'],
+                    explanation=q_data.get('explanation'),
+                    difficulty=q_data.get('difficulty', 'intermediate'),
+                    audio_timestamp=q_data.get('timestamp')
+                )
+                db.session.add(question)
+            
+            db.session.commit()
+            # Refresh the questions list
+            questions = Question.query.filter_by(content_id=content_id).all()
+            
+        except Exception as e:
+            logging.error(f"Error generating questions: {e}")
+            flash('Error generating questions. Please try again.', 'error')
+            return redirect(url_for('content_library'))
+    
+    # Update practice session with question count
+    practice_session.total_questions = len(questions)
+    db.session.commit()
     
     # Convert questions to JSON-serializable format
     questions_data = []
