@@ -64,8 +64,8 @@ class KoolearnCompleteImport:
                 'failed_imports': 0
             }
             
-            # 匯入重點TPO（75-72）
-            priority_tpos = [75, 74, 73, 72, 71, 70, 69, 68, 67, 66, 65, 51, 33, 22, 11, 1]
+            # 匯入所有TPO（1-75完整）
+            priority_tpos = list(range(75, 0, -1))  # 從75到1，完整匯入所有TPO
             
             for tpo_num in priority_tpos:
                 result = self._create_single_tpo(tpo_num)
@@ -149,7 +149,7 @@ class KoolearnCompleteImport:
             content = ContentSource(
                 name=name,
                 type='tpo',
-                url=f"https://archive.org/download/TOEFL-Listening/Official_TPO_{tpo_num}_{part['name']}.mp3",
+                url=f"https://archive.org/download/toefl-practice-listening/TPO_{tpo_num:02d}_{part['name']}.mp3",
                 description=f"TPO {tpo_num} {part['type']} on {topic} (Koolearn Official)",
                 topic=topic,
                 difficulty_level=difficulty,
