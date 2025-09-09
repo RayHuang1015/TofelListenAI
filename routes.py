@@ -223,6 +223,61 @@ def audio_labs():
         logging.error(f"Audio Labs error: {e}")
         return f"Error loading Audio Labs: {str(e)}", 500
 
+@app.route('/koolearn-official')
+def koolearn_official():
+    """新東方Official TOEFL聽力專區"""
+    try:
+        # 分頁處理新東方內容
+        page = request.args.get('page', 1, type=int)
+        per_page = 100  # 每頁顯示100個項目
+        
+        # 獲取難度和話題過濾
+        difficulty = request.args.get('difficulty', '')
+        topic = request.args.get('topic', '')
+        official_num = request.args.get('official', '')
+        
+        # 構建查詢
+        query = ContentSource.query.filter_by(type='koolearn_official')
+        
+        if difficulty:
+            query = query.filter_by(difficulty_level=difficulty)
+        if topic:
+            query = query.filter(ContentSource.topic.contains(topic))
+        if official_num:
+            query = query.filter(ContentSource.name.contains(f'Official {official_num}'))
+        
+        # 分頁處理
+        pagination = query.order_by(ContentSource.id.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        content_items = pagination.items
+        
+        # 統計信息
+        total_count = ContentSource.query.filter_by(type='koolearn_official').count()
+        logging.info(f"KooLearn Official total count: {total_count}")
+        logging.info(f"Current page items: {len(content_items)}")
+        
+        # 獲取過濾選項
+        difficulties = db.session.query(ContentSource.difficulty_level).filter_by(type='koolearn_official').distinct().all()
+        topics = db.session.query(ContentSource.topic).filter_by(type='koolearn_official').distinct().all()
+        
+        # 獲取Official編號列表
+        official_nums = []
+        for i in range(65, 76):  # Official 65-75
+            official_nums.append(str(i))
+        
+        return render_template('koolearn_official.html',
+                             content_items=content_items,
+                             pagination=pagination,
+                             difficulties=[d[0] for d in difficulties if d[0]],
+                             topics=[t[0] for t in topics if t[0]],
+                             official_nums=official_nums,
+                             total_count=total_count)
+    
+    except Exception as e:
+        logging.error(f"KooLearn Official error: {e}")
+        return f"Error loading KooLearn Official: {str(e)}", 500
+
 @app.route('/practice/<int:content_id>')
 def practice(content_id):
     """Start a practice session with specific content"""

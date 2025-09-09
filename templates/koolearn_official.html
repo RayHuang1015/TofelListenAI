@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}新東方 Official TOEFL 聽力 - TOEFL Audio Labs{% endblock %}
+
+{% block extra_css %}
+<style>
+    .koolearn-header {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .official-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 107, 53, 0.2);
+    }
+    
+    .official-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255, 107, 53, 0.15);
+        border-color: #ff6b35;
+    }
+    
+    .difficulty-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+        color: white;
+        border: none;
+    }
+    
+    .filter-section {
+        background-color: var(--bs-dark);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- KooLearn Header -->
+<div class="koolearn-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-graduation-cap me-3"></i>新東方 Official TOEFL 聽力
+                </h1>
+                <p class="lead mb-0">
+                    ETS官方授權題庫 • Official 65-75 • 專業聽力訓練
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="stats-card card">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ total_count or 0 }}</h3>
+                        <small>官方聽力題目</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="container">
+    <div class="filter-section">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label for="official" class="form-label text-light">Official 編號</label>
+                <select name="official" id="official" class="form-select">
+                    <option value="">全部</option>
+                    {% for num in official_nums %}
+                    <option value="{{ num }}" {% if request.args.get('official') == num %}selected{% endif %}>
+                        Official {{ num }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="difficulty" class="form-label text-light">難度級別</label>
+                <select name="difficulty" id="difficulty" class="form-select">
+                    <option value="">全部難度</option>
+                    {% for difficulty in difficulties %}
+                    <option value="{{ difficulty }}" {% if request.args.get('difficulty') == difficulty %}selected{% endif %}>
+                        {{ difficulty }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="topic" class="form-label text-light">話題類型</label>
+                <select name="topic" id="topic" class="form-select">
+                    <option value="">全部話題</option>
+                    {% for topic in topics %}
+                    <option value="{{ topic }}" {% if request.args.get('topic') == topic %}selected{% endif %}>
+                        {{ topic }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-warning w-100 fw-bold">
+                    <i class="fas fa-filter me-2"></i>過濾
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('koolearn_official') }}" class="btn btn-outline-light w-100">
+                    <i class="fas fa-refresh me-2"></i>重置
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="row">
+        {% if content_items %}
+            {% for content in content_items %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card official-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="card-title mb-0 fw-bold text-warning">
+                                {{ content.name }}
+                            </h6>
+                            {% if content.difficulty_level %}
+                            <span class="badge 
+                                {% if content.difficulty_level == '易' %}bg-success
+                                {% elif content.difficulty_level == '中' %}bg-warning text-dark
+                                {% else %}bg-danger
+                                {% endif %} difficulty-badge">
+                                {{ content.difficulty_level }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if content.topic %}
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-tag me-2"></i>{{ content.topic }}
+                        </p>
+                        {% endif %}
+                        
+                        {% if content.duration %}
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-clock me-2"></i>
+                            {{ (content.duration // 60) }} min {{ (content.duration % 60) }} sec
+                        </p>
+                        {% endif %}
+                        
+                        {% if content.description %}
+                        <p class="card-text small">{{ content.description[:100] }}...</p>
+                        {% endif %}
+                        
+                        <p class="text-muted small mb-3">
+                            <i class="fas fa-calendar me-2"></i>{{ content.created_at.strftime('%Y-%m-%d') if content.created_at else '2025-09-09' }}
+                        </p>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <div class="d-grid gap-2 d-md-flex">
+                            <a href="{{ url_for('practice', content_id=content.id) }}" 
+                               class="btn btn-warning flex-fill fw-bold">
+                                <i class="fas fa-play me-2"></i>開始練習
+                            </a>
+                            <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" 
+                                    title="詳細說明">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-search text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3 text-muted">暫無內容</h4>
+                    <p class="text-muted">請調整過濾條件或稍後再試</p>
+                    <a href="{{ url_for('koolearn_official') }}" class="btn btn-warning">
+                        <i class="fas fa-refresh me-2"></i>重新加載
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Content pagination">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('koolearn_official', page=pagination.prev_num, **request.args) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('koolearn_official', page=page_num, **request.args) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('koolearn_official', page=pagination.next_num, **request.args) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Info Section -->
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>關於新東方 Official TOEFL 聽力
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <h6><i class="fas fa-certificate text-warning me-2"></i>ETS官方授權</h6>
+                            <p class="small text-muted mb-0">
+                                來自ETS官方的真實聽力材料，包含最新的Official 65-75題目集合。
+                            </p>
+                        </div>
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <h6><i class="fas fa-comments text-warning me-2"></i>真實場景</h6>
+                            <p class="small text-muted mb-0">
+                                包含校園對話和學術講座，完全模擬真實TOEFL聽力考試環境。
+                            </p>
+                        </div>
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <h6><i class="fas fa-chart-line text-warning me-2"></i>進階練習</h6>
+                            <p class="small text-muted mb-0">
+                                提供詳細解析和精聽功能，幫助你系統性提升聽力技能。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化tooltip
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // 統計信息
+    const totalItems = {{ content_items|length if content_items else 0 }};
+    const totalCount = {{ total_count or 0 }};
+    
+    console.log('🎓 新東方Official載入完成');
+    console.log(`顯示了 ${totalItems} 個聽力項目`);
+    console.log(`總共有 ${totalCount} 個Official題目`);
+    
+    // 加載動畫效果
+    const cards = document.querySelectorAll('.official-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}
