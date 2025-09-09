@@ -170,6 +170,7 @@ class AIQuestionGenerator:
             {
                 'question': f'這段對話的主要目的是什麼？（TPO {tpo_num} S{section}P{part}）',
                 'type': 'gist_purpose',
+                'question_type': 'multiple_choice',
                 'options': [
                     'A. 學生想要得到課程建議',
                     'B. 學生需要解決學術問題',
@@ -184,6 +185,7 @@ class AIQuestionGenerator:
             {
                 'question': f'根據對話內容，學生最可能會采取什麼行動？（TPO {tpo_num} S{section}P{part}）',
                 'type': 'connecting_content',
+                'question_type': 'multiple_choice',
                 'options': [
                     'A. 修改課程計劃',
                     'B. 與教授預約面談',
@@ -204,6 +206,7 @@ class AIQuestionGenerator:
             {
                 'question': f'這個講座的主題是什麼？（TPO {tpo_num} S{section}P{part}）',
                 'type': 'gist_content',
+                'question_type': 'multiple_choice',
                 'options': [
                     'A. 一個科學理論的發展',
                     'B. 歷史事件的分析',
@@ -218,6 +221,7 @@ class AIQuestionGenerator:
             {
                 'question': f'教授提到了哪個重要概念？（TPO {tpo_num} S{section}P{part}）',
                 'type': 'detail',
+                'question_type': 'multiple_choice',
                 'options': [
                     'A. 實驗方法的重要性',
                     'B. 理論與實踐的結合',
@@ -232,6 +236,7 @@ class AIQuestionGenerator:
             {
                 'question': f'根據講座內容，以下哪個說法是正確的？（TPO {tpo_num} S{section}P{part}）',
                 'type': 'inference',
+                'question_type': 'multiple_choice',
                 'options': [
                     'A. 這個理論已經完全被驗證',
                     'B. 還需要更多的研究來支持',
@@ -246,6 +251,7 @@ class AIQuestionGenerator:
             {
                 'question': f'教授的態度可以用哪個詞來描述？（TPO {tpo_num} S{section}P{part}）',
                 'type': 'attitude',
+                'question_type': 'multiple_choice',
                 'options': [
                     'A. 懷疑的',
                     'B. 樂觀的',
