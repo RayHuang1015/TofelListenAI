@@ -278,28 +278,6 @@ def premium_tpo():
         logging.error(f"Premium TPO error: {e}")
         return f"Error loading Premium TPO: {str(e)}", 500
 
-@app.route('/complete-tpo')
-def complete_tpo():
-    """完整TPO 1-75聽力題庫"""
-    try:
-        # 統計總項目數
-        total_items = ContentSource.query.filter(
-            ContentSource.name.like('TPO %')
-        ).count()
-        
-        # 統計唯一學科數量
-        unique_topics = db.session.query(ContentSource.topic).filter(
-            ContentSource.name.like('TPO %'),
-            ContentSource.topic.isnot(None)
-        ).distinct().count()
-        
-        return render_template('complete_tpo.html',
-                             total_items=total_items,
-                             unique_topics=unique_topics)
-    
-    except Exception as e:
-        logging.error(f"Complete TPO error: {e}")
-        return f"Error loading Complete TPO: {str(e)}", 500
 
 @app.route('/api/find-content')
 def find_content():
