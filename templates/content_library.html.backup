@@ -201,7 +201,7 @@
                 </div>
             </div>
         </div>
-    {% else %}
+    {% elif request.args.get('type') != 'TPO' %>
         <div class="col-12">
             <div class="text-center py-5">
                 <i class="fas fa-search fa-3x text-muted mb-3"></i>
