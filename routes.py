@@ -188,15 +188,15 @@ def content_library():
 
 @app.route('/audio-labs')
 def audio_labs():
-    """TOEFL Audio Labs專用頁面"""
+    """Practice TPO Collection - 小站TPO練習專區"""
     try:
-        # 分頁處理小站TPO內容  
+        # 分頁處理小站TPO練習內容  
         page = request.args.get('page', 1, type=int)
-        per_page = 150  # 每頁顯示25個TPO（每個6題）
+        per_page = 150  # 每頁顯示150個練習項目
         
         # 調試日誌
         total_count = ContentSource.query.filter_by(type='smallstation_tpo').count()
-        logging.info(f"Total smallstation_tpo count: {total_count}")
+        logging.info(f"Practice TPO total count: {total_count}")
         
         pagination = ContentSource.query.filter_by(type='smallstation_tpo').order_by(
             ContentSource.id.desc()
@@ -225,21 +225,20 @@ def audio_labs():
 
 @app.route('/premium-tpo')
 def premium_tpo():
-    """精選TPO聽力專區"""
+    """Official TPO Collection - 新東方官方TPO精選"""
     try:
-        # 分頁處理新東方內容
+        # 分頁處理新東方官方內容
         page = request.args.get('page', 1, type=int)
-        per_page = 100  # 每頁顯示100個項目
+        per_page = 30  # 每頁顯示30個項目
         
         # 獲取難度和話題過濾
         difficulty = request.args.get('difficulty', '')
         topic = request.args.get('topic', '')
         official_num = request.args.get('official', '')
         
-        # 構建查詢 - 包含所有TPO內容
+        # 構建查詢 - 只查詢新東方官方TPO內容
         query = ContentSource.query.filter(
-            (ContentSource.type == 'tpo_official') | 
-            (ContentSource.type == 'smallstation_tpo')
+            ContentSource.type == 'tpo_official'
         )
         
         if difficulty:
@@ -255,22 +254,19 @@ def premium_tpo():
         )
         content_items = pagination.items
         
-        # 統計信息 - 包含所有TPO內容
+        # 統計信息 - 只包含新東方官方TPO內容
         total_count = ContentSource.query.filter(
-            (ContentSource.type == 'tpo_official') | 
-            (ContentSource.type == 'smallstation_tpo')
+            ContentSource.type == 'tpo_official'
         ).count()
-        logging.info(f"Premium TPO total count: {total_count}")
+        logging.info(f"Official TPO total count: {total_count}")
         logging.info(f"Current page items: {len(content_items)}")
         
-        # 獲取過濾選項 - 包含所有TPO內容
+        # 獲取過濾選項 - 只包含新東方官方TPO內容
         difficulties = db.session.query(ContentSource.difficulty_level).filter(
-            (ContentSource.type == 'tpo_official') | 
-            (ContentSource.type == 'smallstation_tpo')
+            ContentSource.type == 'tpo_official'
         ).distinct().all()
         topics = db.session.query(ContentSource.topic).filter(
-            (ContentSource.type == 'tpo_official') | 
-            (ContentSource.type == 'smallstation_tpo')
+            ContentSource.type == 'tpo_official'
         ).distinct().all()
         
         # 獲取TPO編號列表
