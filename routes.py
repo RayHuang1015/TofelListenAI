@@ -192,12 +192,20 @@ def smallstation():
         page = request.args.get('page', 1, type=int)
         per_page = 150  # 每頁顯示25個TPO（每個6題）
         
+        # 調試日誌
+        total_count = ContentSource.query.filter_by(type='smallstation_tpo').count()
+        logging.info(f"Total smallstation_tpo count: {total_count}")
+        
         pagination = ContentSource.query.filter_by(type='smallstation_tpo').order_by(
             ContentSource.id.desc()
         ).paginate(
             page=page, per_page=per_page, error_out=False
         )
         content_items = pagination.items
+        
+        logging.info(f"Content items count: {len(content_items)}")
+        if content_items:
+            logging.info(f"First item: {content_items[0].name}")
         
         # 獲取過濾選項
         difficulties = db.session.query(ContentSource.difficulty_level).distinct().all()
