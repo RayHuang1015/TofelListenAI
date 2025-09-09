@@ -157,15 +157,13 @@
             </div>
         </div>
         {% endfor %}
-    {% else %}
+    {% elif request.args.get('type') != 'TPO' %}
         <div class="col-12">
             <div class="text-center py-5">
                 <i class="fas fa-search fa-3x text-muted mb-3"></i>
                 <h4 class="text-muted">No content found</h4>
                 <p class="text-muted">
-                    {% if request.args.get('type') == 'TPO' %}
-                    沒有找到TPO內容。不如試試小站TPO練習？
-                    {% elif request.args.get('type') or request.args.get('difficulty') or request.args.get('topic') %}
+                    {% if request.args.get('type') or request.args.get('difficulty') or request.args.get('topic') %}
                     Try adjusting your filters to see more content.
                     {% else %}
                     No content is currently available. Please sync content or try again later.
@@ -173,14 +171,7 @@
                 </p>
                 
                 <div class="d-flex flex-column flex-md-row gap-2 justify-content-center">
-                    {% if request.args.get('type') == 'TPO' %}
-                    <a href="{{ url_for('smallstation') }}" class="btn btn-success btn-lg">
-                        <i class="fas fa-graduation-cap me-2"></i>小站TPO練習 (450題)
-                    </a>
-                    <a href="{{ url_for('content_library') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-times me-2"></i>Clear Filters
-                    </a>
-                    {% elif request.args.get('type') or request.args.get('difficulty') or request.args.get('topic') %}
+                    {% if request.args.get('type') or request.args.get('difficulty') or request.args.get('topic') %}
                     <a href="{{ url_for('content_library') }}" class="btn btn-primary">
                         <i class="fas fa-times me-2"></i>Clear Filters
                     </a>
