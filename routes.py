@@ -198,8 +198,9 @@ def audio_labs():
         total_count = ContentSource.query.filter_by(type='smallstation_tpo').count()
         logging.info(f"Practice TPO total count: {total_count}")
         
+        # 只顯示小站TPO內容 (TPO 1-64)
         pagination = ContentSource.query.filter_by(type='smallstation_tpo').order_by(
-            ContentSource.id.desc()
+            ContentSource.id.asc()  # 從TPO 1開始順序顯示
         ).paginate(
             page=page, per_page=per_page, error_out=False
         )
@@ -236,9 +237,10 @@ def premium_tpo():
         topic = request.args.get('topic', '')
         official_num = request.args.get('official', '')
         
-        # 構建查詢 - 只查詢新東方官方TPO內容
+        # 構建查詢 - 查詢所有TPO內容作為官方精選
         query = ContentSource.query.filter(
-            ContentSource.type == 'tpo_official'
+            (ContentSource.type == 'tpo_official') | 
+            (ContentSource.type == 'smallstation_tpo')
         )
         
         if difficulty:
@@ -254,19 +256,22 @@ def premium_tpo():
         )
         content_items = pagination.items
         
-        # 統計信息 - 只包含新東方官方TPO內容
+        # 統計信息 - 包含所有TPO內容
         total_count = ContentSource.query.filter(
-            ContentSource.type == 'tpo_official'
+            (ContentSource.type == 'tpo_official') | 
+            (ContentSource.type == 'smallstation_tpo')
         ).count()
         logging.info(f"Official TPO total count: {total_count}")
         logging.info(f"Current page items: {len(content_items)}")
         
-        # 獲取過濾選項 - 只包含新東方官方TPO內容
+        # 獲取過濾選項 - 包含所有TPO內容
         difficulties = db.session.query(ContentSource.difficulty_level).filter(
-            ContentSource.type == 'tpo_official'
+            (ContentSource.type == 'tpo_official') | 
+            (ContentSource.type == 'smallstation_tpo')
         ).distinct().all()
         topics = db.session.query(ContentSource.topic).filter(
-            ContentSource.type == 'tpo_official'
+            (ContentSource.type == 'tpo_official') | 
+            (ContentSource.type == 'smallstation_tpo')
         ).distinct().all()
         
         # 獲取TPO編號列表
