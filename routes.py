@@ -188,15 +188,16 @@ def content_library():
 def smallstation():
     """小站TPO專用頁面"""
     try:
-        # 分頁處理小站TPO內容
+        # 分頁處理小站TPO內容  
         page = request.args.get('page', 1, type=int)
-        per_page = 60  # 每頁顯示10個TPO（每個6題）
+        per_page = 150  # 每頁顯示25個TPO（每個6題）
         
-        content_items = ContentSource.query.filter_by(type='smallstation_tpo').order_by(
+        pagination = ContentSource.query.filter_by(type='smallstation_tpo').order_by(
             ContentSource.id.desc()
         ).paginate(
             page=page, per_page=per_page, error_out=False
-        ).items
+        )
+        content_items = pagination.items
         
         # 獲取過濾選項
         difficulties = db.session.query(ContentSource.difficulty_level).distinct().all()
@@ -204,6 +205,7 @@ def smallstation():
         
         return render_template('smallstation.html',
                              content_items=content_items,
+                             pagination=pagination,
                              difficulties=[d[0] for d in difficulties if d[0]],
                              topics=[t[0] for t in topics if t[0]])
     
