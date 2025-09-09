@@ -131,57 +131,58 @@ def select_practice():
 @app.route('/content')
 def content_library():
     """Browse available content sources"""
-    source_type = request.args.get('type', '')
-    difficulty = request.args.get('difficulty', '')
-    topic = request.args.get('topic', '')
-    
-    query = ContentSource.query
-    
-    # 特殊處理TPO過濾 - 使用type欄位而不是name
-    if source_type:
-        if source_type.upper() == 'TPO':
-            query = query.filter_by(type='tpo')
+    try:
+        source_type = request.args.get('type', '')
+        difficulty = request.args.get('difficulty', '')
+        topic = request.args.get('topic', '')
+        
+        query = ContentSource.query
+        
+        # 特殊處理TPO過濾 - 使用type欄位而不是name
+        if source_type:
+            if source_type.upper() == 'TPO':
+                query = query.filter_by(type='tpo')
+            else:
+                query = query.filter(ContentSource.name.contains(source_type))
+        
+        if difficulty:
+            query = query.filter_by(difficulty_level=difficulty)
+        if topic:
+            query = query.filter(ContentSource.topic.contains(topic))
+        
+        # 限制TPO內容數量，避免性能問題
+        if source_type and source_type.upper() == 'TPO':
+            # 分頁處理TPO內容，每頁最多50項
+            page = request.args.get('page', 1, type=int)
+            per_page = 50
+            
+            content_items = query.order_by(ContentSource.id.desc()).paginate(
+                page=page, per_page=per_page, error_out=False
+            ).items
         else:
-            query = query.filter(ContentSource.name.contains(source_type))
+            content_items = query.order_by(ContentSource.name.asc()).limit(100).all()
+        
+        # 獲取過濾選項 - 為TPO提供統一的選項
+        content_types = ['TPO']  # 手動添加TPO作為主要類型
+        
+        # 獲取其他唯一來源類型（限制查詢以提高性能）
+        other_sources = db.session.query(ContentSource.name).filter(
+            ~ContentSource.type.in_(['tpo'])
+        ).distinct().limit(20).all()
+        content_types.extend([s[0] for s in other_sources if s[0]])
+        
+        difficulties = db.session.query(ContentSource.difficulty_level).distinct().all()
+        topics = db.session.query(ContentSource.topic).distinct().all()
+        
+        return render_template('content_library.html',
+                             content_items=content_items,
+                             sources=content_types,
+                             difficulties=[d[0] for d in difficulties if d[0]],
+                             topics=[t[0] for t in topics if t[0]])
     
-    if difficulty:
-        query = query.filter_by(difficulty_level=difficulty)
-    if topic:
-        query = query.filter(ContentSource.topic.contains(topic))
-    
-    # TPO內容按數字降序排列，其他內容按名稱排序
-    if source_type and source_type.upper() == 'TPO':
-        # 獲取TPO內容並按數字排序
-        try:
-            content_items = query.all()
-            import re
-            def extract_tpo_number(content):
-                match = re.search(r'Official (\d+)', content.name)
-                return int(match.group(1)) if match else 0
-            content_items.sort(key=extract_tpo_number, reverse=True)
-        except Exception as e:
-            logging.error(f"TPO sorting error: {e}")
-            content_items = query.order_by(ContentSource.name.asc()).all()
-    else:
-        content_items = query.order_by(ContentSource.name.asc()).all()
-    
-    # 獲取過濾選項 - 為TPO提供統一的選項
-    content_types = ['TPO']  # 手動添加TPO作為主要類型
-    
-    # 獲取其他唯一來源類型
-    other_sources = db.session.query(ContentSource.name).filter(
-        ~ContentSource.type.in_(['tpo'])
-    ).distinct().all()
-    content_types.extend([s[0] for s in other_sources if s[0]])
-    
-    difficulties = db.session.query(ContentSource.difficulty_level).distinct().all()
-    topics = db.session.query(ContentSource.topic).distinct().all()
-    
-    return render_template('content_library.html',
-                         content_items=content_items,
-                         sources=content_types,
-                         difficulties=[d[0] for d in difficulties if d[0]],
-                         topics=[t[0] for t in topics if t[0]])
+    except Exception as e:
+        logging.error(f"Content library error: {e}")
+        return f"Error loading content library: {str(e)}", 500
 
 @app.route('/practice/<int:content_id>')
 def practice(content_id):
