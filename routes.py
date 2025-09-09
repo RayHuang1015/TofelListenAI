@@ -184,9 +184,9 @@ def content_library():
         logging.error(f"Content library error: {e}")
         return f"Error loading content library: {str(e)}", 500
 
-@app.route('/smallstation')
-def smallstation():
-    """小站TPO專用頁面"""
+@app.route('/audio-labs')
+def audio_labs():
+    """TOEFL Audio Labs專用頁面"""
     try:
         # 分頁處理小站TPO內容  
         page = request.args.get('page', 1, type=int)
@@ -211,15 +211,15 @@ def smallstation():
         difficulties = db.session.query(ContentSource.difficulty_level).distinct().all()
         topics = db.session.query(ContentSource.topic).distinct().all()
         
-        return render_template('smallstation.html',
+        return render_template('audio_labs.html',
                              content_items=content_items,
                              pagination=pagination,
                              difficulties=[d[0] for d in difficulties if d[0]],
                              topics=[t[0] for t in topics if t[0]])
     
     except Exception as e:
-        logging.error(f"Smallstation TPO error: {e}")
-        return f"Error loading smallstation TPO: {str(e)}", 500
+        logging.error(f"Audio Labs error: {e}")
+        return f"Error loading Audio Labs: {str(e)}", 500
 
 @app.route('/practice/<int:content_id>')
 def practice(content_id):

@@ -17,8 +17,8 @@
     </div>
     <div class="col-lg-4 text-lg-end">
         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-            <a href="{{ url_for('smallstation') }}" class="btn btn-success">
-                <i class="fas fa-graduation-cap me-2"></i>小站TPO練習
+            <a href="{{ url_for('audio_labs') }}" class="btn btn-success">
+                <i class="fas fa-flask me-2"></i>Audio Labs
             </a>
             <a href="{{ url_for('sync_content') }}" class="btn btn-outline-primary">
                 <i class="fas fa-sync me-2"></i>Sync New Content
@@ -35,15 +35,15 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h5 class="alert-heading mb-1">
-                        <i class="fas fa-graduation-cap me-2"></i>想要練習小站TPO？
+                        <i class="fas fa-flask me-2"></i>想要進入Audio Labs？
                     </h5>
                     <p class="mb-0">
-                        小站TPO包含完整的TPO 1-75題庫，每個TPO分6題練習，使用正確的音檔格式。
+                        專業的TOEFL聽力實驗室，包含完整的TPO 1-75題庫，每個TPO分6題練習。
                     </p>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <a href="{{ url_for('smallstation') }}" class="btn btn-success btn-lg">
-                        <i class="fas fa-arrow-right me-2"></i>進入小站TPO
+                    <a href="{{ url_for('audio_labs') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-arrow-right me-2"></i>進入Audio Labs
                     </a>
                 </div>
             </div>
@@ -160,10 +160,10 @@
     {% elif request.args.get('type') == 'TPO' %}
         <div class="col-12">
             <div class="text-center py-5">
-                <i class="fas fa-graduation-cap fa-4x text-success mb-4"></i>
-                <h3 class="text-primary mb-3">使用小站TPO練習TOEFL聽力</h3>
+                <i class="fas fa-flask fa-4x text-success mb-4"></i>
+                <h3 class="text-primary mb-3">使用Audio Labs練習TOEFL聽力</h3>
                 <p class="lead text-muted mb-4">
-                    小站TPO包含完整的TPO 1-75題庫，每個TPO分6題練習<br>
+                    Audio Labs包含完整的TPO 1-75題庫，每個TPO分6題練習<br>
                     使用正確的音檔格式，提供最佳的TOEFL練習體驗
                 </p>
                 
@@ -174,7 +174,7 @@
                                 <div class="row align-items-center">
                                     <div class="col-md-8">
                                         <h5 class="card-title text-success mb-2">
-                                            <i class="fas fa-star me-2"></i>小站TPO練習平台
+                                            <i class="fas fa-star me-2"></i>Audio Labs平台
                                         </h5>
                                         <ul class="list-unstyled text-start mb-0">
                                             <li><i class="fas fa-check text-success me-2"></i>450個官方TPO練習（TPO 1-75）</li>
@@ -184,7 +184,7 @@
                                         </ul>
                                     </div>
                                     <div class="col-md-4 text-center">
-                                        <a href="{{ url_for('smallstation') }}" class="btn btn-success btn-lg">
+                                        <a href="{{ url_for('audio_labs') }}" class="btn btn-success btn-lg">
                                             <i class="fas fa-play me-2"></i>開始練習
                                         </a>
                                     </div>
@@ -219,15 +219,15 @@
                     <a href="{{ url_for('content_library') }}" class="btn btn-primary">
                         <i class="fas fa-times me-2"></i>Clear Filters
                     </a>
-                    <a href="{{ url_for('smallstation') }}" class="btn btn-success">
-                        <i class="fas fa-graduation-cap me-2"></i>試試小站TPO
+                    <a href="{{ url_for('audio_labs') }}" class="btn btn-success">
+                        <i class="fas fa-flask me-2"></i>試試Audio Labs
                     </a>
                     {% else %}
                     <a href="{{ url_for('sync_content') }}" class="btn btn-primary">
                         <i class="fas fa-sync me-2"></i>Sync Content
                     </a>
-                    <a href="{{ url_for('smallstation') }}" class="btn btn-success">
-                        <i class="fas fa-graduation-cap me-2"></i>小站TPO練習
+                    <a href="{{ url_for('audio_labs') }}" class="btn btn-success">
+                        <i class="fas fa-flask me-2"></i>Audio Labs
                     </a>
                     {% endif %}
                 </div>
@@ -279,7 +279,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-lg-4 col-md-6 mb-3">
-                        <h6><i class="fas fa-graduation-cap text-primary me-2"></i>TPO Tests (01-75)</h6>
+                        <h6><i class="fas fa-flask text-primary me-2"></i>TPO Tests (01-75)</h6>
                         <p class="small text-muted mb-0">
                             Official TOEFL Practice Online tests from ETS. These are the most authentic practice materials available with varied difficulty levels.
                         </p>

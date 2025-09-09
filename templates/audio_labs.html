@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}小站TPO - TOEFL Listening Practice{% endblock %}
+{% block title %}TOEFL Audio Labs - Advanced Listening Practice{% endblock %}
 
 {% block content %}
 <!-- Header Section -->
@@ -8,10 +8,10 @@
     <div class="col-lg-8">
         <h1 class="mb-3">
             <i class="fas fa-graduation-cap me-2"></i>
-            小站TPO聽力練習
+            TOEFL Audio Labs 🎧
         </h1>
         <p class="lead">
-            小站TOEFL聽力練習，包含TPO 1-75完整題庫。每個TPO包含6題，分為2個部分：
+            專業TOEFL聽力訓練平台，包含TPO 1-75完整題庫。每個TPO包含6題，分為2個部分：
             每部分第一題為師生討論，第二、三題為學術講座。
         </p>
         <div class="alert alert-info">
@@ -124,7 +124,7 @@
         <div class="col-12">
             <div class="alert alert-warning text-center">
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                暫無小站TPO內容可用
+                暫無Audio Labs內容可用
             </div>
         </div>
     {% endif %}
@@ -140,17 +140,17 @@
             </h6>
             <div class="row">
                 <div class="col-md-4">
-                    <a href="{{ url_for('smallstation', page=1) }}" class="btn btn-outline-primary btn-sm w-100">
+                    <a href="{{ url_for('audio_labs', page=1) }}" class="btn btn-outline-primary btn-sm w-100">
                         <i class="fas fa-play me-1"></i>第1頁: TPO 75-51
                     </a>
                 </div>
                 <div class="col-md-4">
-                    <a href="{{ url_for('smallstation', page=2) }}" class="btn btn-outline-success btn-sm w-100">
+                    <a href="{{ url_for('audio_labs', page=2) }}" class="btn btn-outline-success btn-sm w-100">
                         <i class="fas fa-play me-1"></i>第2頁: TPO 50-26
                     </a>
                 </div>
                 <div class="col-md-4">
-                    <a href="{{ url_for('smallstation', page=3) }}" class="btn btn-outline-warning btn-sm w-100">
+                    <a href="{{ url_for('audio_labs', page=3) }}" class="btn btn-outline-warning btn-sm w-100">
                         <i class="fas fa-play me-1"></i>第3頁: TPO 25-1
                     </a>
                 </div>
@@ -164,18 +164,18 @@
 {% if pagination and pagination.pages > 1 %}
 <div class="row mt-4">
     <div class="col-12">
-        <nav aria-label="小站TPO分頁">
+        <nav aria-label="Audio Labs分頁">
             <ul class="pagination justify-content-center">
                 <!-- 第一頁 -->
                 <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
-                    <a class="page-link" href="{{ url_for('smallstation', page=1) if pagination.has_prev else '#' }}">
+                    <a class="page-link" href="{{ url_for('audio_labs', page=1) if pagination.has_prev else '#' }}">
                         <i class="fas fa-angle-double-left"></i>
                     </a>
                 </li>
                 
                 <!-- 上一頁 -->
                 <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
-                    <a class="page-link" href="{{ url_for('smallstation', page=pagination.prev_num) if pagination.has_prev else '#' }}">
+                    <a class="page-link" href="{{ url_for('audio_labs', page=pagination.prev_num) if pagination.has_prev else '#' }}">
                         <i class="fas fa-angle-left"></i>
                     </a>
                 </li>
@@ -185,7 +185,7 @@
                     {% if page_num %}
                         {% if page_num != pagination.page %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url_for('smallstation', page=page_num) }}">{{ page_num }}</a>
+                                <a class="page-link" href="{{ url_for('audio_labs', page=page_num) }}">{{ page_num }}</a>
                             </li>
                         {% else %}
                             <li class="page-item active">
@@ -201,14 +201,14 @@
                 
                 <!-- 下一頁 -->
                 <li class="page-item {{ 'disabled' if not pagination.has_next }}">
-                    <a class="page-link" href="{{ url_for('smallstation', page=pagination.next_num) if pagination.has_next else '#' }}">
+                    <a class="page-link" href="{{ url_for('audio_labs', page=pagination.next_num) if pagination.has_next else '#' }}">
                         <i class="fas fa-angle-right"></i>
                     </a>
                 </li>
                 
                 <!-- 最後一頁 -->
                 <li class="page-item {{ 'disabled' if not pagination.has_next }}">
-                    <a class="page-link" href="{{ url_for('smallstation', page=pagination.pages) if pagination.has_next else '#' }}">
+                    <a class="page-link" href="{{ url_for('audio_labs', page=pagination.pages) if pagination.has_next else '#' }}">
                         <i class="fas fa-angle-double-right"></i>
                     </a>
                 </li>
@@ -232,7 +232,7 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('小站TPO頁面載入完成');
+    console.log('🎧 Audio Labs載入完成');
     
     // 統計信息 - 修正選擇器為實際存在的卡片元素
     const tpoCards = document.querySelectorAll('.col-lg-4.col-md-6.mb-4');
