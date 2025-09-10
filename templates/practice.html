@@ -374,57 +374,121 @@
         const ttsStatus = document.getElementById('tts-status');
         const contentPreview = document.getElementById('content-preview');
         
-        // Test sound button
-        ttsTestBtn.addEventListener('click', function() {
-            console.log('Testing TTS sound...');
+        // Test sound button - enhanced with multiple strategies
+        ttsTestBtn.addEventListener('click', async function() {
+            console.log('Testing TTS sound with enhanced strategies...');
             ttsStatus.textContent = 'Testing sound...';
             
+            // Strategy 1: Check basic support
             if (!window.speechSynthesis) {
                 alert('Text-to-speech 在此瀏覽器中不支援');
                 return;
             }
             
-            // Create a simple test utterance
-            const testText = 'Hello, this is a sound test. Can you hear me clearly?';
-            const testUtterance = new SpeechSynthesisUtterance(testText);
+            // Strategy 2: Create audio context for user interaction
+            try {
+                if (window.AudioContext || window.webkitAudioContext) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    const audioContext = new AudioContext();
+                    
+                    if (audioContext.state === 'suspended') {
+                        console.log('Resuming audio context...');
+                        await audioContext.resume();
+                    }
+                    console.log('Audio context state:', audioContext.state);
+                }
+            } catch (e) {
+                console.log('Audio context not available:', e);
+            }
             
-            // Configure test utterance
-            testUtterance.rate = 1.0;
-            testUtterance.pitch = 1.0;
-            testUtterance.volume = 1.0;
+            // Strategy 3: Stop any existing speech first
+            speechSynthesis.cancel();
             
-            // Select voice
-            const voices = speechSynthesis.getVoices();
+            // Strategy 4: Wait for voices to load
+            let voices = speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                console.log('Waiting for voices to load...');
+                await new Promise((resolve) => {
+                    speechSynthesis.onvoiceschanged = resolve;
+                });
+                voices = speechSynthesis.getVoices();
+            }
+            
             console.log('Test - Available voices:', voices.length);
             
-            if (voices.length > 0) {
-                let testVoice = voices.find(voice => voice.lang.includes('en'));
-                if (testVoice) {
-                    testUtterance.voice = testVoice;
-                    console.log('Test - Selected voice:', testVoice.name);
+            // Strategy 5: Try multiple test approaches
+            const testTexts = [
+                'Hello',
+                'Test',
+                'Can you hear this?'
+            ];
+            
+            for (let i = 0; i < testTexts.length; i++) {
+                const testText = testTexts[i];
+                console.log(`Trying test ${i + 1}: "${testText}"`);
+                
+                const testUtterance = new SpeechSynthesisUtterance(testText);
+                
+                // Configure utterance
+                testUtterance.rate = 1.0;
+                testUtterance.pitch = 1.0;
+                testUtterance.volume = 1.0;
+                
+                // Try different voices
+                if (voices.length > 0) {
+                    const voiceOptions = [
+                        voices.find(voice => voice.lang.includes('en-US')),
+                        voices.find(voice => voice.lang.includes('en')),
+                        voices[0]
+                    ].filter(Boolean);
+                    
+                    for (const voice of voiceOptions) {
+                        testUtterance.voice = voice;
+                        console.log(`Test - Trying voice: ${voice.name} (${voice.lang})`);
+                        break;
+                    }
+                }
+                
+                // Set up event handlers
+                let hasStarted = false;
+                let hasEnded = false;
+                
+                testUtterance.onstart = function() {
+                    console.log('Test TTS started successfully!');
+                    ttsStatus.textContent = 'Playing test sound...';
+                    ttsTestBtn.disabled = true;
+                    hasStarted = true;
+                };
+                
+                testUtterance.onend = function() {
+                    console.log('Test TTS ended successfully!');
+                    ttsStatus.textContent = '聲音測試成功！';
+                    ttsTestBtn.disabled = false;
+                    hasEnded = true;
+                };
+                
+                testUtterance.onerror = function(event) {
+                    console.error('Test TTS error:', event);
+                    ttsStatus.textContent = 'Sound test failed: ' + event.error;
+                    ttsTestBtn.disabled = false;
+                };
+                
+                // Speak and wait
+                speechSynthesis.speak(testUtterance);
+                
+                // Wait a moment to see if it works
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                if (hasStarted) {
+                    console.log('Test successful!');
+                    return;
                 }
             }
             
-            testUtterance.onstart = function() {
-                console.log('Test TTS started');
-                ttsStatus.textContent = 'Playing test sound...';
-                ttsTestBtn.disabled = true;
-            };
-            
-            testUtterance.onend = function() {
-                console.log('Test TTS ended');
-                ttsStatus.textContent = 'Sound test completed';
-                ttsTestBtn.disabled = false;
-            };
-            
-            testUtterance.onerror = function(event) {
-                console.error('Test TTS error:', event);
-                ttsStatus.textContent = 'Sound test failed: ' + event.error;
-                ttsTestBtn.disabled = false;
-            };
-            
-            // Speak the test
-            speechSynthesis.speak(testUtterance);
+            // If we get here, all tests failed
+            console.log('All TTS tests failed');
+            ttsStatus.textContent = '無法播放聲音 - 請檢查瀏覽器聲音設定和權限';
+            ttsTestBtn.disabled = false;
         });
         
         // Load AI text content
