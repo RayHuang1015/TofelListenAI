@@ -49,11 +49,31 @@
             <div class="card-body audio-player">
                 <!-- Audio Player Controls -->
                 <div class="audio-controls mb-3">
-                    <!-- Standard Audio Player for all content -->
+                    {% if content.type == 'ai_tpo_practice' %}
+                    <!-- AI Text-to-Speech Player (without comments) -->
+                    <div class="ai-tts-player border rounded p-3 mb-3" style="background: #1a1a1a;">
+                        <div class="d-flex align-items-center gap-2">
+                            <button id="tts-play-btn" class="btn btn-success">
+                                <i class="fas fa-play me-2"></i>Play Audio Content
+                            </button>
+                            <button id="tts-pause-btn" class="btn btn-warning" style="display: none;">
+                                <i class="fas fa-pause me-2"></i>Pause
+                            </button>
+                            <button id="tts-stop-btn" class="btn btn-danger" style="display: none;">
+                                <i class="fas fa-stop me-2"></i>Stop
+                            </button>
+                            <div class="ms-auto text-white">
+                                <small id="tts-status">Ready to play content</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Standard Audio Player for non-AI content -->
                     <audio id="audio-player" controls class="w-100" preload="metadata">
                         <source src="{{ content.url }}" type="audio/mpeg">
                         <p>Your browser does not support the audio element.</p>
                     </audio>
+                    {% endif %}
                 </div>
                 
                 <!-- Player Controls -->
