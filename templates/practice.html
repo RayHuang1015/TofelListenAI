@@ -145,11 +145,6 @@
                 <div class="card-header">
                     <h6 class="mb-0">
                         Question {{ loop.index }} of {{ questions|length }}
-                        {% if question.audio_timestamp %}
-                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="seekToTimestamp({{ question.audio_timestamp }})">
-                            <i class="fas fa-clock me-1"></i>{{ "%.0f"|format(question.audio_timestamp) }}s
-                        </button>
-                        {% endif %}
                     </h6>
                 </div>
                 <div class="card-body">
@@ -349,6 +344,33 @@
         audioFinished: false
     };
     
+    // Answer timing functions
+    var answerStartTime = null;
+    var answerTimerInterval = null;
+    
+    function startAnswerTimer() {
+        answerStartTime = Date.now();
+        updateAnswerTimer();
+    }
+    
+    function updateAnswerTimer() {
+        const timerElement = document.getElementById('session-timer');
+        if (timerElement && answerStartTime) {
+            const elapsed = Math.floor((Date.now() - answerStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            answerTimerInterval = setTimeout(updateAnswerTimer, 1000);
+        }
+    }
+    
+    function stopAnswerTimer() {
+        if (answerTimerInterval) {
+            clearTimeout(answerTimerInterval);
+            answerTimerInterval = null;
+        }
+    }
+
     // Audio flow control
     function showQuestionsAfterAudio() {
         const audioInstructions = document.getElementById('audio-instructions');
@@ -362,6 +384,9 @@
         
         // Hide audio player completely after questions appear
         if (audioPlayer) audioPlayer.style.display = 'none';
+        
+        // Start answer timer when questions appear
+        startAnswerTimer();
         
         sessionData.audioFinished = true;
         // Initialize practice session and show first question
@@ -700,6 +725,7 @@
                     playBtn.style.display = 'inline-block';
                     pauseBtn.style.display = 'none';
                     stopBtn.style.display = 'none';
+                    stopAudioTimer();
                     showQuestionsAfterAudio();
                 }
                 return;
@@ -711,19 +737,22 @@
             currentUtterance.pitch = 1.0;
             currentUtterance.volume = 1.0;
             
-            // Select voice based on speaker
+            // Select voice based on speaker with more dramatic differences
             switch (segment.speaker) {
                 case 'female_student':
                     currentUtterance.voice = femaleVoice;
-                    currentUtterance.pitch = 1.2; // Higher pitch for female voice
+                    currentUtterance.pitch = 1.4; // Much higher pitch for female voice
+                    currentUtterance.rate = 1.0; // Slightly faster
                     break;
                 case 'male_student':
                     currentUtterance.voice = maleStudentVoice;
-                    currentUtterance.pitch = 1.1; // Slightly higher than professor
+                    currentUtterance.pitch = 1.2; // Higher than professor
+                    currentUtterance.rate = 0.95; // Slightly faster than professor
                     break;
                 default: // professor
                     currentUtterance.voice = professorVoice;
-                    currentUtterance.pitch = 1.0;
+                    currentUtterance.pitch = 0.8; // Lower pitch for authority
+                    currentUtterance.rate = 0.85; // Slower, more deliberate
                     break;
             }
             
@@ -748,8 +777,32 @@
         pauseBtn.style.display = 'inline-block';
         stopBtn.style.display = 'inline-block';
         
-        // Start playback
+        // Start playback and timer
+        startAudioTimer();
         playNextSegment();
+        
+        // Audio timer functions
+        function startAudioTimer() {
+            const currentTimeSpan = document.getElementById('current-time');
+            if (currentTimeSpan && !window.audioTimeInterval) {
+                let audioCurrentTime = 0;
+                window.audioTimeInterval = setInterval(function() {
+                    if (!isPaused) {
+                        audioCurrentTime++;
+                        const minutes = Math.floor(audioCurrentTime / 60);
+                        const seconds = audioCurrentTime % 60;
+                        currentTimeSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }, 1000);
+            }
+        }
+        
+        function stopAudioTimer() {
+            if (window.audioTimeInterval) {
+                clearInterval(window.audioTimeInterval);
+                window.audioTimeInterval = null;
+            }
+        }
         
         // Override pause button for multi-voice
         pauseBtn.onclick = function() {
