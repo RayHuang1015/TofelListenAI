@@ -291,6 +291,69 @@ def premium_tpo():
         logging.error(f"Premium TPO error: {e}")
         return f"Error loading Premium TPO: {str(e)}", 500
 
+@app.route('/ai-tpo-practice')
+def ai_tpo_practice():
+    """AI TPO Practice Collection - AI自動生成的TOEFL聽力練習"""
+    try:
+        # 分頁處理AI TPO內容
+        page = request.args.get('page', 1, type=int)
+        per_page = 50  # 每頁顯示50個測驗
+        
+        # 獲取過濾參數
+        difficulty = request.args.get('difficulty', '')
+        topic = request.args.get('topic', '')
+        test_num = request.args.get('test', '')
+        
+        # 構建查詢 - 只查詢AI TPO內容
+        query = ContentSource.query.filter(
+            ContentSource.type == 'ai_tpo_practice'
+        )
+        
+        if difficulty:
+            query = query.filter_by(difficulty_level=difficulty)
+        if topic:
+            query = query.filter(ContentSource.topic.contains(topic))
+        if test_num:
+            query = query.filter(ContentSource.name.contains(f'AI TPO {test_num}'))
+        
+        # 分頁處理 - 按測驗編號順序排列
+        pagination = query.order_by(
+            ContentSource.id.asc()
+        ).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        content_items = pagination.items
+        
+        # 統計信息
+        total_count = ContentSource.query.filter(
+            ContentSource.type == 'ai_tpo_practice'
+        ).count()
+        logging.info(f"AI TPO Practice total count: {total_count}")
+        logging.info(f"Current page items: {len(content_items)}")
+        
+        # 獲取過濾選項
+        difficulties = db.session.query(ContentSource.difficulty_level).filter(
+            ContentSource.type == 'ai_tpo_practice'
+        ).distinct().all()
+        topics = db.session.query(ContentSource.topic).filter(
+            ContentSource.type == 'ai_tpo_practice'
+        ).distinct().all()
+        
+        # 獲取測驗編號列表 (1-200)
+        test_nums = [str(i) for i in range(1, 201)]
+        
+        return render_template('ai_tpo_practice.html',
+                             content_items=content_items,
+                             pagination=pagination,
+                             difficulties=[d[0] for d in difficulties if d[0]],
+                             topics=[t[0] for t in topics if t[0]],
+                             test_nums=test_nums,
+                             total_count=total_count)
+    
+    except Exception as e:
+        logging.error(f"AI TPO Practice error: {e}")
+        return f"Error loading AI TPO Practice: {str(e)}", 500
+
 
 @app.route('/api/find-content')
 def find_content():
