@@ -428,6 +428,12 @@
                         utterance.pitch = 1.0;
                         utterance.volume = 1.0;
                         
+                        // Calculate estimated duration (approximately 150-200 words per minute)
+                        const wordCount = textToSpeak.split(' ').length;
+                        const estimatedDuration = Math.round((wordCount / 150) * 60); // seconds
+                        let currentTime = 0;
+                        let timeInterval;
+                        
                         // Select and configure voice
                         const voices = speechSynthesis.getVoices();
                         console.log('Available voices:', voices.length);
@@ -456,6 +462,30 @@
                         utterance.onstart = function() {
                             console.log('AI TTS started');
                             ttsStatus.textContent = 'Playing academic content...';
+                            
+                            // Start time counter
+                            const currentTimeSpan = document.getElementById('current-time');
+                            const durationSpan = document.getElementById('duration');
+                            
+                            if (durationSpan) {
+                                const minutes = Math.floor(estimatedDuration / 60);
+                                const seconds = estimatedDuration % 60;
+                                durationSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                            }
+                            
+                            timeInterval = setInterval(function() {
+                                currentTime++;
+                                if (currentTimeSpan) {
+                                    const minutes = Math.floor(currentTime / 60);
+                                    const seconds = currentTime % 60;
+                                    currentTimeSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                                }
+                                
+                                // Stop when estimated duration is reached
+                                if (currentTime >= estimatedDuration) {
+                                    clearInterval(timeInterval);
+                                }
+                            }, 1000);
                         };
                         
                         utterance.onend = function() {
@@ -463,6 +493,11 @@
                             ttsPlayBtn.style.display = 'inline-block';
                             ttsPauseBtn.style.display = 'none';
                             ttsStopBtn.style.display = 'none';
+                            
+                            // Clear time interval
+                            if (timeInterval) {
+                                clearInterval(timeInterval);
+                            }
                             
                             // Show questions after audio ends
                             showQuestionsAfterAudio();
@@ -502,6 +537,15 @@
                         ttsPlayBtn.style.display = 'inline-block';
                         ttsPauseBtn.style.display = 'none';
                         ttsStopBtn.style.display = 'none';
+                        
+                        // Clear time interval and reset time
+                        if (timeInterval) {
+                            clearInterval(timeInterval);
+                        }
+                        const currentTimeSpan = document.getElementById('current-time');
+                        if (currentTimeSpan) {
+                            currentTimeSpan.textContent = '0:00';
+                        }
                     });
                     
                 } else {
