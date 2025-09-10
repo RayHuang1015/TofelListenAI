@@ -904,6 +904,7 @@
             if (!isPaused) {
                 isPaused = true;
                 speechSynthesis.cancel();
+                console.log('Pausing TTS playback at segment', currentSegment + 1);
                 statusElement.textContent = 'Paused - Click Play to continue';
                 playBtn.style.display = 'inline-block';
                 pauseBtn.style.display = 'none';
@@ -914,10 +915,14 @@
         playBtn.onclick = function() {
             if (isPaused) {
                 isPaused = false;
+                console.log('Resuming TTS playback from segment', currentSegment + 1);
                 statusElement.textContent = 'Playing multi-voice academic content...';
                 playBtn.style.display = 'none';
                 pauseBtn.style.display = 'inline-block';
-                playNextSegment();
+                playNextSegment(); // Will continue from current segment
+            } else {
+                // Initial play - start from beginning
+                startMultiVoiceTTS();
             }
         };
         
