@@ -136,9 +136,6 @@
                 <div class="spinner-border text-info" role="status" id="listening-spinner">
                     <span class="visually-hidden">Listening...</span>
                 </div>
-                <button class="btn btn-outline-primary mt-3" onclick="showQuestionsAfterAudio()">
-                    <i class="fas fa-question-circle me-2"></i>Show Questions
-                </button>
             </div>
         </div>
         
@@ -357,10 +354,14 @@
         const audioInstructions = document.getElementById('audio-instructions');
         const questionsContainer = document.getElementById('questions-container');
         const listeningSpinner = document.getElementById('listening-spinner');
+        const audioPlayer = document.querySelector('.card.border-primary');
         
         if (audioInstructions) audioInstructions.style.display = 'none';
         if (questionsContainer) questionsContainer.style.display = 'block';
         if (listeningSpinner) listeningSpinner.style.display = 'none';
+        
+        // Hide audio player completely after questions appear
+        if (audioPlayer) audioPlayer.style.display = 'none';
         
         sessionData.audioFinished = true;
         // Initialize practice session and show first question
@@ -738,8 +739,8 @@
                     clearInterval(timeInterval);
                 }
                 
-                // Don't automatically show questions - let user control
-                // showQuestionsAfterAudio();
+                // Show questions after audio ends
+                showQuestionsAfterAudio();
             };
             
             utterance.onerror = function(event) {
