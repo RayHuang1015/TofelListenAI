@@ -155,20 +155,40 @@
                 <div class="card-body">
                     <p class="question-text">{{ question.question_text }}</p>
                     
-                    <!-- Always show multiple choice options for TOEFL questions -->
+                    <!-- TOEFL-style questions with single and multiple select -->
                     {% if question.options %}
                     <div class="options-container">
-                        {% for option in question.options %}
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" 
-                                   name="question_{{ loop.index0 }}" 
-                                   id="q{{ loop.index0 }}_option{{ loop.index }}" 
-                                   value="{{ option }}">
-                            <label class="form-check-label" for="q{{ loop.index0 }}_option{{ loop.index }}">
-                                {{ option }}
-                            </label>
-                        </div>
-                        {% endfor %}
+                        {% if question.question_type == 'multiple_select' %}
+                            <!-- Multi-select questions -->
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Choose {{ '2' if '2 answers' in question.question_text else '3' if '3 answers' in question.question_text else 'multiple' }} answers.</strong>
+                            </div>
+                            {% for option in question.options %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" 
+                                       name="question_{{ loop.index0 }}" 
+                                       id="q{{ loop.index0 }}_option{{ loop.index }}" 
+                                       value="{{ option }}">
+                                <label class="form-check-label" for="q{{ loop.index0 }}_option{{ loop.index }}">
+                                    {{ option }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <!-- Single-select questions -->
+                            {% for option in question.options %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" 
+                                       name="question_{{ loop.index0 }}" 
+                                       id="q{{ loop.index0 }}_option{{ loop.index }}" 
+                                       value="{{ option }}">
+                                <label class="form-check-label" for="q{{ loop.index0 }}_option{{ loop.index }}">
+                                    {{ option }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
                     </div>
                     {% elif question.question_type == 'multiple_answer' %}
                     <div class="options-container">
@@ -576,13 +596,18 @@
                     });
                     
                 } else {
-                    console.log('No matching content found, using fallback');
-                    // Use fallback content for demonstration
-                    const fallbackText = `Welcome to this TOEFL listening practice session. Today we will discuss economic policy, which is a fundamental concept in economics. Economic policy refers to the actions that governments take in the economic field. This includes taxation, government spending, monetary policy, and regulations. Understanding economic policy is crucial for students of economics as it affects every aspect of our daily lives. Let's explore the key principles and applications of economic policy in modern society.`;
-                    
-                    // Update the fullText for TTS
-                    window.aiContentText = fallbackText;
-                    console.log('Using fallback content for TTS');
+                    console.log('No matching content found, using database transcript');
+                    // Use database transcript as priority
+                    const dbTranscript = `{{ content_transcript|replace('"', '\\"')|safe }}`;
+                    if (dbTranscript && dbTranscript.length > 1000 && !dbTranscript.includes('undefined')) {
+                        window.aiContentText = dbTranscript;
+                        console.log('Using complete database transcript, length:', dbTranscript.length);
+                    } else {
+                        // Fallback content for demonstration
+                        const fallbackText = `Welcome to this TOEFL listening practice session. Today we will discuss economic policy, which is a fundamental concept in economics. Economic policy refers to the actions that governments take in the economic field. This includes taxation, government spending, monetary policy, and regulations. Understanding economic policy is crucial for students of economics as it affects every aspect of our daily lives. Let's explore the key principles and applications of economic policy in modern society.`;
+                        window.aiContentText = fallbackText;
+                        console.log('Using fallback content for TTS');
+                    }
                 }
             })
             .catch(error => {
