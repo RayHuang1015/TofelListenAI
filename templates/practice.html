@@ -351,129 +351,11 @@
     {% if content.type == 'ai_tpo_practice' %}
     // Initialize AI TTS Player for AI content
     function initializeAITTS() {
-        const ttsTestBtn = document.getElementById('tts-test-btn');
         const ttsPlayBtn = document.getElementById('tts-play-btn');
         const ttsPauseBtn = document.getElementById('tts-pause-btn');
         const ttsStopBtn = document.getElementById('tts-stop-btn');
         const ttsStatus = document.getElementById('tts-status');
-        const contentPreview = document.getElementById('content-preview');
         
-        // Test sound button - enhanced with multiple strategies
-        ttsTestBtn.addEventListener('click', async function() {
-            console.log('Testing TTS sound with enhanced strategies...');
-            ttsStatus.textContent = 'Testing sound...';
-            
-            // Strategy 1: Check basic support
-            if (!window.speechSynthesis) {
-                alert('Text-to-speech 在此瀏覽器中不支援');
-                return;
-            }
-            
-            // Strategy 2: Create audio context for user interaction
-            try {
-                if (window.AudioContext || window.webkitAudioContext) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    const audioContext = new AudioContext();
-                    
-                    if (audioContext.state === 'suspended') {
-                        console.log('Resuming audio context...');
-                        await audioContext.resume();
-                    }
-                    console.log('Audio context state:', audioContext.state);
-                }
-            } catch (e) {
-                console.log('Audio context not available:', e);
-            }
-            
-            // Strategy 3: Stop any existing speech first
-            speechSynthesis.cancel();
-            
-            // Strategy 4: Wait for voices to load
-            let voices = speechSynthesis.getVoices();
-            if (voices.length === 0) {
-                console.log('Waiting for voices to load...');
-                await new Promise((resolve) => {
-                    speechSynthesis.onvoiceschanged = resolve;
-                });
-                voices = speechSynthesis.getVoices();
-            }
-            
-            console.log('Test - Available voices:', voices.length);
-            
-            // Strategy 5: Try multiple test approaches
-            const testTexts = [
-                'Hello',
-                'Test',
-                'Can you hear this?'
-            ];
-            
-            for (let i = 0; i < testTexts.length; i++) {
-                const testText = testTexts[i];
-                console.log(`Trying test ${i + 1}: "${testText}"`);
-                
-                const testUtterance = new SpeechSynthesisUtterance(testText);
-                
-                // Configure utterance
-                testUtterance.rate = 1.0;
-                testUtterance.pitch = 1.0;
-                testUtterance.volume = 1.0;
-                
-                // Try different voices
-                if (voices.length > 0) {
-                    const voiceOptions = [
-                        voices.find(voice => voice.lang.includes('en-US')),
-                        voices.find(voice => voice.lang.includes('en')),
-                        voices[0]
-                    ].filter(Boolean);
-                    
-                    for (const voice of voiceOptions) {
-                        testUtterance.voice = voice;
-                        console.log(`Test - Trying voice: ${voice.name} (${voice.lang})`);
-                        break;
-                    }
-                }
-                
-                // Set up event handlers
-                let hasStarted = false;
-                let hasEnded = false;
-                
-                testUtterance.onstart = function() {
-                    console.log('Test TTS started successfully!');
-                    ttsStatus.textContent = 'Playing test sound...';
-                    ttsTestBtn.disabled = true;
-                    hasStarted = true;
-                };
-                
-                testUtterance.onend = function() {
-                    console.log('Test TTS ended successfully!');
-                    ttsStatus.textContent = '聲音測試成功！';
-                    ttsTestBtn.disabled = false;
-                    hasEnded = true;
-                };
-                
-                testUtterance.onerror = function(event) {
-                    console.error('Test TTS error:', event);
-                    ttsStatus.textContent = 'Sound test failed: ' + event.error;
-                    ttsTestBtn.disabled = false;
-                };
-                
-                // Speak and wait
-                speechSynthesis.speak(testUtterance);
-                
-                // Wait a moment to see if it works
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                if (hasStarted) {
-                    console.log('Test successful!');
-                    return;
-                }
-            }
-            
-            // If we get here, all tests failed
-            console.log('All TTS tests failed');
-            ttsStatus.textContent = '無法播放聲音 - 請檢查瀏覽器聲音設定和權限';
-            ttsTestBtn.disabled = false;
-        });
         
         // Load AI text content
         fetch('/static/ai_audio/text_content.json')
@@ -519,9 +401,6 @@
                         // Generic academic content if not specifically matched
                         fullText = `Welcome to this academic lecture. Today we will explore important concepts and theories that are fundamental to understanding this subject area. This presentation will cover key principles, examine real-world applications, and discuss current research findings. We'll analyze different perspectives and methodologies used in this field of study. Please listen carefully as this material will help you understand the broader context and significance of these academic concepts.`;
                     }
-                    
-                    const previewText = fullText.length > 200 ? fullText.substring(0, 200) + '...' : fullText;
-                    contentPreview.innerHTML = `<strong>AI Academic Content</strong><br><br>${previewText}`;
                     
                     // Store the text globally for TTS
                     window.aiContentText = fullText;
@@ -629,7 +508,6 @@
                     console.log('No matching content found, using fallback');
                     // Use fallback content for demonstration
                     const fallbackText = `Welcome to this TOEFL listening practice session. Today we will discuss economic policy, which is a fundamental concept in economics. Economic policy refers to the actions that governments take in the economic field. This includes taxation, government spending, monetary policy, and regulations. Understanding economic policy is crucial for students of economics as it affects every aspect of our daily lives. Let's explore the key principles and applications of economic policy in modern society.`;
-                    contentPreview.innerHTML = '<strong>AI TPO 1 - Lecture 1: Economic Policy</strong><br><br>' + fallbackText.substring(0, 200) + '...';
                     
                     // Update the fullText for TTS
                     window.aiContentText = fallbackText;
@@ -638,7 +516,9 @@
             })
             .catch(error => {
                 console.error('Error loading AI content:', error);
-                contentPreview.innerHTML = '<em>Error loading content</em>';
+                // Use fallback content
+                const fallbackText = `Welcome to this TOEFL listening practice session. Today we will discuss economic policy, which is a fundamental concept in economics.`;
+                window.aiContentText = fallbackText;
                 ttsPlayBtn.disabled = true;
             });
     }
