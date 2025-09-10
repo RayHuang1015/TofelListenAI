@@ -434,6 +434,8 @@
                         let currentTime = 0;
                         let timeInterval;
                         
+                        console.log('Estimated duration:', estimatedDuration, 'seconds for', wordCount, 'words');
+                        
                         // Select and configure voice
                         const voices = speechSynthesis.getVoices();
                         console.log('Available voices:', voices.length);
@@ -460,32 +462,36 @@
                         }
                         
                         utterance.onstart = function() {
-                            console.log('AI TTS started');
+                            console.log('AI TTS started successfully');
                             ttsStatus.textContent = 'Playing academic content...';
                             
                             // Start time counter
                             const currentTimeSpan = document.getElementById('current-time');
                             const durationSpan = document.getElementById('duration');
                             
+                            console.log('Setting up time display, estimated duration:', estimatedDuration);
+                            
                             if (durationSpan) {
                                 const minutes = Math.floor(estimatedDuration / 60);
                                 const seconds = estimatedDuration % 60;
                                 durationSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                                console.log('Duration set to:', durationSpan.textContent);
                             }
                             
-                            timeInterval = setInterval(function() {
-                                currentTime++;
-                                if (currentTimeSpan) {
+                            if (currentTimeSpan) {
+                                currentTime = 0;
+                                timeInterval = setInterval(function() {
+                                    currentTime++;
                                     const minutes = Math.floor(currentTime / 60);
                                     const seconds = currentTime % 60;
                                     currentTimeSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                                }
-                                
-                                // Stop when estimated duration is reached
-                                if (currentTime >= estimatedDuration) {
-                                    clearInterval(timeInterval);
-                                }
-                            }, 1000);
+                                    
+                                    // Stop when estimated duration is reached
+                                    if (currentTime >= estimatedDuration) {
+                                        clearInterval(timeInterval);
+                                    }
+                                }, 1000);
+                            }
                         };
                         
                         utterance.onend = function() {
@@ -505,25 +511,38 @@
                         
                         utterance.onerror = function(event) {
                             console.error('TTS error:', event.error);
-                            ttsStatus.textContent = 'Playback error';
+                            ttsStatus.textContent = 'Playback error: ' + event.error;
                             ttsPlayBtn.style.display = 'inline-block';
                             ttsPauseBtn.style.display = 'none';
                             ttsStopBtn.style.display = 'none';
+                            
+                            // Clear time interval
+                            if (timeInterval) {
+                                clearInterval(timeInterval);
+                            }
                         };
+                        
+                        // Store utterance globally for stop/pause functions
+                        window.currentUtterance = utterance;
                         
                         // Ensure voices are loaded before speaking
                         if (voices.length === 0) {
                             console.log('No voices loaded yet, waiting...');
                             speechSynthesis.onvoiceschanged = function() {
-                                console.log('Voices loaded, trying again');
+                                console.log('Voices loaded, now speaking');
                                 speechSynthesis.speak(utterance);
                             };
                         } else {
-                            console.log('Speaking utterance now');
-                            speechSynthesis.speak(utterance);
+                            console.log('Speaking utterance now with voice:', utterance.voice ? utterance.voice.name : 'default');
+                            
+                            // Stop any existing speech first
+                            speechSynthesis.cancel();
+                            
+                            // Small delay to ensure cleanup
+                            setTimeout(function() {
+                                speechSynthesis.speak(utterance);
+                            }, 100);
                         }
-                        
-                        window.currentUtterance = utterance;
                     });
                     
                     ttsPauseBtn.addEventListener('click', function() {
