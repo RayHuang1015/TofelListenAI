@@ -63,6 +63,11 @@
                                 <em>Loading AI-generated content...</em>
                             </div>
                         </div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <button id="tts-test-btn" class="btn btn-info btn-sm">
+                                <i class="fas fa-volume-up me-1"></i>測試聲音
+                            </button>
+                        </div>
                         <div class="d-flex align-items-center gap-2">
                             <button id="tts-play-btn" class="btn btn-success">
                                 <i class="fas fa-play me-2"></i>Play Academic Content
@@ -362,11 +367,65 @@
     {% if content.type == 'ai_tpo_practice' %}
     // Initialize AI TTS Player for AI content
     function initializeAITTS() {
+        const ttsTestBtn = document.getElementById('tts-test-btn');
         const ttsPlayBtn = document.getElementById('tts-play-btn');
         const ttsPauseBtn = document.getElementById('tts-pause-btn');
         const ttsStopBtn = document.getElementById('tts-stop-btn');
         const ttsStatus = document.getElementById('tts-status');
         const contentPreview = document.getElementById('content-preview');
+        
+        // Test sound button
+        ttsTestBtn.addEventListener('click', function() {
+            console.log('Testing TTS sound...');
+            ttsStatus.textContent = 'Testing sound...';
+            
+            if (!window.speechSynthesis) {
+                alert('Text-to-speech 在此瀏覽器中不支援');
+                return;
+            }
+            
+            // Create a simple test utterance
+            const testText = 'Hello, this is a sound test. Can you hear me clearly?';
+            const testUtterance = new SpeechSynthesisUtterance(testText);
+            
+            // Configure test utterance
+            testUtterance.rate = 1.0;
+            testUtterance.pitch = 1.0;
+            testUtterance.volume = 1.0;
+            
+            // Select voice
+            const voices = speechSynthesis.getVoices();
+            console.log('Test - Available voices:', voices.length);
+            
+            if (voices.length > 0) {
+                let testVoice = voices.find(voice => voice.lang.includes('en'));
+                if (testVoice) {
+                    testUtterance.voice = testVoice;
+                    console.log('Test - Selected voice:', testVoice.name);
+                }
+            }
+            
+            testUtterance.onstart = function() {
+                console.log('Test TTS started');
+                ttsStatus.textContent = 'Playing test sound...';
+                ttsTestBtn.disabled = true;
+            };
+            
+            testUtterance.onend = function() {
+                console.log('Test TTS ended');
+                ttsStatus.textContent = 'Sound test completed';
+                ttsTestBtn.disabled = false;
+            };
+            
+            testUtterance.onerror = function(event) {
+                console.error('Test TTS error:', event);
+                ttsStatus.textContent = 'Sound test failed: ' + event.error;
+                ttsTestBtn.disabled = false;
+            };
+            
+            // Speak the test
+            speechSynthesis.speak(testUtterance);
+        });
         
         // Load AI text content
         fetch('/static/ai_audio/text_content.json')
