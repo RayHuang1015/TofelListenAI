@@ -163,8 +163,12 @@ class AITPOContentGenerator:
                     "為了提出問題"
                 ]
             
+            # 隨機選擇正確答案
+            correct_answer = random.randint(0, len(options) - 1)
+            correct_option = options[correct_answer]
             random.shuffle(options)
-            correct_answer = 0  # 總是第一個選項為正確答案
+            # 洗牌後重新找到正確答案的新位置
+            correct_answer = options.index(correct_option)
             
             questions.append({
                 "question_number": i + 1,
@@ -172,7 +176,7 @@ class AITPOContentGenerator:
                 "question_type": question_type,
                 "options": options,
                 "correct_answer": correct_answer,
-                "explanation": f"根據{content_type}內容，正確答案是'{options[correct_answer]}'。"
+                "explanation": f"根據{content_type}內容，正確答案是'{correct_option}'。這個答案最準確地反映了音頻中討論的主要內容。"
             })
         
         return questions
