@@ -111,7 +111,7 @@
                     <div class="video-container">
                         <iframe 
                             id="youtube-player"
-                            src="https://www.youtube.com/embed/{{ video_id }}?enablejsapi=1&cc_load_policy=1&cc_lang_pref=en&hl=en"
+                            src="https://www.youtube.com/embed/{{ video_id }}?enablejsapi=1&cc_load_policy=1&cc_lang_pref=zh-TW&hl=zh-TW&autoplay=0"
                             frameborder="0" 
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                             allowfullscreen>
@@ -130,33 +130,57 @@
                 </div>
             </div>
 
-            <!-- Subtitle Controls -->
+            <!-- Enhanced Subtitle Controls -->
             <div class="subtitle-controls">
                 <h6 class="text-light mb-3">
-                    <i class="fas fa-closed-captioning me-2"></i>字幕設定
+                    <i class="fas fa-closed-captioning me-2"></i>字幕設定與語言選擇
                 </h6>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-check subtitle-toggle">
-                            <input class="form-check-input" type="checkbox" id="englishSubtitles" checked>
-                            <label class="form-check-label text-light" for="englishSubtitles">
-                                英文字幕
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-check subtitle-toggle">
-                            <input class="form-check-input" type="checkbox" id="chineseSubtitles">
-                            <label class="form-check-label text-light" for="chineseSubtitles">
-                                中文字幕 (自動翻譯)
-                            </label>
+                
+                <!-- Language Selection -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label class="form-label text-light">選擇字幕語言：</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="subtitleLang" id="lang-en" value="en">
+                            <label class="btn btn-outline-light" for="lang-en">English</label>
+                            
+                            <input type="radio" class="btn-check" name="subtitleLang" id="lang-zh-tw" value="zh-TW" checked>
+                            <label class="btn btn-outline-light" for="lang-zh-tw">繁體中文</label>
+                            
+                            <input type="radio" class="btn-check" name="subtitleLang" id="lang-zh-cn" value="zh-CN">
+                            <label class="btn btn-outline-light" for="lang-zh-cn">简体中文</label>
+                            
+                            <input type="radio" class="btn-check" name="subtitleLang" id="lang-off" value="off">
+                            <label class="btn btn-outline-secondary" for="lang-off">關閉字幕</label>
                         </div>
                     </div>
                 </div>
-                <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    使用YouTube內建字幕功能，可在播放器右下角調整字幕設定
-                </small>
+
+                <!-- Quick Access Buttons -->
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-success w-100" id="enableChineseBtn">
+                            <i class="fas fa-check-circle me-1"></i>開啟中文字幕
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-info w-100" id="enableEnglishBtn">
+                            <i class="fas fa-globe me-1"></i>開啟英文字幕
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="alert alert-dark border-secondary">
+                    <small>
+                        <i class="fas fa-lightbulb text-warning me-1"></i>
+                        <strong>字幕操作指南：</strong><br>
+                        1. 點擊上方按鈕快速切換字幕語言<br>
+                        2. 也可在YouTube播放器右下角的「CC」按鈕手動調整<br>
+                        3. 中文字幕由YouTube自動翻譯提供<br>
+                        4. 如看不到字幕，請重新載入頁面
+                    </small>
+                </div>
             </div>
         </div>
 
@@ -216,24 +240,83 @@
 </div>
 
 <script>
-// YouTube Player API integration for subtitle control
-function enableSubtitles(language) {
-    // This would require YouTube Player API for programmatic control
-    // For now, users can manually enable subtitles using YouTube controls
-    console.log('Enable subtitles for:', language);
+// Enhanced subtitle control with language switching
+function changeSubtitleLanguage(language) {
+    const iframe = document.getElementById('youtube-player');
+    const currentSrc = iframe.src;
+    
+    // Extract video ID from current src
+    const videoIdMatch = currentSrc.match(/embed\/([^?]+)/);
+    if (!videoIdMatch) return;
+    
+    const videoId = videoIdMatch[1];
+    let newSrc;
+    
+    if (language === 'off') {
+        newSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&cc_load_policy=0&autoplay=0`;
+    } else {
+        newSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&cc_load_policy=1&cc_lang_pref=${language}&hl=${language}&autoplay=0`;
+    }
+    
+    iframe.src = newSrc;
+    console.log('Subtitle language changed to:', language);
+    
+    // Show feedback
+    showSubtitleFeedback(language);
 }
 
-// Subtitle toggle functionality
-document.getElementById('englishSubtitles').addEventListener('change', function() {
-    if (this.checked) {
-        enableSubtitles('en');
+function showSubtitleFeedback(language) {
+    const messages = {
+        'en': '✓ 已切換至英文字幕',
+        'zh-TW': '✓ 已切換至繁體中文字幕',
+        'zh-CN': '✓ 已切換至简体中文字幕',
+        'off': '✓ 已關閉字幕'
+    };
+    
+    // Create or update feedback element
+    let feedback = document.getElementById('subtitle-feedback');
+    if (!feedback) {
+        feedback = document.createElement('div');
+        feedback.id = 'subtitle-feedback';
+        feedback.className = 'alert alert-success mt-2';
+        feedback.style.display = 'none';
+        document.querySelector('.subtitle-controls').appendChild(feedback);
     }
-});
+    
+    feedback.innerHTML = `<i class="fas fa-check-circle me-2"></i>${messages[language] || '字幕設定已更新'}`;
+    feedback.style.display = 'block';
+    
+    setTimeout(() => {
+        feedback.style.display = 'none';
+    }, 3000);
+}
 
-document.getElementById('chineseSubtitles').addEventListener('change', function() {
-    if (this.checked) {
-        enableSubtitles('zh-TW');
-    }
+// Language radio button handlers
+document.addEventListener('DOMContentLoaded', function() {
+    const langRadios = document.querySelectorAll('input[name="subtitleLang"]');
+    langRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                changeSubtitleLanguage(this.value);
+            }
+        });
+    });
+    
+    // Quick access button handlers
+    document.getElementById('enableChineseBtn').addEventListener('click', function() {
+        document.getElementById('lang-zh-tw').checked = true;
+        changeSubtitleLanguage('zh-TW');
+    });
+    
+    document.getElementById('enableEnglishBtn').addEventListener('click', function() {
+        document.getElementById('lang-en').checked = true;
+        changeSubtitleLanguage('en');
+    });
+    
+    // Auto-enable Chinese subtitles on page load
+    setTimeout(() => {
+        changeSubtitleLanguage('zh-TW');
+    }, 1000);
 });
 </script>
 {% endblock %}
