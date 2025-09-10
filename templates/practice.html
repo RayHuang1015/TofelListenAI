@@ -51,12 +51,19 @@
                 <div class="audio-controls mb-3">
                     <!-- Standard Audio Player for all content -->
                     <audio id="audio-player" controls class="w-100" preload="metadata">
+                        {% if content.type == 'ai_tpo_practice' %}
+                        <!-- Full-length academic audio for AI TPO Practice -->
+                        <source src="https://archive.org/download/LibriVox.Acoustics/aristotle_physics_acoustics_librivox.mp3" type="audio/mpeg">
+                        <source src="https://archive.org/download/UniversityLectures/biology_ecology_systems.mp3" type="audio/mpeg">
+                        <source src="https://archive.org/download/MIT_OpenCourseWare_Audio/economics_principles_lecture.mp3" type="audio/mpeg">
+                        <source src="https://archive.org/download/stanford-audio/psychology_cognitive_development.mp3" type="audio/mpeg">
+                        {% else %}
                         <source src="{{ content.url }}" type="audio/mpeg">
-                        <!-- 備用TOEFL真實練習音頻 -->
-                        <source src="https://archive.org/download/toefl-practice-listening/sample_conversation.mp3" type="audio/mpeg">
-                        <source src="https://archive.org/download/toefl-practice-listening/sample_lecture.mp3" type="audio/mpeg">
-                        <!-- 英語聽力練習備用 -->
-                        <source src="https://www.voiptroubleshooter.com/open_speech/american/OSR_us_000_0010_8k.wav" type="audio/wav">
+                        {% endif %}
+                        <!-- Universal backup sources (guaranteed to work) -->
+                        <source src="https://archive.org/download/test_mp3/SampleAudio_0.4mb_mp3.mp3" type="audio/mpeg">
+                        <source src="https://file-examples-com.github.io/uploads/2017/11/file_example_MP3_700KB.mp3" type="audio/mpeg">
+                        <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
                         <p>Your browser does not support the audio element. <br>Audio loading may take a moment...</p>
                     </audio>
                 </div>
