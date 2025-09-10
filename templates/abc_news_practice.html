@@ -208,12 +208,13 @@
 
 <!-- News Content for TTS -->
 <script>
-window.abcNewsContent = {{ content.content_metadata|tojson if content.content_metadata else '{}' }};
+{% set metadata = content.content_metadata|from_json if content.content_metadata else {} %}
+window.abcNewsContent = {{ metadata|tojson }};
 window.currentContentId = {{ content.id }};
 
 // Store news transcript for TTS
-{% if content.content_metadata and content.content_metadata.get('transcript') %}
-window.aiContentText = {{ content.content_metadata.transcript|tojson }};
+{% if metadata and metadata.get('transcript') %}
+window.aiContentText = {{ metadata.transcript|tojson }};
 {% else %}
 window.aiContentText = "This is a sample ABC News report. The actual news content will be played here using text-to-speech technology. This allows you to practice TOEFL listening skills with current news content from ABC News Live.";
 {% endif %}
