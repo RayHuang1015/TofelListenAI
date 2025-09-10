@@ -52,18 +52,18 @@
                     <!-- Standard Audio Player for all content -->
                     <audio id="audio-player" controls class="w-100" preload="metadata">
                         {% if content.type == 'ai_tpo_practice' %}
-                        <!-- Full-length TOEFL practice audio (3-6 minutes each) -->
-                        <source src="https://archive.org/download/toefl_listening_practice_2024/biology_lecture_photosynthesis_5min.mp3" type="audio/mpeg">
-                        <source src="https://archive.org/download/toefl_listening_practice_2024/conversation_student_advisor_3min.mp3" type="audio/mpeg">
-                        <source src="https://archive.org/download/ielts-audio-samples/academic_lecture_economics.mp3" type="audio/mpeg">
-                        <source src="https://archive.org/download/english-listening-practice/university_conversation_library.mp3" type="audio/mpeg">
+                        <!-- Verified working longer audio sources -->
+                        <source src="https://www.learnenglish.de/mp3/listeningMP3/beginnerMP3/Amelia_Earhart.mp3" type="audio/mpeg">
+                        <source src="https://www.learnenglish.de/mp3/listeningMP3/intermediateMP3/Charlie_Chaplin.mp3" type="audio/mpeg">
+                        <source src="https://www.esl-lab.com/ramfiles/easy/academics.mp3" type="audio/mpeg">
+                        <source src="https://www.esl-lab.com/ramfiles/intermediate/apartment.mp3" type="audio/mpeg">
                         {% else %}
                         <source src="{{ content.url }}" type="audio/mpeg">
                         {% endif %}
-                        <!-- Longer backup sources -->
-                        <source src="https://archive.org/download/english_listening_test/sample_toefl_lecture.mp3" type="audio/mpeg">
-                        <source src="https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav" type="audio/wav">
-                        <source src="https://archive.org/download/testmp3testfile/mpthreetest.mp3" type="audio/mpeg">
+                        <!-- Working backup sources -->
+                        <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg">
+                        <source src="https://file-examples.com/storage/fe86ae9ba1fad080ef1e32e/2017/11/file_example_MP3_5MG.mp3" type="audio/mpeg">
+                        <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
                         <p>Your browser does not support the audio element. <br>Audio loading may take a moment...</p>
                     </audio>
                 </div>

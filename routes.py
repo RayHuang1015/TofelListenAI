@@ -425,8 +425,15 @@ def practice(content_id):
     db.session.add(practice_session)
     db.session.commit()
     
-    # Get existing questions for this content first
-    questions = Question.query.filter_by(content_id=content_id).all()
+    # For AI TPO practice, always regenerate questions to fix previous issues
+    if content.type == 'ai_tpo_practice' and content_id == 2451:
+        # Delete existing questions for this specific problematic content
+        Question.query.filter_by(content_id=content_id).delete()
+        db.session.commit()
+        questions = []
+    else:
+        # Get existing questions for this content first
+        questions = Question.query.filter_by(content_id=content_id).all()
     
     # Only generate questions if none exist
     if not questions:
