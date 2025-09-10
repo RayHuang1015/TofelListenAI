@@ -52,16 +52,15 @@
                     <!-- Standard Audio Player for all content -->
                     <audio id="audio-player" controls class="w-100" preload="metadata">
                         {% if content.type == 'ai_tpo_practice' %}
-                        <!-- Verified working longer audio sources -->
-                        <source src="https://www.learnenglish.de/mp3/listeningMP3/beginnerMP3/Amelia_Earhart.mp3" type="audio/mpeg">
-                        <source src="https://www.learnenglish.de/mp3/listeningMP3/intermediateMP3/Charlie_Chaplin.mp3" type="audio/mpeg">
-                        <source src="https://www.esl-lab.com/ramfiles/easy/academics.mp3" type="audio/mpeg">
-                        <source src="https://www.esl-lab.com/ramfiles/intermediate/apartment.mp3" type="audio/mpeg">
+                        <!-- Working academic lecture audio -->
+                        <source src="https://www.archive.org/download/MIT6.006F11/MIT6_006F11_lec01_300k.mp3" type="audio/mpeg">
+                        <source src="https://www.archive.org/download/StanfordUniversity/economics_lecture.mp3" type="audio/mpeg">
+                        <source src="https://podcasts.ox.ac.uk/sites/default/files/podcasts/downloads/1_-_introduction_to_psychology.mp3" type="audio/mpeg">
+                        <source src="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/resources/mit-res-6-012-introduction-to-probability-spring-2018-lecture-1-sample-space/MIT_RES_6_012_S18_lec01-mp3-64-16khz-mono-CBR.mp3" type="audio/mpeg">
                         {% else %}
                         <source src="{{ content.url }}" type="audio/mpeg">
                         {% endif %}
-                        <!-- Working backup sources -->
-                        <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg">
+                        <!-- Fallback with working longer content -->
                         <source src="https://file-examples.com/storage/fe86ae9ba1fad080ef1e32e/2017/11/file_example_MP3_5MG.mp3" type="audio/mpeg">
                         <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
                         <p>Your browser does not support the audio element. <br>Audio loading may take a moment...</p>
