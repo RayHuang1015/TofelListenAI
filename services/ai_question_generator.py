@@ -122,7 +122,7 @@ class AIQuestionGenerator:
         
         # Parse content metadata to determine content type
         content_type = 'lecture'  # default
-        topic = content_source.topic or 'academic content'
+        topic = 'economics'  # Use English topic always
         
         try:
             if content_source.content_metadata:
@@ -130,7 +130,18 @@ class AIQuestionGenerator:
                 content_data = metadata.get('content_data', {})
                 if 'conversation' in content_data.get('type', ''):
                     content_type = 'conversation'
-                topic = content_data.get('topic', content_data.get('subject', topic))
+                # Convert Chinese topics to English equivalents
+                raw_topic = content_data.get('topic', content_data.get('subject', ''))
+                if '經濟政策' in str(raw_topic):
+                    topic = 'economic policy'
+                elif '社會學' in str(raw_topic):
+                    topic = 'sociology'
+                elif '環境科學' in str(raw_topic):
+                    topic = 'environmental science'
+                elif '化學' in str(raw_topic):
+                    topic = 'chemistry'
+                else:
+                    topic = 'academic studies'
         except:
             pass
         
@@ -196,7 +207,7 @@ class AIQuestionGenerator:
                 'type': 'multiple_choice',
                 'question_type': q_type,
                 'options': options,
-                'answer': correct_index,  # Store as index
+                'answer': str(correct_index),  # Store as string to match system expectations
                 'explanation': f"Based on the {content_type} content, the correct answer is '{options[correct_index]}'. This best reflects the information presented in the audio.",
                 'difficulty': 'intermediate',
                 'timestamp': float(i * 30)  # Spread questions across audio timeline
