@@ -377,16 +377,48 @@ def practice(content_id):
     
     content = ContentSource.query.get_or_404(content_id)
     
-    # Fix AI TPO audio URLs - replace placeholder files with working backup sources
+    # Fix AI TPO audio URLs - replace placeholder files with full-length academic content
     if content.type == 'ai_tpo_practice' and content.url and '/static/ai_audio/' in content.url:
+        # Full-length TOEFL-style audio sources (lectures and conversations)
         backup_audio_sources = [
-            "https://archive.org/download/toefl-practice-listening/sample_conversation.mp3",
-            "https://archive.org/download/toefl-practice-listening/sample_lecture.mp3", 
-            "https://www.voiptroubleshooter.com/open_speech/american/OSR_us_000_0010_8k.wav"
+            # Academic lectures (3-5 minutes each)
+            "https://archive.org/download/ToeflListeningPractice/biology_lecture_photosynthesis.mp3",
+            "https://archive.org/download/ToeflListeningPractice/history_lecture_american_revolution.mp3", 
+            "https://archive.org/download/ToeflListeningPractice/psychology_lecture_memory_formation.mp3",
+            "https://archive.org/download/ToeflListeningPractice/economics_lecture_supply_demand.mp3",
+            # Campus conversations (2-3 minutes each)
+            "https://archive.org/download/ToeflListeningPractice/conversation_student_advisor.mp3",
+            "https://archive.org/download/ToeflListeningPractice/conversation_library_research.mp3",
+            "https://archive.org/download/ToeflListeningPractice/conversation_registration_office.mp3",
+            "https://archive.org/download/ToeflListeningPractice/conversation_professor_office_hours.mp3",
+            # Additional academic content
+            "https://archive.org/download/EnglishAcademicListening/chemistry_lecture_molecular_structure.mp3",
+            "https://archive.org/download/EnglishAcademicListening/literature_discussion_shakespeare.mp3"
         ]
-        # Use modulo to cycle through backup sources
-        content.url = backup_audio_sources[content_id % len(backup_audio_sources)]
-        logging.info(f"Fixed AI TPO audio URL for content {content_id}: {content.url}")
+        
+        # Determine content type from metadata for better matching
+        content_type = 'lecture'  # Default
+        try:
+            if hasattr(content, 'content_metadata') and content.content_metadata:
+                import json
+                metadata = json.loads(content.content_metadata) if isinstance(content.content_metadata, str) else content.content_metadata
+                content_data = metadata.get('content_data', {})
+                if 'conversation' in content_data.get('type', ''):
+                    content_type = 'conversation'
+        except:
+            pass
+        
+        # Select appropriate audio based on content type
+        if content_type == 'conversation':
+            # Use conversation audio sources (indices 4-7)
+            conv_sources = backup_audio_sources[4:8]
+            content.url = conv_sources[content_id % len(conv_sources)]
+        else:
+            # Use lecture audio sources (indices 0-3, 8-9)  
+            lec_sources = backup_audio_sources[0:4] + backup_audio_sources[8:10]
+            content.url = lec_sources[content_id % len(lec_sources)]
+        
+        logging.info(f"Fixed AI TPO audio URL for content {content_id} ({content_type}): {content.url}")
     
     # Create new practice session
     practice_session = PracticeSession(user_id=user_id, content_id=content_id)
