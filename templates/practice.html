@@ -922,7 +922,9 @@
                 playNextSegment(); // Will continue from current segment
             } else {
                 // Initial play - start from beginning
-                startMultiVoiceTTS();
+                currentSegment = 0;
+                isPaused = false;
+                playNextSegment();
             }
         };
         
