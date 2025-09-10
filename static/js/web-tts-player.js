@@ -36,28 +36,36 @@ class WebTTSPlayer {
         const content = this.textContentData[filename];
         
         if (content && content.text) {
+            // 如果是中文內容，轉換為英文說明
+            if (content.text.includes('關於') || content.text.includes('學術講座') || content.text.includes('校園對話')) {
+                const topic = content.topic || 'academic content';
+                if (content.text.includes('對話')) {
+                    return `Welcome to this TOEFL listening practice. You will hear a campus conversation about ${topic}. Listen carefully to the dialogue between students and staff members, and then answer the questions that follow.`;
+                } else if (content.text.includes('講座')) {
+                    return `Welcome to this TOEFL listening practice. You will hear an academic lecture about ${topic}. Pay attention to the main concepts, examples, and supporting details presented by the professor.`;
+                }
+            }
             return content.text;
         }
         
-        // 回退到默認文本
-        return '歡迎來到TOEFL聽力練習。請仔細聆聽內容並回答相關問題。';
+        // 回退到英文默認文本
+        return 'Welcome to TOEFL listening practice. Please listen carefully to the audio content and answer the questions that follow.';
     }
 
     createVoice() {
         const voices = this.speechSynthesis.getVoices();
         
-        // 嘗試找到中文語音
+        // 優先選擇英文女聲（適合TOEFL聽力）
         let selectedVoice = voices.find(voice => 
-            voice.lang.includes('zh') || 
-            voice.lang.includes('cmn') ||
-            voice.name.includes('Chinese')
+            voice.lang.includes('en-US') && 
+            (voice.name.includes('Female') || voice.name.includes('Samantha') || voice.name.includes('Susan'))
         );
         
-        // 如果沒有中文語音，使用英文
+        // 如果沒有找到，選擇任何英文語音
         if (!selectedVoice) {
             selectedVoice = voices.find(voice => 
-                voice.lang.includes('en') && 
-                voice.name.includes('Female')
+                voice.lang.includes('en') || 
+                voice.lang.startsWith('en')
             );
         }
         

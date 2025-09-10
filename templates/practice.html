@@ -54,34 +54,33 @@
                     <div class="ai-tts-player border rounded p-3 mb-3">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <h6 class="mb-0">
-                                <i class="fas fa-robot text-primary me-2"></i>AI語音播放
+                                <i class="fas fa-robot text-primary me-2"></i>AI Audio Player
                             </h6>
                             <span class="badge bg-primary">Web TTS</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <button id="tts-play-btn" class="btn btn-success btn-lg">
-                                <i class="fas fa-play me-2"></i>播放語音
+                                <i class="fas fa-play me-2"></i>Play Audio
                             </button>
                             <button id="tts-pause-btn" class="btn btn-warning" style="display: none;">
-                                <i class="fas fa-pause me-2"></i>暫停
+                                <i class="fas fa-pause me-2"></i>Pause
                             </button>
                             <button id="tts-stop-btn" class="btn btn-danger" style="display: none;">
-                                <i class="fas fa-stop me-2"></i>停止
+                                <i class="fas fa-stop me-2"></i>Stop
                             </button>
                             <div class="ms-auto">
-                                <span id="tts-status" class="text-muted">準備播放</span>
+                                <span id="tts-status" class="text-muted">Ready to play</span>
                             </div>
                         </div>
                         <div class="mt-2">
                             <small class="text-muted">
                                 <i class="fas fa-info-circle me-1"></i>
-                                使用瀏覽器內建語音引擎播放AI生成的聽力內容
+                                Using browser's speech synthesis for AI-generated listening content
                             </small>
                         </div>
                     </div>
-                    {% endif %}
-                    
-                    <!-- Standard Audio Player -->
+                    {% else %}
+                    <!-- Standard Audio Player for non-AI content -->
                     <audio id="audio-player" controls class="w-100" preload="metadata">
                         <source src="{{ content.url }}" type="audio/mpeg">
                         <!-- 備用TOEFL真實練習音頻 -->
@@ -91,6 +90,7 @@
                         <source src="https://www.voiptroubleshooter.com/open_speech/american/OSR_us_000_0010_8k.wav" type="audio/wav">
                         <p>Your browser does not support the audio element. <br>Audio loading may take a moment...</p>
                     </audio>
+                    {% endif %}
                 </div>
                 
                 <!-- Player Controls -->
