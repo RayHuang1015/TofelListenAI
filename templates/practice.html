@@ -626,7 +626,15 @@
         const ttsStopBtn = document.getElementById('tts-stop-btn');
         const ttsStatus = document.getElementById('tts-status');
         
-        ttsPlayBtn.addEventListener('click', function() {
+        // Remove any existing event listeners to prevent duplicates
+        const newPlayBtn = ttsPlayBtn.cloneNode(true);
+        ttsPlayBtn.parentNode.replaceChild(newPlayBtn, ttsPlayBtn);
+        const newPauseBtn = ttsPauseBtn.cloneNode(true);
+        ttsPauseBtn.parentNode.replaceChild(newPauseBtn, ttsPauseBtn);
+        const newStopBtn = ttsStopBtn.cloneNode(true);
+        ttsStopBtn.parentNode.replaceChild(newStopBtn, ttsStopBtn);
+        
+        newPlayBtn.addEventListener('click', function() {
             console.log('TTS Play button clicked');
             if (!window.speechSynthesis) {
                 alert('Text-to-speech not supported in this browser');
@@ -712,20 +720,43 @@
                 showQuestionsAfterAudio();
             };
             
-            speechSynthesis.speak(utterance);
+            // Ensure voices are loaded before speaking
+            if (voices.length === 0) {
+                console.log('No voices loaded yet, waiting...');
+                speechSynthesis.onvoiceschanged = function() {
+                    console.log('Voices loaded, now speaking');
+                    speechSynthesis.speak(utterance);
+                };
+            } else {
+                console.log('Speaking utterance now with voice:', utterance.voice ? utterance.voice.name : 'default');
+                
+                // Stop any existing speech first
+                speechSynthesis.cancel();
+                
+                // Small delay to ensure cleanup
+                setTimeout(function() {
+                    speechSynthesis.speak(utterance);
+                }, 100);
+            }
         });
         
-        ttsPauseBtn.addEventListener('click', function() {
+        newPauseBtn.addEventListener('click', function() {
             speechSynthesis.pause();
             ttsStatus.textContent = 'Paused';
         });
         
-        ttsStopBtn.addEventListener('click', function() {
+        newStopBtn.addEventListener('click', function() {
             speechSynthesis.cancel();
             ttsStatus.textContent = 'Stopped';
             ttsPlayBtn.style.display = 'inline-block';
             ttsPauseBtn.style.display = 'none';
             ttsStopBtn.style.display = 'none';
+            
+            // Clear time interval and reset time
+            const currentTimeSpan = document.getElementById('current-time');
+            if (currentTimeSpan) {
+                currentTimeSpan.textContent = '0:00';
+            }
         });
     }
     
