@@ -17,4 +17,5 @@ dependencies = [
     "trafilatura>=2.0.0",
     "beautifulsoup4>=4.13.5",
     "openai>=1.107.0",
+    "gtts>=2.5.4",
 ]
