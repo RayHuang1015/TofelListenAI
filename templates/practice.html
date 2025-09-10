@@ -136,6 +136,9 @@
                 <div class="spinner-border text-info" role="status" id="listening-spinner">
                     <span class="visually-hidden">Listening...</span>
                 </div>
+                <button class="btn btn-outline-primary mt-3" onclick="showQuestionsAfterAudio()">
+                    <i class="fas fa-question-circle me-2"></i>Show Questions
+                </button>
             </div>
         </div>
         
@@ -735,7 +738,8 @@
                     clearInterval(timeInterval);
                 }
                 
-                showQuestionsAfterAudio();
+                // Don't automatically show questions - let user control
+                // showQuestionsAfterAudio();
             };
             
             utterance.onerror = function(event) {
@@ -771,8 +775,17 @@
         });
         
         newPauseBtn.addEventListener('click', function() {
-            speechSynthesis.pause();
-            ttsStatus.textContent = 'Paused';
+            if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                speechSynthesis.pause();
+                ttsStatus.textContent = 'Paused';
+                newPlayBtn.style.display = 'inline-block';
+                newPauseBtn.style.display = 'none';
+            } else if (speechSynthesis.paused) {
+                speechSynthesis.resume();
+                ttsStatus.textContent = 'Playing academic content...';
+                newPlayBtn.style.display = 'none';
+                newPauseBtn.style.display = 'inline-block';
+            }
         });
         
         newStopBtn.addEventListener('click', function() {
