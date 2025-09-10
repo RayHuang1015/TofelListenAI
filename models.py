@@ -16,13 +16,15 @@ class User(UserMixin, db.Model):
 
 class ContentSource(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)  # TPO, TED, CNN, BBC, etc.
-    type = db.Column(db.String(20), nullable=False)  # audio, video, podcast
+    name = db.Column(db.String(50), nullable=False)  # TPO, TED, CNN, BBC, ABC News, etc.
+    type = db.Column(db.String(20), nullable=False)  # audio, video, podcast, news
     url = db.Column(db.String(500))
     description = db.Column(Text)
     difficulty_level = db.Column(db.String(20))  # beginner, intermediate, advanced
     duration = db.Column(db.Integer)  # in seconds
     topic = db.Column(db.String(100))
+    category = db.Column(db.String(50))  # For news: politics, business, technology, etc.
+    published_date = db.Column(db.DateTime)  # For news content
     content_metadata = db.Column(JSON)  # For storing additional metadata like TPO structure
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
