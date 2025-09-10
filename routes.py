@@ -482,11 +482,22 @@ def practice(content_id):
             'audio_timestamp': q.audio_timestamp or 0.0
         })
     
+    # Get transcript from content metadata if available
+    content_transcript = ""
+    if content.content_metadata:
+        try:
+            import json
+            metadata = json.loads(content.content_metadata)
+            content_transcript = metadata.get('transcript', '')
+        except:
+            content_transcript = ""
+    
     return render_template('practice.html', 
                          content=content, 
                          questions=questions,
                          questions_data=questions_data,
-                         session_id=practice_session.id)
+                         session_id=practice_session.id,
+                         content_transcript=content_transcript)
 
 @app.route('/submit_answer', methods=['POST'])
 def submit_answer():

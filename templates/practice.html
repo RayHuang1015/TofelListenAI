@@ -155,7 +155,8 @@
                 <div class="card-body">
                     <p class="question-text">{{ question.question_text }}</p>
                     
-                    {% if question.question_type == 'multiple_choice' %}
+                    <!-- Always show multiple choice options for TOEFL questions -->
+                    {% if question.options %}
                     <div class="options-container">
                         {% for option in question.options %}
                         <div class="form-check mb-2">
@@ -394,7 +395,14 @@
                     if (fullText.includes('財務援助')) {
                         fullText = `Welcome to this TOEFL listening practice session. Today we have a campus conversation about financial aid and scholarships. Student: Hello, I would like to ask about financial aid and scholarship opportunities. Staff: Of course, I'd be happy to help you. Please tell me about your specific situation. Student: I'm having some difficulties with financial aid and scholarships. Staff: I understand your concerns. Let me explain this in detail for you. This conversation will cover various aspects of financial assistance available to students, including federal grants, merit-based scholarships, work-study programs, and loan options. We'll also discuss application deadlines, eligibility requirements, and tips for successful applications.`;
                     } else if (fullText.includes('經濟政策')) {
-                        fullText = `Welcome to today's economics lecture on economic policy. Economic policy refers to the actions that governments take in the economic field. This includes monetary policy, fiscal policy, trade policy, and regulatory frameworks. Today we will examine how these policies affect economic growth, inflation, unemployment, and overall economic stability. We'll also discuss the role of central banks, government spending decisions, and how different economic theories influence policy making. Understanding economic policy is crucial for students as it affects every aspect of our daily lives and business decisions.`;
+                        // Use the complete transcript from database for Economic Policy
+                        const dbTranscript = `{{ content.content_metadata.transcript | replace('"', '\"') | safe }}`;
+                        if (dbTranscript && dbTranscript.length > 1000) {
+                            fullText = dbTranscript;
+                            console.log('Using complete database transcript, length:', fullText.length);
+                        } else {
+                            fullText = `Welcome to today's economics lecture on economic policy. Economic policy refers to the actions that governments take in the economic field. This includes monetary policy, fiscal policy, trade policy, and regulatory frameworks. Today we will examine how these policies affect economic growth, inflation, unemployment, and overall economic stability. We'll also discuss the role of central banks, government spending decisions, and how different economic theories influence policy making. Understanding economic policy is crucial for students as it affects every aspect of our daily lives and business decisions.`;
+                        }
                     } else if (fullText.includes('社會學')) {
                         fullText = `Today's sociology lecture focuses on fundamental concepts in social research. Sociology is the scientific study of society, social relationships, and social behavior. We'll explore key research methodologies including surveys, interviews, participant observation, and statistical analysis. This lecture covers theoretical frameworks such as functionalism, conflict theory, and symbolic interactionism. We'll examine how sociologists study social institutions, social change, and the relationship between individual behavior and larger social forces.`;
                     } else {
