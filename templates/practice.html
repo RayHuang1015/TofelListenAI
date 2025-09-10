@@ -49,38 +49,7 @@
             <div class="card-body audio-player">
                 <!-- Audio Player Controls -->
                 <div class="audio-controls mb-3">
-                    {% if content.type == 'ai_tpo_practice' %}
-                    <!-- AI TPO Web TTS Player -->
-                    <div class="ai-tts-player border rounded p-3 mb-3">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <h6 class="mb-0">
-                                <i class="fas fa-robot text-primary me-2"></i>AI Audio Player
-                            </h6>
-                            <span class="badge bg-primary">Web TTS</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <button id="tts-play-btn" class="btn btn-success btn-lg">
-                                <i class="fas fa-play me-2"></i>Play Audio
-                            </button>
-                            <button id="tts-pause-btn" class="btn btn-warning" style="display: none;">
-                                <i class="fas fa-pause me-2"></i>Pause
-                            </button>
-                            <button id="tts-stop-btn" class="btn btn-danger" style="display: none;">
-                                <i class="fas fa-stop me-2"></i>Stop
-                            </button>
-                            <div class="ms-auto">
-                                <span id="tts-status" class="text-muted">Ready to play</span>
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Using browser's speech synthesis for AI-generated listening content
-                            </small>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- Standard Audio Player for non-AI content -->
+                    <!-- Standard Audio Player for all content -->
                     <audio id="audio-player" controls class="w-100" preload="metadata">
                         <source src="{{ content.url }}" type="audio/mpeg">
                         <!-- 備用TOEFL真實練習音頻 -->
@@ -90,7 +59,6 @@
                         <source src="https://www.voiptroubleshooter.com/open_speech/american/OSR_us_000_0010_8k.wav" type="audio/wav">
                         <p>Your browser does not support the audio element. <br>Audio loading may take a moment...</p>
                     </audio>
-                    {% endif %}
                 </div>
                 
                 <!-- Player Controls -->
@@ -324,9 +292,6 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/audio_player.js') }}"></script>
 <script src="{{ url_for('static', filename='js/practice.js') }}"></script>
-{% if content.type == 'ai_tpo_practice' %}
-<script src="{{ url_for('static', filename='js/web-tts-player.js') }}"></script>
-{% endif %}
 <script>
     // Initialize practice session
     const sessionData = {
@@ -364,77 +329,6 @@
         }
     }
     
-    {% if content.type == 'ai_tpo_practice' %}
-    // AI TPO Web TTS控制邏輯
-    function initializeWebTTS() {
-        const ttsPlayBtn = document.getElementById('tts-play-btn');
-        const ttsPauseBtn = document.getElementById('tts-pause-btn');
-        const ttsStopBtn = document.getElementById('tts-stop-btn');
-        const ttsStatus = document.getElementById('tts-status');
-        
-        if (!window.webTTSPlayer || !window.webTTSPlayer.isSupported()) {
-            ttsStatus.textContent = '瀏覽器不支援語音播放';
-            ttsPlayBtn.disabled = true;
-            return;
-        }
-        
-        // 播放按鈕
-        ttsPlayBtn.addEventListener('click', function() {
-            const audioUrl = '{{ content.url }}';
-            
-            ttsStatus.textContent = '正在播放...';
-            ttsPlayBtn.style.display = 'none';
-            ttsPauseBtn.style.display = 'inline-block';
-            ttsStopBtn.style.display = 'inline-block';
-            
-            window.webTTSPlayer.play(audioUrl,
-                // onStart
-                function() {
-                    console.log('TTS播放開始');
-                },
-                // onEnd
-                function() {
-                    console.log('TTS播放結束');
-                    ttsStatus.textContent = '播放完成';
-                    ttsPlayBtn.style.display = 'inline-block';
-                    ttsPauseBtn.style.display = 'none';
-                    ttsStopBtn.style.display = 'none';
-                    
-                    // 播放結束後顯示問題
-                    showQuestionsAfterAudio();
-                },
-                // onError
-                function(error) {
-                    console.error('TTS播放錯誤:', error);
-                    ttsStatus.textContent = '播放錯誤';
-                    ttsPlayBtn.style.display = 'inline-block';
-                    ttsPauseBtn.style.display = 'none';
-                    ttsStopBtn.style.display = 'none';
-                }
-            );
-        });
-        
-        // 暫停按鈕
-        ttsPauseBtn.addEventListener('click', function() {
-            window.webTTSPlayer.pause();
-            ttsStatus.textContent = '已暫停';
-        });
-        
-        // 停止按鈕
-        ttsStopBtn.addEventListener('click', function() {
-            window.webTTSPlayer.stop();
-            ttsStatus.textContent = '已停止';
-            ttsPlayBtn.style.display = 'inline-block';
-            ttsPauseBtn.style.display = 'none';
-            ttsStopBtn.style.display = 'none';
-        });
-        
-        ttsStatus.textContent = '準備播放AI語音';
-    }
-    
-    // 初始化Web TTS
-    setTimeout(initializeWebTTS, 1000); // 等待Web TTS Player載入
-    {% endif %}
     
     // Initialize audio player first
     initializeAudioPlayer();
