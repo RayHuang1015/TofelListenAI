@@ -49,6 +49,11 @@
                             <i class="fas fa-certificate me-1"></i>Official TPO
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('ai_tpo_practice') }}">
+                            <i class="fas fa-robot me-1"></i>AI TPO Practice
+                        </a>
+                    </li>
                     {% if session.user_id %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard') }}">
