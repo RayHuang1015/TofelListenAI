@@ -159,6 +159,25 @@ def abc_news_practice(news_id):
                          content=content, 
                          questions=questions)
 
+@app.route('/watch/abc_news/<int:news_id>')
+def watch_abc_news(news_id):
+    """Watch ABC News video with subtitles"""
+    content = ContentSource.query.get_or_404(news_id)
+    if content.name != 'ABC News':
+        flash('Content not found in ABC News Area', 'error')
+        return redirect(url_for('abc_news_area'))
+    
+    # Extract YouTube video ID from URL
+    video_id = None
+    if content.url and 'youtube.com/watch?v=' in content.url:
+        video_id = content.url.split('watch?v=')[1].split('&')[0]
+    elif content.url and 'youtu.be/' in content.url:
+        video_id = content.url.split('youtu.be/')[1].split('?')[0]
+    
+    return render_template('watch_abc_news.html', 
+                         content=content, 
+                         video_id=video_id)
+
 @app.route('/select_practice')
 def select_practice():
     """Practice selection interface with source and topic filters"""

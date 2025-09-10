@@ -83,8 +83,29 @@
                         <small>Time Range</small>
                     </div>
                     <div class="col-md-3">
-                        <h3 class="mb-1"><i class="fas fa-microphone"></i></h3>
-                        <small>Live Coverage</small>
+                        <h3 class="mb-1"><i class="fas fa-play-circle"></i></h3>
+                        <small>Local Player</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Year Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <h5 class="card-title text-warning mb-3">
+                        <i class="fas fa-filter me-2"></i>年份篩選
+                    </h5>
+                    <div class="btn-group flex-wrap" role="group" aria-label="Year filter">
+                        <input type="radio" class="btn-check" name="yearFilter" id="yearAll" value="all" checked>
+                        <label class="btn btn-outline-danger" for="yearAll">全部年份 ({{ total_news }})</label>
+                        {% for year in sorted_years %}
+                        <input type="radio" class="btn-check" name="yearFilter" id="year{{ year }}" value="{{ year }}">
+                        <label class="btn btn-outline-danger" for="year{{ year }}">{{ year }}年 ({{ news_by_year[year]|length }})</label>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -114,7 +135,7 @@
     {% else %}
     <!-- News Content by Year -->
     {% for year in sorted_years %}
-    <div class="row mb-4">
+    <div class="row mb-4 year-section" data-year="{{ year }}">
         <div class="col-12">
             <div class="d-flex align-items-center mb-3">
                 <span class="year-badge me-3">{{ year }}</span>
@@ -157,8 +178,8 @@
                             {% endif %}
                         </div>
                         <div class="card-footer bg-transparent border-0 pt-0">
-                            <a href="{{ news.url }}" target="_blank" class="btn btn-danger w-100">
-                                <i class="fas fa-play me-2"></i>Watch on YouTube
+                            <a href="{{ url_for('watch_abc_news', news_id=news.id) }}" class="btn btn-danger w-100">
+                                <i class="fas fa-play me-2"></i>觀看影片
                             </a>
                         </div>
                     </div>
@@ -169,7 +190,46 @@
     </div>
     {% endfor %}
     {% endif %}
+</div>
 
+<script>
+// Year filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const yearFilters = document.querySelectorAll('input[name="yearFilter"]');
+    const yearSections = document.querySelectorAll('.year-section');
+    
+    yearFilters.forEach(filter => {
+        filter.addEventListener('change', function() {
+            const selectedYear = this.value;
+            
+            yearSections.forEach(section => {
+                const yearData = section.getAttribute('data-year');
+                
+                if (selectedYear === 'all' || yearData === selectedYear) {
+                    section.style.display = 'block';
+                    // Smooth show animation
+                    section.style.opacity = '0';
+                    section.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        section.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        section.style.opacity = '1';
+                        section.style.transform = 'translateY(0)';
+                    }, 10);
+                } else {
+                    section.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    section.style.opacity = '0';
+                    section.style.transform = 'translateY(-20px)';
+                    setTimeout(() => {
+                        section.style.display = 'none';
+                    }, 300);
+                }
+            });
+        });
+    });
+});
+</script>
+
+<div class="container-fluid">
     <!-- Quick Actions -->
     <div class="row mt-5">
         <div class="col-12">
