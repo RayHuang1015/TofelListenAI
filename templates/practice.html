@@ -699,6 +699,9 @@
             utterance.onstart = function() {
                 console.log('AI TTS started successfully - audio is now playing');
                 ttsStatus.textContent = 'Playing academic content...';
+                newPlayBtn.style.display = 'none';
+                newPauseBtn.style.display = 'inline-block';
+                newStopBtn.style.display = 'inline-block';
                 
                 const currentTimeSpan = document.getElementById('current-time');
                 const durationSpan = document.getElementById('duration');
