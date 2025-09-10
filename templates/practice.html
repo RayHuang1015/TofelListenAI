@@ -49,21 +49,42 @@
             <div class="card-body audio-player">
                 <!-- Audio Player Controls -->
                 <div class="audio-controls mb-3">
-                    <!-- Standard Audio Player for all content -->
+                    {% if content.type == 'ai_tpo_practice' %}
+                    <!-- AI Text-to-Speech Player for AI generated content -->
+                    <div class="ai-tts-player border rounded p-3 mb-3" style="background: #1a1a1a;">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="mb-0 text-white">
+                                <i class="fas fa-robot text-primary me-2"></i>AI Generated Academic Content
+                            </h6>
+                            <span class="badge bg-success">Text-to-Speech</span>
+                        </div>
+                        <div class="mb-3">
+                            <div id="content-preview" class="text-light small" style="max-height: 100px; overflow-y: auto; background: #2d2d2d; padding: 10px; border-radius: 5px;">
+                                <em>Loading AI-generated content...</em>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button id="tts-play-btn" class="btn btn-success">
+                                <i class="fas fa-play me-2"></i>Play Academic Content
+                            </button>
+                            <button id="tts-pause-btn" class="btn btn-warning" style="display: none;">
+                                <i class="fas fa-pause me-2"></i>Pause
+                            </button>
+                            <button id="tts-stop-btn" class="btn btn-danger" style="display: none;">
+                                <i class="fas fa-stop me-2"></i>Stop
+                            </button>
+                            <div class="ms-auto text-white">
+                                <small id="tts-status">Ready to play AI content</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Standard Audio Player for non-AI content -->
                     <audio id="audio-player" controls class="w-100" preload="metadata">
-                        {% if content.type == 'ai_tpo_practice' %}
-                        <!-- Working audio samples with academic content -->
-                        <source src="https://file-examples.com/storage/fee86ae9ba1fad080ef1e32e/2017/11/file_example_MP3_5MG.mp3" type="audio/mpeg">
-                        <source src="https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3" type="audio/mpeg">
-                        <source src="https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3" type="audio/mpeg">
-                        <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/week7-brrring.m4a" type="audio/mpeg">
-                        {% else %}
                         <source src="{{ content.url }}" type="audio/mpeg">
-                        {% endif %}
-                        <!-- Final fallback -->
-                        <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg">
-                        <p>Your browser does not support the audio element. <br>Audio loading may take a moment...</p>
+                        <p>Your browser does not support the audio element.</p>
                     </audio>
+                    {% endif %}
                 </div>
                 
                 <!-- Player Controls -->
@@ -297,6 +318,9 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/audio_player.js') }}"></script>
 <script src="{{ url_for('static', filename='js/practice.js') }}"></script>
+{% if content.type == 'ai_tpo_practice' %}
+<script src="{{ url_for('static', filename='js/web-tts-player.js') }}"></script>
+{% endif %}
 <script>
     // Initialize practice session
     const sessionData = {
@@ -335,8 +359,110 @@
     }
     
     
-    // Initialize audio player first
+    {% if content.type == 'ai_tpo_practice' %}
+    // Initialize AI TTS Player for AI content
+    function initializeAITTS() {
+        const ttsPlayBtn = document.getElementById('tts-play-btn');
+        const ttsPauseBtn = document.getElementById('tts-pause-btn');
+        const ttsStopBtn = document.getElementById('tts-stop-btn');
+        const ttsStatus = document.getElementById('tts-status');
+        const contentPreview = document.getElementById('content-preview');
+        
+        // Load AI text content
+        fetch('/static/ai_audio/text_content.json')
+            .then(response => response.json())
+            .then(data => {
+                const filename = '{{ content.url }}'.split('/').pop();
+                const contentData = data[filename];
+                
+                if (contentData && contentData.text) {
+                    const fullText = contentData.text;
+                    const previewText = fullText.length > 200 ? fullText.substring(0, 200) + '...' : fullText;
+                    contentPreview.innerHTML = `<strong>${contentData.title}</strong><br><br>${previewText}`;
+                    
+                    // TTS controls
+                    ttsPlayBtn.addEventListener('click', function() {
+                        if (!window.speechSynthesis) {
+                            alert('Text-to-speech not supported in this browser');
+                            return;
+                        }
+                        
+                        ttsStatus.textContent = 'Playing AI academic content...';
+                        ttsPlayBtn.style.display = 'none';
+                        ttsPauseBtn.style.display = 'inline-block';
+                        ttsStopBtn.style.display = 'inline-block';
+                        
+                        // Create and configure speech
+                        const utterance = new SpeechSynthesisUtterance(fullText);
+                        utterance.rate = 0.8; // Slower for academic content
+                        utterance.pitch = 1.0;
+                        utterance.volume = 1.0;
+                        
+                        // Select English voice
+                        const voices = speechSynthesis.getVoices();
+                        const englishVoice = voices.find(voice => 
+                            voice.lang.includes('en') && 
+                            (voice.name.includes('Female') || voice.name.includes('US'))
+                        );
+                        if (englishVoice) utterance.voice = englishVoice;
+                        
+                        utterance.onstart = function() {
+                            console.log('AI TTS started');
+                        };
+                        
+                        utterance.onend = function() {
+                            ttsStatus.textContent = 'Content finished';
+                            ttsPlayBtn.style.display = 'inline-block';
+                            ttsPauseBtn.style.display = 'none';
+                            ttsStopBtn.style.display = 'none';
+                            
+                            // Show questions after audio ends
+                            showQuestionsAfterAudio();
+                        };
+                        
+                        utterance.onerror = function(event) {
+                            console.error('TTS error:', event.error);
+                            ttsStatus.textContent = 'Playback error';
+                            ttsPlayBtn.style.display = 'inline-block';
+                            ttsPauseBtn.style.display = 'none';
+                            ttsStopBtn.style.display = 'none';
+                        };
+                        
+                        speechSynthesis.speak(utterance);
+                        window.currentUtterance = utterance;
+                    });
+                    
+                    ttsPauseBtn.addEventListener('click', function() {
+                        speechSynthesis.pause();
+                        ttsStatus.textContent = 'Paused';
+                    });
+                    
+                    ttsStopBtn.addEventListener('click', function() {
+                        speechSynthesis.cancel();
+                        ttsStatus.textContent = 'Stopped';
+                        ttsPlayBtn.style.display = 'inline-block';
+                        ttsPauseBtn.style.display = 'none';
+                        ttsStopBtn.style.display = 'none';
+                    });
+                    
+                } else {
+                    contentPreview.innerHTML = '<em>No AI content found for this item</em>';
+                    ttsPlayBtn.disabled = true;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading AI content:', error);
+                contentPreview.innerHTML = '<em>Error loading content</em>';
+                ttsPlayBtn.disabled = true;
+            });
+    }
+    
+    // Initialize AI TTS after page loads
+    setTimeout(initializeAITTS, 1000);
+    {% else %}
+    // Initialize standard audio player
     initializeAudioPlayer();
+    {% endif %}
     
     // Only initialize practice session after audio ends (it will be done in showQuestionsAfterAudio)
 </script>
