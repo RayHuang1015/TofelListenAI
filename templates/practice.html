@@ -49,47 +49,11 @@
             <div class="card-body audio-player">
                 <!-- Audio Player Controls -->
                 <div class="audio-controls mb-3">
-                    {% if content.type == 'ai_tpo_practice' %}
-                    <!-- AI Text-to-Speech Player for AI generated content -->
-                    <div class="ai-tts-player border rounded p-3 mb-3" style="background: #1a1a1a;">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <h6 class="mb-0 text-white">
-                                <i class="fas fa-robot text-primary me-2"></i>AI Generated Academic Content
-                            </h6>
-                            <span class="badge bg-success">Text-to-Speech</span>
-                        </div>
-                        <div class="mb-3">
-                            <div id="content-preview" class="text-light small" style="max-height: 100px; overflow-y: auto; background: #2d2d2d; padding: 10px; border-radius: 5px;">
-                                <em>Loading AI-generated content...</em>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <button id="tts-test-btn" class="btn btn-info btn-sm">
-                                <i class="fas fa-volume-up me-1"></i>測試聲音
-                            </button>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <button id="tts-play-btn" class="btn btn-success">
-                                <i class="fas fa-play me-2"></i>Play Academic Content
-                            </button>
-                            <button id="tts-pause-btn" class="btn btn-warning" style="display: none;">
-                                <i class="fas fa-pause me-2"></i>Pause
-                            </button>
-                            <button id="tts-stop-btn" class="btn btn-danger" style="display: none;">
-                                <i class="fas fa-stop me-2"></i>Stop
-                            </button>
-                            <div class="ms-auto text-white">
-                                <small id="tts-status">Ready to play AI content</small>
-                            </div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- Standard Audio Player for non-AI content -->
+                    <!-- Standard Audio Player for all content -->
                     <audio id="audio-player" controls class="w-100" preload="metadata">
                         <source src="{{ content.url }}" type="audio/mpeg">
                         <p>Your browser does not support the audio element.</p>
                     </audio>
-                    {% endif %}
                 </div>
                 
                 <!-- Player Controls -->

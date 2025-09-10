@@ -124,43 +124,132 @@ class AITPOContentGenerator:
         questions = []
         question_count = 5 if content_type == "conversation" else 6
         
+        # 英文主題映射
+        topic_map = {
+            "選課和學期規劃": "course registration",
+            "圖書館使用和研究": "library services", 
+            "宿舍生活問題": "dormitory issues",
+            "校園餐廳和飲食": "dining services",
+            "學術諮詢和專業選擇": "academic advising",
+            "校園工作機會": "campus employment",
+            "體育活動和健身": "athletics",
+            "社團活動參與": "student organizations",
+            "財務援助和獎學金": "financial aid",
+            "健康中心服務": "health services",
+            "校園設施使用": "campus facilities",
+            "交通和停車": "transportation",
+            "國際學生服務": "international student services",
+            "學習技巧和時間管理": "study skills",
+            "就業輔導和實習": "career counseling",
+            "經濟政策": "economic policy",
+            "基礎概念研究": "fundamental concepts",
+            "理論與實踐": "theory and practice",
+            "進化理論": "evolutionary theory",
+            "現代發展趨勢": "modern developments"
+        }
+        
+        english_topic = topic_map.get(topic, topic.lower())
+        english_subject = {
+            "生物學": "biology", "化學": "chemistry", "物理學": "physics",
+            "數學": "mathematics", "歷史學": "history", "心理學": "psychology",
+            "經濟學": "economics", "社會學": "sociology", "文學": "literature",
+            "藝術史": "art history", "環境科學": "environmental science",
+            "地質學": "geology", "天文學": "astronomy", "考古學": "archaeology",
+            "語言學": "linguistics", "哲學": "philosophy", "政治學": "political science",
+            "人類學": "anthropology"
+        }.get(subject, subject.lower())
+        
         for i in range(question_count):
             question_type = random.choice(self.question_types)
             
             if question_type == "main_idea":
-                question_text = f"這段{content_type}的主要目的是什麼？"
-                options = [
-                    f"解釋{topic}的基本概念",
-                    f"討論{subject}的應用方法", 
-                    f"比較不同的{topic}理論",
-                    f"介紹{subject}的歷史發展"
-                ]
+                if content_type == "conversation":
+                    question_text = "What is the main purpose of this conversation?"
+                    options = [
+                        f"To get information about {english_topic}",
+                        f"To discuss problems with {english_topic}",
+                        f"To make arrangements for {english_topic}",
+                        f"To complain about {english_topic}"
+                    ]
+                else:
+                    question_text = "What is the main topic of the lecture?"
+                    options = [
+                        f"The basic principles of {english_topic}",
+                        f"Recent developments in {english_topic}",
+                        f"The historical background of {english_topic}",
+                        f"Applications of {english_topic}"
+                    ]
+                    
             elif question_type == "supporting_detail":
-                question_text = f"根據對話/講座，關於{topic}的哪個細節是正確的？"
-                options = [
-                    f"{topic}的第一個特點是複雜性",
-                    f"{topic}在現代社會中很重要",
-                    f"研究{topic}需要特殊設備",
-                    f"{topic}的理論基礎很深厚"
-                ]
+                if content_type == "conversation":
+                    question_text = f"According to the conversation, what is true about {english_topic}?"
+                    options = [
+                        "It requires advance registration",
+                        "It is available to all students",
+                        "It has specific requirements",
+                        "It is offered year-round"
+                    ]
+                else:
+                    question_text = f"According to the professor, what is a key characteristic of {english_topic}?"
+                    options = [
+                        "It is highly complex",
+                        "It is widely applicable",
+                        "It requires specialized equipment",
+                        "It has theoretical foundations"
+                    ]
+                    
             elif question_type == "speaker_attitude":
-                question_text = "說話者對這個話題的態度是什麼？"
-                options = ["積極支持的", "謹慎懷疑的", "中性客觀的", "強烈反對的"]
-            elif question_type == "inference":
-                question_text = f"根據討論內容，我們可以推斷什麼？"
+                question_text = "What is the speaker's attitude toward the topic?"
                 options = [
-                    f"{topic}將會繼續發展",
-                    f"需要更多的相關研究",
-                    f"這個領域還有爭議",
-                    f"實際應用還有限制"
+                    "Enthusiastic",
+                    "Cautious",
+                    "Neutral",
+                    "Critical"
                 ]
-            else:
-                question_text = f"說話者為什麼提到{topic}？"
+                
+            elif question_type == "inference":
+                if content_type == "conversation":
+                    question_text = "What can be inferred from the conversation?"
+                    options = [
+                        "The student is satisfied with the information",
+                        "Additional steps will be required",
+                        "The problem has been resolved",
+                        "Further meetings will be necessary"
+                    ]
+                else:
+                    question_text = "What can be inferred about the topic discussed?"
+                    options = [
+                        "It will continue to develop rapidly",
+                        "More research is needed in this area",
+                        "There is controversy in the field",
+                        "Practical applications are limited"
+                    ]
+                    
+            elif question_type == "organization":
+                if content_type == "conversation":
+                    question_text = "How is the conversation organized?"
+                    options = [
+                        "Problem and solution",
+                        "Question and answer",
+                        "Cause and effect",
+                        "Comparison and contrast"
+                    ]
+                else:
+                    question_text = "How does the professor organize the information?"
+                    options = [
+                        "By presenting examples and explanations",
+                        "By comparing different theories",
+                        "By following a chronological order",
+                        "By describing problems and solutions"
+                    ]
+                    
+            else:  # connect_information
+                question_text = f"Why does the speaker mention {english_topic}?"
                 options = [
-                    "為了舉例說明觀點",
-                    "為了引入新話題", 
-                    "為了總結前面內容",
-                    "為了提出問題"
+                    "To provide an example",
+                    "To introduce a new topic",
+                    "To summarize previous information",
+                    "To present a contrasting view"
                 ]
             
             # 隨機選擇正確答案
@@ -176,7 +265,7 @@ class AITPOContentGenerator:
                 "question_type": question_type,
                 "options": options,
                 "correct_answer": correct_answer,
-                "explanation": f"根據{content_type}內容，正確答案是'{correct_option}'。這個答案最準確地反映了音頻中討論的主要內容。"
+                "explanation": f"According to the {content_type}, the correct answer is '{correct_option}'. This answer most accurately reflects the main content discussed in the audio."
             })
         
         return questions
