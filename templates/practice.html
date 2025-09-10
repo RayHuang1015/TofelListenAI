@@ -643,6 +643,15 @@
         ttsStopBtn.parentNode.replaceChild(newStopBtn, ttsStopBtn);
         
         newPlayBtn.addEventListener('click', function() {
+            // Check if we're resuming from pause first
+            if (speechSynthesis.paused) {
+                console.log('Resuming from pause');
+                speechSynthesis.resume();
+                ttsStatus.textContent = 'Playing academic content...';
+                newPlayBtn.style.display = 'none';
+                newPauseBtn.style.display = 'inline-block';
+                return;
+            }
             console.log('TTS Play button clicked');
             if (!window.speechSynthesis) {
                 alert('Text-to-speech not supported in this browser');
@@ -780,15 +789,11 @@
         
         newPauseBtn.addEventListener('click', function() {
             if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                console.log('Pausing TTS playback');
                 speechSynthesis.pause();
-                ttsStatus.textContent = 'Paused';
+                ttsStatus.textContent = 'Paused - Click Play to continue';
                 newPlayBtn.style.display = 'inline-block';
                 newPauseBtn.style.display = 'none';
-            } else if (speechSynthesis.paused) {
-                speechSynthesis.resume();
-                ttsStatus.textContent = 'Playing academic content...';
-                newPlayBtn.style.display = 'none';
-                newPauseBtn.style.display = 'inline-block';
             }
         });
         
