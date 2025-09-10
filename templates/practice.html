@@ -456,13 +456,13 @@
                         ttsPauseBtn.style.display = 'inline-block';
                         ttsStopBtn.style.display = 'inline-block';
                         
-                        // Create and configure speech
+                        // Create and configure multi-voice speech
                         const textToSpeak = window.aiContentText || fullText || contentData.text;
-                        console.log('Creating TTS utterance for text length:', textToSpeak.length);
-                        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                        utterance.rate = 0.8; // Slower for academic content
-                        utterance.pitch = 1.0;
-                        utterance.volume = 1.0;
+                        console.log('Starting multi-voice TTS for text length:', textToSpeak.length);
+                        
+                        // Use multi-voice TTS function
+                        playMultiVoiceTTS(textToSpeak, ttsStatus, ttsPlayBtn, ttsPauseBtn, ttsStopBtn);
+                        return;
                         
                         // Calculate estimated duration (approximately 150-200 words per minute)
                         const wordCount = textToSpeak.split(' ').length;
@@ -627,6 +627,164 @@
             });
     }
     
+    // Function to parse transcript into speaker segments
+    function parseTranscriptIntoSegments(text) {
+        const segments = [];
+        const lines = text.split('\n\n');
+        
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+            
+            // Identify speaker based on content patterns
+            let speaker = 'professor'; // default
+            
+            // Check for student voices patterns
+            if (line.includes('Professor,') || 
+                line.match(/^(Well|Um|I guess|I think|I was wondering|Because)/)) {
+                // Determine if it's a female or male student
+                if (line.includes('Professor, I was wondering') || 
+                    line.includes('Professor, because')) {
+                    speaker = 'female_student'; // Jessica, Emma, Sarah
+                } else {
+                    speaker = 'male_student'; // Michael, David
+                }
+            }
+            
+            segments.push({
+                text: line,
+                speaker: speaker
+            });
+        }
+        
+        return segments;
+    }
+    
+    // Function to play multi-voice TTS
+    function playMultiVoiceTTS(fullText, statusElement, playBtn, pauseBtn, stopBtn) {
+        const segments = parseTranscriptIntoSegments(fullText);
+        let currentSegment = 0;
+        let isPaused = false;
+        let currentUtterance = null;
+        
+        // Get available voices
+        const voices = speechSynthesis.getVoices();
+        const professorVoice = voices.find(voice => voice.name.includes('Mark') && voice.lang.includes('en-US')) ||
+                              voices.find(voice => voice.lang.includes('en-US') && voice.name.includes('Male')) ||
+                              voices.find(voice => voice.lang.includes('en-US')) ||
+                              voices[0];
+        
+        const femaleVoice = voices.find(voice => voice.lang.includes('en-US') && 
+                                       (voice.name.includes('Zira') || voice.name.includes('Female') || 
+                                        voice.name.includes('Susan') || voice.name.includes('Linda'))) ||
+                           voices.find(voice => voice.lang.includes('en') && voice.name.includes('Female')) ||
+                           professorVoice;
+        
+        const maleStudentVoice = voices.find(voice => voice.lang.includes('en-US') && 
+                                           voice.name.includes('David') && !voice.name.includes('Mark')) ||
+                                voices.find(voice => voice.lang.includes('en-US') && voice.name.includes('Male') && 
+                                          !voice.name.includes('Mark')) ||
+                                professorVoice;
+        
+        console.log('Selected voices:', {
+            professor: professorVoice?.name,
+            female: femaleVoice?.name,
+            male_student: maleStudentVoice?.name
+        });
+        
+        function playNextSegment() {
+            if (currentSegment >= segments.length || isPaused) {
+                if (currentSegment >= segments.length) {
+                    console.log('Multi-voice TTS playback finished');
+                    statusElement.textContent = 'Content finished';
+                    playBtn.style.display = 'inline-block';
+                    pauseBtn.style.display = 'none';
+                    stopBtn.style.display = 'none';
+                    showQuestionsAfterAudio();
+                }
+                return;
+            }
+            
+            const segment = segments[currentSegment];
+            currentUtterance = new SpeechSynthesisUtterance(segment.text);
+            currentUtterance.rate = 0.9;
+            currentUtterance.pitch = 1.0;
+            currentUtterance.volume = 1.0;
+            
+            // Select voice based on speaker
+            switch (segment.speaker) {
+                case 'female_student':
+                    currentUtterance.voice = femaleVoice;
+                    currentUtterance.pitch = 1.2; // Higher pitch for female voice
+                    break;
+                case 'male_student':
+                    currentUtterance.voice = maleStudentVoice;
+                    currentUtterance.pitch = 1.1; // Slightly higher than professor
+                    break;
+                default: // professor
+                    currentUtterance.voice = professorVoice;
+                    currentUtterance.pitch = 1.0;
+                    break;
+            }
+            
+            currentUtterance.onend = function() {
+                currentSegment++;
+                setTimeout(playNextSegment, 300); // Small pause between speakers
+            };
+            
+            currentUtterance.onerror = function(event) {
+                console.error('TTS error in segment', currentSegment, ':', event.error);
+                currentSegment++;
+                setTimeout(playNextSegment, 100);
+            };
+            
+            speechSynthesis.speak(currentUtterance);
+            console.log('Playing segment', currentSegment + 1, 'of', segments.length, 'with', segment.speaker, 'voice');
+        }
+        
+        // Set up controls
+        statusElement.textContent = 'Playing multi-voice academic content...';
+        playBtn.style.display = 'none';
+        pauseBtn.style.display = 'inline-block';
+        stopBtn.style.display = 'inline-block';
+        
+        // Start playback
+        playNextSegment();
+        
+        // Override pause button for multi-voice
+        pauseBtn.onclick = function() {
+            if (!isPaused) {
+                isPaused = true;
+                speechSynthesis.cancel();
+                statusElement.textContent = 'Paused - Click Play to continue';
+                playBtn.style.display = 'inline-block';
+                pauseBtn.style.display = 'none';
+            }
+        };
+        
+        // Override play button for resume
+        playBtn.onclick = function() {
+            if (isPaused) {
+                isPaused = false;
+                statusElement.textContent = 'Playing multi-voice academic content...';
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'inline-block';
+                playNextSegment();
+            }
+        };
+        
+        // Override stop button
+        stopBtn.onclick = function() {
+            isPaused = true;
+            currentSegment = segments.length; // End playback
+            speechSynthesis.cancel();
+            statusElement.textContent = 'Stopped';
+            playBtn.style.display = 'inline-block';
+            pauseBtn.style.display = 'none';
+            stopBtn.style.display = 'none';
+        };
+    }
+
     // Function to set up TTS controls with content
     function setupTTSControls() {
         const ttsPlayBtn = document.getElementById('tts-play-btn');
@@ -665,22 +823,13 @@
             ttsPauseBtn.style.display = 'inline-block';
             ttsStopBtn.style.display = 'inline-block';
             
-            // Use the stored text content - break into smaller chunks if too long
+            // Use the stored text content with multi-voice
             const fullText = window.aiContentText;
-            console.log('Creating TTS utterance for text length:', fullText.length);
+            console.log('Starting multi-voice TTS for text length:', fullText.length);
             
-            // Split very long text into manageable chunks (Chrome has limits)
-            const maxChunkLength = 32000; // Chrome TTS limit
-            let textToSpeak = fullText;
-            if (fullText.length > maxChunkLength) {
-                textToSpeak = fullText.substring(0, maxChunkLength);
-                console.log('Text truncated to fit TTS limits, new length:', textToSpeak.length);
-            }
-            
-            const utterance = new SpeechSynthesisUtterance(textToSpeak);
-            utterance.rate = 0.9; // Slightly faster for long content
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
+            // Use multi-voice TTS function
+            playMultiVoiceTTS(fullText, ttsStatus, newPlayBtn, newPauseBtn, newStopBtn);
+            return;
             
             // Calculate estimated duration
             const wordCount = textToSpeak.split(' ').length;
