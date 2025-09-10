@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}{{ content.description }} - ABC News Practice{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/web-tts-player.css') }}">
+<style>
+    .abc-header {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .abc-logo {
+        background: rgba(255,255,255,0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: bold;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+    .news-info {
+        background: var(--bs-dark);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .question-card {
+        border-left: 4px solid #dc3545;
+        margin-bottom: 1.5rem;
+    }
+    .question-card.correct {
+        border-left-color: #28a745;
+        background: rgba(40, 167, 69, 0.1);
+    }
+    .question-card.incorrect {
+        border-left-color: #dc3545;
+        background: rgba(220, 53, 69, 0.1);
+    }
+    .audio-player {
+        background: var(--bs-dark);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .control-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- ABC News Header -->
+    <div class="abc-header">
+        <div class="abc-logo">
+            <i class="fas fa-tv me-2"></i>ABC News Live
+        </div>
+        <h1 class="mb-3">{{ content.description }}</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <p class="mb-1">
+                    <i class="fas fa-calendar me-2"></i>
+                    {{ content.published_date.strftime('%B %d, %Y') if content.published_date else 'Recent' }}
+                </p>
+                {% if content.category %}
+                <p class="mb-1">
+                    <i class="fas fa-tag me-2"></i>
+                    {{ content.category|title }}
+                </p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <p class="mb-1">
+                    <i class="fas fa-clock me-2"></i>
+                    Duration: {{ (content.duration // 60) }}:{{ '{:02d}'.format(content.duration % 60) if content.duration else '0:00' }}
+                </p>
+                <p class="mb-1">
+                    <i class="fas fa-layer-group me-2"></i>
+                    Level: {{ content.difficulty_level|title if content.difficulty_level else 'Intermediate' }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Player Section -->
+    <div class="audio-player">
+        <h4 class="mb-3">
+            <i class="fas fa-headphones text-danger me-2"></i>
+            Listen to ABC News Report
+        </h4>
+        
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                <div class="d-flex justify-content-center gap-2">
+                    <button id="tts-play-btn" class="btn btn-danger control-btn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button id="tts-pause-btn" class="btn btn-warning control-btn" style="display: none;">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                    <button id="tts-stop-btn" class="btn btn-secondary control-btn" style="display: none;">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div id="tts-status" class="text-muted mb-2">Click Play to listen to the news report</div>
+                <div class="progress" style="height: 8px;">
+                    <div id="tts-progress" class="progress-bar bg-danger" style="width: 0%"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <small id="current-time" class="text-muted">0:00</small>
+                    <small id="total-time" class="text-muted">
+                        {{ (content.duration // 60) }}:{{ '{:02d}'.format(content.duration % 60) if content.duration else '0:00' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Questions Section -->
+    {% if questions %}
+    <div class="questions-section">
+        <h3 class="mb-4">
+            <i class="fas fa-question-circle text-danger me-2"></i>
+            TOEFL Listening Questions ({{ questions|length }})
+        </h3>
+        
+        <form id="practice-form" onsubmit="submitAnswers(event)">
+            {% for question in questions %}
+            <div class="card question-card" id="question-{{ loop.index }}">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        Question {{ loop.index }}
+                        <span class="badge bg-secondary ms-2">{{ question.question_type|replace('_', ' ')|title }}</span>
+                    </h5>
+                    <p class="card-text">{{ question.question_text }}</p>
+                    
+                    {% if question.options %}
+                    <div class="mt-3">
+                        {% for option in question.options %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" 
+                                   name="question_{{ question.id }}" 
+                                   id="q{{ question.id }}_{{ loop.index0 }}" 
+                                   value="{{ loop.index0 }}">
+                            <label class="form-check-label" for="q{{ question.id }}_{{ loop.index0 }}">
+                                {{ option }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div id="answer-feedback-{{ question.id }}" class="mt-3" style="display: none;">
+                        <!-- Feedback will be shown here -->
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-danger btn-lg">
+                    <i class="fas fa-check me-2"></i>Submit Answers
+                </button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Questions for this ABC News content are being prepared. Please check back soon!
+    </div>
+    {% endif %}
+
+    <!-- Navigation -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Continue Your Practice</h5>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <a href="{{ url_for('abc_news_area') }}" class="btn btn-outline-danger">
+                            <i class="fas fa-arrow-left me-1"></i>Back to ABC News
+                        </a>
+                        <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-robot me-1"></i>AI TPO Practice
+                        </a>
+                        {% if session.user_id %}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-chart-line me-1"></i>View Progress
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- News Content for TTS -->
+<script>
+window.abcNewsContent = {{ content.content_metadata|tojson if content.content_metadata else '{}' }};
+window.currentContentId = {{ content.id }};
+
+// Store news transcript for TTS
+{% if content.content_metadata and content.content_metadata.get('transcript') %}
+window.aiContentText = {{ content.content_metadata.transcript|tojson }};
+{% else %}
+window.aiContentText = "This is a sample ABC News report. The actual news content will be played here using text-to-speech technology. This allows you to practice TOEFL listening skills with current news content from ABC News Live.";
+{% endif %}
+</script>
+
+<script src="{{ url_for('static', filename='js/web-tts-player.js') }}"></script>
+<script>
+// Initialize TTS player for ABC News
+document.addEventListener('DOMContentLoaded', function() {
+    setupTTSControls();
+});
+
+function submitAnswers(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const answers = {};
+    
+    // Collect answers
+    for (let [key, value] of formData.entries()) {
+        answers[key] = value;
+    }
+    
+    // Here you would typically send to server for scoring
+    // For now, just show simple feedback
+    alert('Answers submitted! Check individual questions for feedback.');
+    
+    // Scroll to top
+    window.scrollTo(0, 0);
+}
+</script>
+{% endblock %}

@@ -106,6 +106,43 @@ def dashboard():
                          avg_score=avg_score,
                          scores=scores)
 
+@app.route('/abc_news_area')
+def abc_news_area():
+    """ABC News Area - dedicated section for ABC News Live content"""
+    # Get ABC News content from 2019 to present
+    abc_news_content = ContentSource.query.filter_by(name='ABC News').order_by(ContentSource.published_date.desc()).all()
+    
+    # Group by year for better organization
+    news_by_year = {}
+    for content in abc_news_content:
+        if content.published_date:
+            year = content.published_date.year
+            if year not in news_by_year:
+                news_by_year[year] = []
+            news_by_year[year].append(content)
+    
+    # Sort years in descending order
+    sorted_years = sorted(news_by_year.keys(), reverse=True)
+    
+    return render_template('abc_news_area.html', 
+                         news_by_year=news_by_year, 
+                         sorted_years=sorted_years,
+                         total_news=len(abc_news_content))
+
+@app.route('/abc_news/<int:news_id>')
+def abc_news_practice(news_id):
+    """Practice with specific ABC News content"""
+    content = ContentSource.query.get_or_404(news_id)
+    if content.name != 'ABC News':
+        flash('Content not found in ABC News Area', 'error')
+        return redirect(url_for('abc_news_area'))
+    
+    questions = Question.query.filter_by(content_id=content.id).all()
+    
+    return render_template('abc_news_practice.html', 
+                         content=content, 
+                         questions=questions)
+
 @app.route('/select_practice')
 def select_practice():
     """Practice selection interface with source and topic filters"""
@@ -118,7 +155,7 @@ def select_practice():
     source_groups = {
         'TPO Tests': [s[0] for s in sources if 'TPO' in s[0]],
         'TED Talks': [s[0] for s in sources if 'TED' in s[0]],
-        'News Sources': [s[0] for s in sources if s[0] in ['CNN', 'BBC', 'ABC']],
+        'News Sources': [s[0] for s in sources if s[0] in ['CNN', 'BBC', 'ABC News']],
         'Podcasts': [s[0] for s in sources if 'Podcast' in s[0]],
         'Educational': [s[0] for s in sources if s[0] in ['Discovery', 'National Geographic']]
     }
