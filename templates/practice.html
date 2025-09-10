@@ -191,6 +191,37 @@
                     </div>
                     {% elif question.question_type == 'multiple_answer' %}
                     <div class="options-container">
+                        <!-- Multiple Answer Selection Instruction -->
+                        {% if question.correct_answer and ',' in question.correct_answer %}
+                            {% set correct_count = question.correct_answer.split(',') | length %}
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-check-square me-2"></i>
+                                <strong>Choose {{ correct_count }} answer{{ 's' if correct_count > 1 else '' }}.</strong>
+                                <small class="d-block mt-1">Select exactly {{ correct_count }} option{{ 's' if correct_count > 1 else '' }} for this question.</small>
+                            </div>
+                        {% else %}
+                            <!-- Fallback: extract from question text -->
+                            {% if 'Choose 2' in question.question_text %}
+                                <div class="alert alert-info mb-3">
+                                    <i class="fas fa-check-square me-2"></i>
+                                    <strong>Choose 2 answers.</strong>
+                                    <small class="d-block mt-1">Select exactly 2 options for this question.</small>
+                                </div>
+                            {% elif 'Choose 3' in question.question_text %}
+                                <div class="alert alert-info mb-3">
+                                    <i class="fas fa-check-square me-2"></i>
+                                    <strong>Choose 3 answers.</strong>
+                                    <small class="d-block mt-1">Select exactly 3 options for this question.</small>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning mb-3">
+                                    <i class="fas fa-check-square me-2"></i>
+                                    <strong>Multiple answers required.</strong>
+                                    <small class="d-block mt-1">Select multiple options for this question.</small>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                        
                         {% for option in question.options %}
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" 
