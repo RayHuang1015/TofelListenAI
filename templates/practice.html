@@ -162,7 +162,11 @@
                             <!-- Multi-select questions -->
                             <div class="alert alert-info mb-3">
                                 <i class="fas fa-info-circle me-2"></i>
-                                <strong>Choose {{ '2' if '2 answers' in question.question_text else '3' if '3 answers' in question.question_text else 'multiple' }} answers.</strong>
+                                <strong>
+                                    {% set correct_count = question.correct_answer.split(',') | length %}
+                                    Choose {{ correct_count }} answer{{ 's' if correct_count > 1 else '' }}.
+                                </strong>
+                                <small class="d-block mt-1">This question requires exactly {{ correct_count }} correct selection{{ 's' if correct_count > 1 else '' }}.</small>
                             </div>
                             {% for option in question.options %}
                             <div class="form-check mb-2">
@@ -648,11 +652,20 @@
             ttsPauseBtn.style.display = 'inline-block';
             ttsStopBtn.style.display = 'inline-block';
             
-            // Use the stored text content
-            const textToSpeak = window.aiContentText;
-            console.log('Creating TTS utterance for text length:', textToSpeak.length);
+            // Use the stored text content - break into smaller chunks if too long
+            const fullText = window.aiContentText;
+            console.log('Creating TTS utterance for text length:', fullText.length);
+            
+            // Split very long text into manageable chunks (Chrome has limits)
+            const maxChunkLength = 32000; // Chrome TTS limit
+            let textToSpeak = fullText;
+            if (fullText.length > maxChunkLength) {
+                textToSpeak = fullText.substring(0, maxChunkLength);
+                console.log('Text truncated to fit TTS limits, new length:', textToSpeak.length);
+            }
+            
             const utterance = new SpeechSynthesisUtterance(textToSpeak);
-            utterance.rate = 0.8;
+            utterance.rate = 0.9; // Slightly faster for long content
             utterance.pitch = 1.0;
             utterance.volume = 1.0;
             
@@ -680,20 +693,24 @@
             }
             
             utterance.onstart = function() {
-                console.log('AI TTS started successfully');
+                console.log('AI TTS started successfully - audio is now playing');
                 ttsStatus.textContent = 'Playing academic content...';
                 
                 const currentTimeSpan = document.getElementById('current-time');
                 const durationSpan = document.getElementById('duration');
                 
+                console.log('Setting up time display, estimated duration:', estimatedDuration);
+                
                 if (durationSpan) {
                     const minutes = Math.floor(estimatedDuration / 60);
                     const seconds = estimatedDuration % 60;
                     durationSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    console.log('Duration set to:', durationSpan.textContent);
                 }
                 
                 if (currentTimeSpan) {
                     currentTime = 0;
+                    currentTimeSpan.textContent = '0:00';
                     timeInterval = setInterval(function() {
                         currentTime++;
                         const minutes = Math.floor(currentTime / 60);
@@ -708,16 +725,29 @@
             };
             
             utterance.onend = function() {
+                console.log('TTS playback finished');
                 ttsStatus.textContent = 'Content finished';
-                ttsPlayBtn.style.display = 'inline-block';
-                ttsPauseBtn.style.display = 'none';
-                ttsStopBtn.style.display = 'none';
+                newPlayBtn.style.display = 'inline-block';
+                newPauseBtn.style.display = 'none';
+                newStopBtn.style.display = 'none';
                 
                 if (timeInterval) {
                     clearInterval(timeInterval);
                 }
                 
                 showQuestionsAfterAudio();
+            };
+            
+            utterance.onerror = function(event) {
+                console.error('TTS error:', event.error);
+                ttsStatus.textContent = 'Playback error: ' + event.error;
+                newPlayBtn.style.display = 'inline-block';
+                newPauseBtn.style.display = 'none';
+                newStopBtn.style.display = 'none';
+                
+                if (timeInterval) {
+                    clearInterval(timeInterval);
+                }
             };
             
             // Ensure voices are loaded before speaking
@@ -748,9 +778,9 @@
         newStopBtn.addEventListener('click', function() {
             speechSynthesis.cancel();
             ttsStatus.textContent = 'Stopped';
-            ttsPlayBtn.style.display = 'inline-block';
-            ttsPauseBtn.style.display = 'none';
-            ttsStopBtn.style.display = 'none';
+            newPlayBtn.style.display = 'inline-block';
+            newPauseBtn.style.display = 'none';
+            newStopBtn.style.display = 'none';
             
             // Clear time interval and reset time
             const currentTimeSpan = document.getElementById('current-time');
