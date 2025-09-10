@@ -92,17 +92,22 @@
     </div>
 
     {% if total_news == 0 %}
-    <!-- No content message -->
+    <!-- No content message with sync option -->
     <div class="row">
         <div class="col-12">
             <div class="alert alert-info text-center">
                 <i class="fas fa-info-circle fa-2x mb-3"></i>
-                <h4>ABC News Content Coming Soon</h4>
-                <p>We're preparing comprehensive ABC News Live content from 2019 to present.<br>
-                Check back soon for the latest news-based TOEFL listening practice!</p>
-                <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-robot me-2"></i>Try AI TPO Practice Meanwhile
-                </a>
+                <h4>ABC News Live Content</h4>
+                <p>Ready to load comprehensive ABC News Live content from 2019 to present.<br>
+                Click the button below to fetch real ABC News videos from YouTube!</p>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="{{ url_for('sync_abc_news') }}" class="btn btn-danger btn-lg">
+                        <i class="fas fa-download me-2"></i>Load ABC News Content
+                    </a>
+                    <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-robot me-2"></i>Try AI TPO Practice Meanwhile
+                    </a>
+                </div>
             </div>
         </div>
     </div>

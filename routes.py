@@ -129,6 +129,22 @@ def abc_news_area():
                          sorted_years=sorted_years,
                          total_news=len(abc_news_content))
 
+@app.route('/sync_abc_news')
+def sync_abc_news():
+    """Manual sync endpoint for ABC News content"""
+    try:
+        from services.abc_news_integration import ABCNewsIntegration
+        
+        abc_integration = ABCNewsIntegration()
+        results = abc_integration.update_abc_news_area()
+        
+        flash(f"ABC News sync completed! Fetched: {results.get('total_fetched', 0)}, Saved: {results.get('total_saved', 0)}", 'success')
+        
+    except Exception as e:
+        flash(f"Error syncing ABC News content: {e}", 'error')
+    
+    return redirect(url_for('abc_news_area'))
+
 @app.route('/abc_news/<int:news_id>')
 def abc_news_practice(news_id):
     """Practice with specific ABC News content"""
