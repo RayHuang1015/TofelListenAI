@@ -1055,9 +1055,9 @@ def view_daily_edition(edition_id):
     edition = DailyEdition.query.get_or_404(edition_id)
     segments = EditionSegment.query.filter_by(edition_id=edition_id).order_by(EditionSegment.seq).all()
     
-    # 臨時重定向到每日新聞區域（模板尚未建立）
-    flash(f'Edition: {edition.title} - {len(segments)} segments', 'info')
-    return redirect(url_for('daily_news_area'))
+    return render_template('daily_edition_player.html', 
+                         edition=edition, 
+                         segments=segments)
 
 
 @app.route('/restore_abc_news')

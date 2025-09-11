@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Listen & Practice - {{ edition.title }} - TOEFL Listening Practice{% endblock %}
+
+{% block content %}
+<!-- Edition Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-2">
+                    <i class="fas fa-headphones me-2"></i>
+                    {{ edition.title }}
+                </h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-calendar me-1"></i>{{ edition.date.strftime('%B %d, %Y') }} | 
+                    <i class="fas fa-clock me-1"></i>{{ "%.1f"|format(edition.total_duration_sec/3600) }} hours |
+                    <i class="fas fa-list me-1"></i>{{ segments|length }} segments
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('daily_news_area') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Daily News
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Audio Player Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-play-circle me-2"></i>Audio Player
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Audio Element -->
+                <audio id="audio-player" class="w-100 mb-3" controls preload="metadata">
+                    <source src="/static/audio/daily_edition_{{ edition.id }}.mp3" type="audio/mpeg">
+                    <source src="/static/audio/daily_edition_{{ edition.id }}.wav" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+                
+                <!-- Playback Controls -->
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary" id="play-pause-btn">
+                                <i class="fas fa-play"></i> Play
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="stop-btn">
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                            <button type="button" class="btn btn-outline-info" id="replay-btn">
+                                <i class="fas fa-redo"></i> Replay
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <label for="speed-control" class="form-label me-2 mb-0">Speed:</label>
+                            <select id="speed-control" class="form-select" style="width: auto;">
+                                <option value="0.5">0.5x</option>
+                                <option value="0.75">0.75x</option>
+                                <option value="1" selected>1x</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2x</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Time Display -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span id="current-time" class="text-muted">00:00</span>
+                            <span id="duration" class="text-muted">{{ "%.0f"|format(edition.total_duration_sec/60) }}:{{ "%02d"|format(edition.total_duration_sec%60) }}</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div id="progress-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Segments List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list-ol me-2"></i>Content Segments ({{ segments|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if segments %}
+                <div class="row">
+                    {% for segment in segments %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 segment-card" data-start-time="{{ segment.start_time_sec }}" data-duration="{{ segment.duration_sec }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0">Segment {{ segment.seq }}</h6>
+                                    <small class="text-muted">{{ "%.0f"|format(segment.duration_sec/60) }}:{{ "%02d"|format(segment.duration_sec%60) }}</small>
+                                </div>
+                                
+                                <p class="card-text">
+                                    {{ segment.content[:150] }}{% if segment.content|length > 150 %}...{% endif %}
+                                </p>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>Start: {{ "%.0f"|format(segment.start_time_sec/60) }}:{{ "%02d"|format(segment.start_time_sec%60) }}
+                                    </small>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-sm btn-primary jump-to-segment" data-time="{{ segment.start_time_sec }}">
+                                        <i class="fas fa-play me-1"></i>Jump to This Segment
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary toggle-transcript" data-target="transcript-{{ segment.id }}">
+                                        <i class="fas fa-eye me-1"></i>Show Transcript
+                                    </button>
+                                </div>
+                                
+                                <!-- Hidden Transcript -->
+                                <div id="transcript-{{ segment.id }}" class="mt-3 p-3 bg-light rounded" style="display: none;">
+                                    <small class="text-muted d-block mb-2">Full Transcript:</small>
+                                    {{ segment.content }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h4>No Segments Available</h4>
+                    <p class="text-muted">This edition doesn't have any segments loaded yet. Please try again later.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Practice Instructions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5 class="alert-heading">
+                <i class="fas fa-lightbulb me-2"></i>How to Practice
+            </h5>
+            <ul class="mb-0">
+                <li><strong>Listen First:</strong> Play the complete audio without reading transcripts</li>
+                <li><strong>Take Notes:</strong> Practice note-taking skills while listening</li>
+                <li><strong>Jump to Segments:</strong> Click on specific segments to focus on difficult parts</li>
+                <li><strong>Adjust Speed:</strong> Use slower speeds for better comprehension</li>
+                <li><strong>Review Transcripts:</strong> Check transcripts after listening to verify understanding</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const audio = document.getElementById('audio-player');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const replayBtn = document.getElementById('replay-btn');
+    const speedControl = document.getElementById('speed-control');
+    const currentTimeDisplay = document.getElementById('current-time');
+    const progressBar = document.getElementById('progress-bar');
+    
+    // Play/Pause functionality
+    playPauseBtn.addEventListener('click', function() {
+        if (audio.paused) {
+            audio.play();
+            this.innerHTML = '<i class="fas fa-pause"></i> Pause';
+        } else {
+            audio.pause();
+            this.innerHTML = '<i class="fas fa-play"></i> Play';
+        }
+    });
+    
+    // Stop functionality
+    stopBtn.addEventListener('click', function() {
+        audio.pause();
+        audio.currentTime = 0;
+        playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+    });
+    
+    // Replay functionality
+    replayBtn.addEventListener('click', function() {
+        audio.currentTime = 0;
+        audio.play();
+        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+    });
+    
+    // Speed control
+    speedControl.addEventListener('change', function() {
+        audio.playbackRate = parseFloat(this.value);
+    });
+    
+    // Time update
+    audio.addEventListener('timeupdate', function() {
+        const currentMinutes = Math.floor(audio.currentTime / 60);
+        const currentSeconds = Math.floor(audio.currentTime % 60);
+        currentTimeDisplay.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+        
+        const progress = (audio.currentTime / audio.duration) * 100;
+        progressBar.style.width = progress + '%';
+    });
+    
+    // Audio ended
+    audio.addEventListener('ended', function() {
+        playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+    });
+    
+    // Jump to segment functionality
+    document.querySelectorAll('.jump-to-segment').forEach(button => {
+        button.addEventListener('click', function() {
+            const time = parseFloat(this.dataset.time);
+            audio.currentTime = time;
+            audio.play();
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+        });
+    });
+    
+    // Toggle transcript functionality
+    document.querySelectorAll('.toggle-transcript').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.dataset.target;
+            const transcript = document.getElementById(targetId);
+            
+            if (transcript.style.display === 'none') {
+                transcript.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Hide Transcript';
+            } else {
+                transcript.style.display = 'none';
+                this.innerHTML = '<i class="fas fa-eye me-1"></i>Show Transcript';
+            }
+        });
+    });
+    
+    // Highlight current segment (optional enhancement)
+    audio.addEventListener('timeupdate', function() {
+        const currentTime = audio.currentTime;
+        document.querySelectorAll('.segment-card').forEach(card => {
+            const startTime = parseFloat(card.dataset.startTime);
+            const duration = parseFloat(card.dataset.duration);
+            const endTime = startTime + duration;
+            
+            if (currentTime >= startTime && currentTime <= endTime) {
+                card.classList.add('border-primary', 'bg-light');
+            } else {
+                card.classList.remove('border-primary', 'bg-light');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
