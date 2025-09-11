@@ -865,6 +865,82 @@ def start_news_sync():
     return redirect(url_for('daily_news_area'))
 
 
+@app.route('/api/backfill/trigger', methods=['POST'])
+def trigger_backfill():
+    """Trigger historical backfill process for all dates 2018-2025"""
+    try:
+        from services.real_content_providers import fetch_real_content_for_date
+        from datetime import date, timedelta
+        import threading
+        
+        # Start and end dates
+        start_date = date(2018, 1, 1)
+        end_date = date(2025, 9, 11)
+        
+        def generate_batch(start_batch_date: date, end_batch_date: date):
+            """Generate content for a batch of dates"""
+            from app import app
+            with app.app_context():
+                current_date = start_batch_date
+                batch_count = 0
+                while current_date <= end_batch_date:
+                    try:
+                        result = fetch_real_content_for_date(current_date)
+                        logging.info(f"Generated content for {current_date}: {result.get('items_fetched', 0)} items saved: {result.get('items_saved', 0)}")
+                        batch_count += 1
+                    except Exception as e:
+                        logging.error(f"Error generating content for {current_date}: {e}")
+                    current_date += timedelta(days=1)
+                logging.info(f"Completed batch: {batch_count} days processed")
+        
+        # Calculate total days
+        total_days = (end_date - start_date).days + 1
+        
+        # Start background thread for batch processing
+        thread = threading.Thread(
+            target=generate_batch,
+            args=(start_date, end_date),
+            daemon=True
+        )
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'total_days': total_days,
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
+            'message': f'Started historical content generation for all {total_days} days (2018-2025)'
+        })
+        
+    except Exception as e:
+        logging.error(f"Error triggering backfill: {e}")
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+@app.route('/api/backfill/status')
+def backfill_status():
+    """Check status of historical backfill process"""
+    try:
+        from services.background_task_manager import BackgroundTaskManager
+        task_manager = BackgroundTaskManager()
+        
+        # Get backfill status
+        status = task_manager.get_backfill_status()
+        
+        return jsonify({
+            'status': 'success',
+            'backfill_status': status
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting backfill status: {e}")
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
 @app.route('/api/test_historical/<date_str>')
 def test_historical_news(date_str):
     """Test endpoint to generate and compose historical news for a specific date"""
