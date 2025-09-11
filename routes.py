@@ -166,9 +166,12 @@ def daily_news_area():
     try:
         from models import DailyEdition, EditionSegment, ProviderSource
         
-        # Get limited daily editions, ordered by date (newest first) - use pagination for performance
+        # Get limited daily editions with eager loading to avoid N+1 queries  
         query_start = time.time()
-        daily_editions = DailyEdition.query.order_by(DailyEdition.id.desc()).limit(50).all()
+        from sqlalchemy.orm import selectinload
+        daily_editions = DailyEdition.query.options(
+            selectinload(DailyEdition.segments)
+        ).order_by(DailyEdition.id.desc()).limit(30).all()  # Reduce to 30 for better performance
         logging.info(f"Daily editions query took {(time.time() - query_start) * 1000:.2f}ms")
         
         # Group by year for better organization
@@ -182,21 +185,27 @@ def daily_news_area():
         # Sort years in descending order
         sorted_years = sorted(editions_by_year.keys(), reverse=True)
         
-        # Simplified statistics to avoid expensive aggregations
-        total_editions = len(daily_editions)
+        # Optimized statistics calculation
+        total_editions = len(daily_editions)  # Use limited set for display
         total_duration = sum(edition.total_duration_sec for edition in daily_editions)
         avg_duration = total_duration / total_editions if total_editions > 0 else 0
         
-        # Skip providers for now to isolate performance issue
-        providers = []
+        # Get actual database statistics for accurate totals
+        stats_start = time.time()
+        actual_total_editions = DailyEdition.query.count()
+        actual_avg_duration = db.session.query(db.func.avg(DailyEdition.total_duration_sec)).scalar() or 0
+        logging.info(f"Stats query took {(time.time() - stats_start) * 1000:.2f}ms")
+        
+        # Get limited providers for display
+        providers = ProviderSource.query.filter_by(active=True).limit(10).all()
         
         template_start = time.time()
         result = render_template('daily_news_area.html', 
                              editions_by_year=editions_by_year, 
                              sorted_years=sorted_years,
-                             total_editions=total_editions,
+                             total_editions=actual_total_editions,  # Use actual database total
                              total_duration=total_duration,
-                             avg_duration=avg_duration,
+                             avg_duration=actual_avg_duration,  # Use accurate average 
                              providers=providers)
         logging.info(f"Template render took {(time.time() - template_start) * 1000:.2f}ms")
         

@@ -266,15 +266,29 @@ class DailyEditionComposer:
                 used_regions.add(item.content.region)
         
         # Second pass: Fill remaining time with best available content
-        if total_duration < self.MIN_DURATION:
+        if total_duration < self.TARGET_DURATION:
             remaining_items = [item for item in ranked_items if item not in selected]
             
+            # More aggressive approach to reach target duration
             for item in remaining_items:
-                if total_duration >= self.MAX_DURATION:
+                if total_duration >= self.TARGET_DURATION:
                     break
+                # Accept content that gets us closer to target, even if it exceeds slightly
                 if total_duration + item.duration_sec <= self.MAX_DURATION:
                     selected.append(item)
                     total_duration += item.duration_sec
+            
+            # Third pass: If still short, cycle through the best items again
+            if total_duration < self.MIN_DURATION and selected:
+                self.logger.info(f"Still short at {total_duration}s, cycling through content again")
+                best_items = sorted(ranked_items, key=lambda x: x.score, reverse=True)[:20]
+                
+                for item in best_items:
+                    if total_duration >= self.TARGET_DURATION:
+                        break
+                    if item not in selected and total_duration + item.duration_sec <= self.MAX_DURATION:
+                        selected.append(item)
+                        total_duration += item.duration_sec
         
         # Sort final selection by category and region for better flow
         selected.sort(key=lambda x: (
@@ -462,20 +476,52 @@ class DailyEditionComposer:
         if current_duration == target_duration:
             return selected
         elif current_duration < target_duration:
-            # Need to add more content - repeat the last item to fill gap
+            # Need to add more content - cycle through all items to fill large gaps
             gap = target_duration - current_duration
+            self.logger.info(f"Need to fill {gap} seconds gap to reach target {target_duration}s")
+            
             if gap > 0 and selected:
-                # Duplicate last item with adjusted duration
-                last_item = selected[-1]
-                filler_duration = min(gap, last_item.duration_sec)
-                filler_item = ContentRanking(
-                    content=last_item.content,
-                    score=last_item.score - 10,  # Lower score for filler
-                    duration_sec=filler_duration,
-                    category_priority=last_item.category_priority,
-                    region_priority=last_item.region_priority
-                )
-                selected.append(filler_item)
+                filler_items = []
+                remaining_gap = gap
+                cycle_index = 0
+                
+                # Cycle through selected items multiple times to fill the gap
+                while remaining_gap > 60:  # Stop when gap is less than 1 minute
+                    source_item = selected[cycle_index % len(selected)]
+                    
+                    # Use full duration or remaining gap, whichever is smaller
+                    filler_duration = min(remaining_gap, source_item.duration_sec)
+                    
+                    filler_item = ContentRanking(
+                        content=source_item.content,
+                        score=source_item.score - 5 - (cycle_index // len(selected)),  # Gradually reduce score
+                        duration_sec=filler_duration,
+                        category_priority=source_item.category_priority,
+                        region_priority=source_item.region_priority
+                    )
+                    
+                    filler_items.append(filler_item)
+                    remaining_gap -= filler_duration
+                    cycle_index += 1
+                    
+                    # Safety check to prevent infinite loop
+                    if cycle_index > len(selected) * 10:  # Max 10 cycles
+                        break
+                
+                # Add a final small filler if needed
+                if remaining_gap > 0:
+                    last_filler = ContentRanking(
+                        content=selected[0].content,
+                        score=selected[0].score - 10,
+                        duration_sec=remaining_gap,
+                        category_priority=selected[0].category_priority,
+                        region_priority=selected[0].region_priority
+                    )
+                    filler_items.append(last_filler)
+                
+                selected.extend(filler_items)
+                self.logger.info(f"Added {len(filler_items)} filler items to reach target duration")
+                
         else:
             # Need to trim content - adjust last item duration
             excess = current_duration - target_duration
@@ -495,6 +541,9 @@ class DailyEditionComposer:
                         if current < target_duration:
                             selected[-1].duration_sec += (target_duration - current)
                             
+        # Verify final duration
+        final_duration = sum(item.duration_sec for item in selected)
+        self.logger.info(f"Final duration after adjustment: {final_duration}s (target: {target_duration}s)")
         return selected
 
 
