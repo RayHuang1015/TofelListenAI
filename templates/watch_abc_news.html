@@ -93,8 +93,13 @@
                     </div>
                     <div class="col-md-4 text-md-end">
                         <div class="mt-2">
+                            {% if 'archive.org' in content.url %}
+                            <span class="badge bg-success">真實當日新聞</span>
+                            <span class="badge bg-warning text-dark ms-2">Internet Archive</span>
+                            {% else %}
                             <span class="badge bg-success">中英文字幕</span>
                             <span class="badge bg-info ms-2">本地播放</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -113,6 +118,16 @@
                         <iframe 
                             id="youtube-player"
                             src="https://www.youtube.com/embed/{{ video_id }}?enablejsapi=1&cc_load_policy=1&cc_lang_pref=zh-TW&hl=zh-TW&autoplay=0"
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                        {% elif 'archive.org' in content.url %}
+                        <!-- Internet Archive ABC World News Tonight -->
+                        {% set embed_url = content.url.replace('archive.org/details/', 'archive.org/embed/') if 'archive.org/details/' in content.url else content.url %}
+                        <iframe 
+                            id="archive-player"
+                            src="{{ embed_url }}"
                             frameborder="0" 
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                             allowfullscreen>
@@ -314,10 +329,10 @@ class ABCPlayerManager {
     
     getCurrentPlayer() {
         // 找出當前活躍的播放器
-        const players = ['youtube-player', 'abc-player', 'pluto-player', 'regional-player', 'dynamic-player'];
+        const players = ['youtube-player', 'archive-player', 'abc-player', 'pluto-player', 'regional-player', 'dynamic-player'];
         for (let id of players) {
             const player = document.getElementById(id);
-            if (player && player.style.display !== 'none') {
+            if (player && (player.offsetParent !== null || player.style.display !== 'none')) {
                 this.currentPlayer = player;
                 this.playerType = id.split('-')[0];
                 return player;
@@ -328,7 +343,13 @@ class ABCPlayerManager {
     
     changeSubtitleLanguage(language) {
         const player = this.getCurrentPlayer();
-        if (!player) return;
+        if (!player) {
+            console.log('❌ No active player found');
+            this.showSubtitleFeedback('off', '❌ 未找到活躍的播放器');
+            return;
+        }
+        
+        console.log('✅ Active player type:', this.playerType, player.id);
         
         if (this.playerType === 'youtube') {
             this.changeYouTubeSubtitles(player, language);
@@ -339,9 +360,18 @@ class ABCPlayerManager {
     }
     
     changeYouTubeSubtitles(iframe, language) {
+        if (!iframe || !iframe.src) {
+            console.error('❌ Invalid iframe or missing src');
+            this.showSubtitleFeedback('off', '❌ 播放器錯誤');
+            return;
+        }
+        
         const currentSrc = iframe.src;
         const videoIdMatch = currentSrc.match(/embed\/([^?]+)/);
-        if (!videoIdMatch) return;
+        if (!videoIdMatch) {
+            console.error('❌ Cannot extract video ID from:', currentSrc);
+            return;
+        }
         
         const videoId = videoIdMatch[1];
         let newSrc;
@@ -353,16 +383,16 @@ class ABCPlayerManager {
         }
         
         iframe.src = newSrc;
-        console.log('YouTube subtitle language changed to:', language);
+        console.log('✅ YouTube subtitle language changed to:', language);
         this.showSubtitleFeedback(language);
     }
     
     showNonYouTubeSubtitleMessage(language) {
         const messages = {
-            'en': '此播放器支援原生英文字幕',
-            'zh-TW': '此播放器不支援中文字幕，但提供原生英文內容',
-            'zh-CN': '此播放器不支援中文字幕，但提供原生英文內容',
-            'off': '字幕控制僅適用於YouTube播放器'
+            'en': this.playerType === 'archive' ? '✓ Internet Archive播放器提供原生英文音頻' : '此播放器支援原生英文字幕',
+            'zh-TW': this.playerType === 'archive' ? '✓ 真實ABC News內容，原生英文報導' : '此播放器不支援中文字幕，但提供原生英文內容',
+            'zh-CN': this.playerType === 'archive' ? '✓ 真實ABC News内容，原生英文报导' : '此播放器不支援中文字幕，但提供原生英文內容',
+            'off': this.playerType === 'archive' ? '✓ Internet Archive播放器 - 專業新聞內容' : '字幕控制僅適用於YouTube播放器'
         };
         
         this.showSubtitleFeedback(language, messages[language]);
