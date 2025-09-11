@@ -896,26 +896,30 @@ def restore_abc_news():
 
 @app.route('/start_historical_backfill')
 def start_historical_backfill():
-    """啟動歷史數據回填"""
+    """啟動完整歷史數據回填"""
     try:
-        from services.historical_backfill_orchestrator import get_backfill_progress, start_sample_backfill
+        from services.background_task_manager import start_full_historical_backfill, get_historical_backfill_status
+        from datetime import date
         
         # 檢查當前進度
-        progress = get_backfill_progress()
+        status = get_historical_backfill_status()
         
-        if progress['completion_rate'] > 0.8:  # 如果已經完成80%以上
-            flash(f'Historical backfill mostly complete: {progress["total_existing_editions"]}/{progress["total_expected_days"]} days ({progress["completion_rate"]:.1%})', 'info')
+        if status['progress_percent'] > 90:  # 如果已經完成90%以上
+            flash(f'Historical backfill mostly complete: {status["completed_jobs"]}/{status["total_jobs"]} days processed ({status["progress_percent"]:.1f}%)', 'info')
         else:
-            # 啟動樣本數據載入進行演示
-            flash(f'Starting sample historical content loading. Creating sample 3-hour daily editions...', 'info')
+            # 啟動完整的歷史回填
+            start_date = date(2018, 1, 1)
+            end_date = date(2025, 9, 11)
             
-            # 執行樣本回填
-            result = start_sample_backfill()
+            flash(f'Starting full historical content loading from {start_date} to {end_date}. This will create 2000+ days of 3-hour international news content.', 'info')
+            
+            # 執行完整回填
+            result = start_full_historical_backfill(start_date, end_date)
             
             if result['status'] == 'success':
-                flash(f'Sample content loaded: {result["editions_created"]} daily editions created', 'success')
+                flash(f'Historical backfill started: {result["jobs_created"]} days queued for processing', 'success')
             else:
-                flash(f'Sample loading completed with some issues: {result.get("message", "Unknown error")}', 'warning')
+                flash(f'Error starting historical backfill: {result.get("error", "Unknown error")}', 'error')
         
         return redirect(url_for('backfill_progress'))
         
@@ -928,9 +932,30 @@ def start_historical_backfill():
 def backfill_progress():
     """顯示歷史數據回填進度"""
     try:
+        from services.background_task_manager import get_historical_backfill_status
         from services.historical_backfill_orchestrator import get_backfill_progress
         
-        progress = get_backfill_progress()
+        # Get both task manager status and edition progress
+        task_status = get_historical_backfill_status()
+        edition_progress = get_backfill_progress()
+        
+        # Combine the data
+        progress = {
+            'total_expected_days': edition_progress['total_expected_days'],
+            'total_existing_editions': edition_progress['total_existing_editions'], 
+            'completion_rate': edition_progress['completion_rate'],
+            'missing_days': edition_progress['missing_days'],
+            'editions_by_year': edition_progress['editions_by_year'],
+            'expected_by_year': edition_progress['expected_by_year'],
+            'task_progress_percent': task_status['progress_percent'],
+            'total_jobs': task_status['total_jobs'],
+            'completed_jobs': task_status['completed_jobs'],
+            'running_jobs': task_status['running_jobs'],
+            'failed_jobs': task_status['failed_jobs'],
+            'pending_jobs': task_status['pending_jobs'],
+            'active_tasks': task_status['active_tasks']
+        }
+        
         return render_template('backfill_progress.html', progress=progress)
         
     except Exception as e:

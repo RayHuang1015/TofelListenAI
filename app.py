@@ -35,3 +35,11 @@ with app.app_context():
     # Import models to ensure tables are created
     import models
     db.create_all()
+    
+    # Initialize background task manager
+    try:
+        from services.background_task_manager import get_task_manager
+        task_manager = get_task_manager()
+        logging.info("Background task manager initialized")
+    except Exception as e:
+        logging.error(f"Failed to initialize background task manager: {e}")

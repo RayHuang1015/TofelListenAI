@@ -151,8 +151,8 @@ class HistoricalBackfillOrchestrator:
         # Check provider diversity
         providers = set()
         for s in segments:
-            if s.source and hasattr(s.source, 'provider_name'):
-                providers.add(s.source.provider_name)
+            if s.source_content and hasattr(s.source_content, 'name'):
+                providers.add(s.source_content.name)
         if len(providers) < 2:
             validation['valid'] = False
             validation['issues'].append(f"Insufficient provider diversity: {len(providers)} providers")
@@ -215,7 +215,7 @@ class HistoricalBackfillOrchestrator:
                 total_items = sum(r.get('items_saved', 0) for r in ingestion_results)
                 self.logger.info(f"Ingested {total_items} items for {target_date}, composing edition")
                 
-                composition_result = self.edition_composer.compose_daily_edition(target_date.strftime('%Y-%m-%d'))
+                composition_result = self.edition_composer.compose_daily_edition(target_date)
                 
                 if composition_result['status'] == 'success':
                     edition = composition_result['edition']
@@ -260,13 +260,13 @@ class HistoricalBackfillOrchestrator:
         try:
             if provider['type'] == 'rss':
                 for feed_url in provider['feeds']:
-                    feed_result = self.news_integration.ingest_for_date(target_date.strftime('%Y-%m-%d'), feed_url)
+                    feed_result = self.news_integration.ingest_for_date(target_date, feed_url)
                     result['items_saved'] += feed_result.get('items_saved', 0)
             
             elif provider['type'] == 'podcast':
                 for feed_url in provider['feeds']:
                     # Use RSS ingestion for podcast feeds
-                    feed_result = self.news_integration.ingest_for_date(target_date.strftime('%Y-%m-%d'), feed_url)
+                    feed_result = self.news_integration.ingest_for_date(target_date, feed_url)
                     result['items_saved'] += feed_result.get('items_saved', 0)
             
             elif provider['type'] == 'youtube':
@@ -455,13 +455,13 @@ def start_sample_backfill():
         for provider_name, description in providers:
             existing = ProviderSource.query.filter_by(name=provider_name).first()
             if not existing:
-                provider = ProviderSource(
-                    name=provider_name,
-                    description=description,
-                    provider_type='news',
-                    base_url='https://example.com',
-                    is_active=True
-                )
+                provider = ProviderSource()
+                provider.key = provider_name.lower().replace(' ', '_')
+                provider.name = provider_name
+                provider.type = 'news'
+                provider.base_url = 'https://example.com'
+                provider.active = True
+                provider.provider_metadata = {'description': description}
                 db.session.add(provider)
         
         db.session.commit()
@@ -480,19 +480,18 @@ def start_sample_backfill():
                 continue
             
             # Create sample edition
-            edition = DailyEdition(
-                date=sample_date,
-                title=f"International News Digest - {sample_date.strftime('%B %d, %Y')}",
-                edition_number=1,
-                total_duration_sec=10800 + random.randint(-600, 600),  # ~3 hours ±10 min
-                word_count=random.randint(20000, 25000),
-                status='ready',
-                edition_metadata={
-                    'categories': ['world', 'politics', 'business'],
-                    'regions': ['europe', 'asia', 'americas'],
-                    'quality_score': random.uniform(0.8, 0.95)
-                }
-            )
+            edition = DailyEdition()
+            edition.date = sample_date
+            edition.title = f"International News Digest - {sample_date.strftime('%B %d, %Y')}"
+            edition.edition_number = 1
+            edition.total_duration_sec = 10800 + random.randint(-600, 600)  # ~3 hours ±10 min
+            edition.word_count = random.randint(20000, 25000)
+            edition.status = 'ready'
+            edition.edition_metadata = {
+                'categories': ['world', 'politics', 'business'],
+                'regions': ['europe', 'asia', 'americas'],
+                'quality_score': random.uniform(0.8, 0.95)
+            }
             db.session.add(edition)
             db.session.flush()  # Get edition ID
             
@@ -518,33 +517,34 @@ def start_sample_backfill():
                 total_duration += segment_duration
                 
                 # Create sample content source
-                content = ContentSource(
-                    name=random.choice([p[0] for p in providers]),
-                    url=f'https://example.com/news/{sample_date.strftime("%Y%m%d")}_{seg_num}',
-                    content_type='news',
-                    language='en',
-                    duration=segment_duration,
-                    description=f'International news segment {seg_num + 1}',
-                    published_date=datetime.combine(sample_date, datetime.min.time()),
-                    provider_name=random.choice([p[0] for p in providers])
-                )
+                content = ContentSource()
+                content.name = random.choice([p[0] for p in providers])
+                content.url = f'https://example.com/news/{sample_date.strftime("%Y%m%d")}_{seg_num}'
+                content.type = 'news'
+                content.language = 'en'
+                content.duration = segment_duration
+                content.description = f'International news segment {seg_num + 1}'
+                content.published_date = datetime.combine(sample_date, datetime.min.time())
+                content.transcript_text = f'Sample transcript for {content.name} segment {seg_num + 1}'
                 db.session.add(content)
                 db.session.flush()
                 
                 # Create segment
-                segment = EditionSegment(
-                    edition_id=edition.id,
-                    source_id=content.id,
-                    seq=seg_num + 1,
-                    start_time_sec=total_duration - segment_duration,
-                    duration_sec=segment_duration,
-                    transcript_text=f'This is a sample transcript for segment {seg_num + 1} covering international news topics including politics, economics, and world events. The content is approximately {segment_duration} seconds long and provides comprehensive coverage of current affairs.',
-                    segment_metadata={
-                        'category': random.choice(['world', 'politics', 'business', 'tech']),
-                        'region': random.choice(['europe', 'asia', 'americas', 'africa']),
-                        'importance': random.uniform(0.6, 1.0)
-                    }
-                )
+                segment = EditionSegment()
+                segment.edition_id = edition.id
+                segment.source_content_id = content.id
+                segment.provider_id = 1  # Use first provider
+                segment.seq = seg_num + 1
+                segment.start_sec = total_duration - segment_duration
+                segment.duration_sec = segment_duration
+                segment.headline = f'International News Update {seg_num + 1}'
+                segment.transcript_text = f'This is a sample transcript for segment {seg_num + 1} covering international news topics including politics, economics, and world events. The content is approximately {segment_duration} seconds long and provides comprehensive coverage of current affairs.'
+                segment.region = random.choice(['global', 'europe', 'asia', 'americas', 'africa'])
+                segment.category = random.choice(['politics', 'business', 'technology', 'world'])
+                segment.segment_metadata = {
+                    'importance': random.uniform(0.6, 1.0),
+                    'source_type': 'sample'
+                }
                 db.session.add(segment)
             
             # Update edition with actual total duration

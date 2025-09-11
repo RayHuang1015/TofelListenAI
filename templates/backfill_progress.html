@@ -93,6 +93,26 @@
                     <small class="text-muted">
                         {{ progress.total_existing_editions }} of {{ progress.total_expected_days }} days completed
                     </small>
+                    
+                    {% if progress.total_jobs and progress.total_jobs > 0 %}
+                    <div class="mt-3">
+                        <h6 class="mb-1">Background Processing</h6>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <small class="text-muted">Running: {{ progress.running_jobs }}</small>
+                            </div>
+                            <div class="col-3">
+                                <small class="text-muted">Pending: {{ progress.pending_jobs }}</small>
+                            </div>
+                            <div class="col-3">
+                                <small class="text-muted">Completed: {{ progress.completed_jobs }}</small>
+                            </div>
+                            <div class="col-3">
+                                <small class="text-muted">Failed: {{ progress.failed_jobs }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
