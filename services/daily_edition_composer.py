@@ -148,11 +148,11 @@ class DailyEditionComposer:
         end_datetime = start_datetime + timedelta(days=1)
         
         content = ContentSource.query.filter(
-            ContentSource.name == 'International News',
             ContentSource.published_date >= start_datetime,
             ContentSource.published_date < end_datetime,
             ContentSource.duration > 30,  # At least 30 seconds
-            ContentSource.transcript_text.isnot(None)  # Must have transcript
+            ContentSource.transcript_text.isnot(None),  # Must have transcript
+            ContentSource.type.in_(['news_article', 'news', 'audio', 'video'])  # News content types
         ).all()
         
         self.logger.info(f"Found {len(content)} content items for {target_date}")
@@ -170,8 +170,11 @@ class DailyEditionComposer:
         # Sort by score (highest first)
         ranked_items.sort(key=lambda x: x.score, reverse=True)
         
-        # Select items to fill target duration with diversity
+        # Select items to fill exactly target duration 
         selected = self._optimize_content_selection(ranked_items)
+        
+        # Ensure exactly 3 hours (10800 seconds)
+        selected = self._adjust_to_exact_duration(selected, self.TARGET_DURATION)
         
         self.logger.info(
             f"Selected {len(selected)} items from {len(available_content)} available "
@@ -349,9 +352,24 @@ class DailyEditionComposer:
         for seq, item in enumerate(selected_content, 1):
             try:
                 # Create segment
+                # Create a provider entry if needed
+                from models import ProviderSource
+                provider_key = 'HistoricalNewsGenerator'
+                provider = ProviderSource.query.filter_by(key=provider_key).first()
+                if not provider:
+                    provider = ProviderSource(
+                        key=provider_key,
+                        name='Historical News Generator',
+                        api_url=None,
+                        api_key=None,
+                        status='active'
+                    )
+                    db.session.add(provider)
+                    db.session.flush()
+                
                 segment = EditionSegment(
                     edition_id=edition.id,
-                    provider_id=item.content.source_ref,
+                    provider_id=provider.id,
                     source_content_id=item.content.id,
                     seq=seq,
                     start_sec=current_time,
@@ -368,7 +386,7 @@ class DailyEditionComposer:
                     segment_metadata={
                         'original_url': item.content.url,
                         'published_date': item.content.published_date.isoformat() if item.content.published_date else None,
-                        'provider_key': item.content.provider.key if item.content.provider else None
+                        'provider_key': 'HistoricalNewsGenerator'
                     }
                 )
                 
@@ -414,10 +432,17 @@ class DailyEditionComposer:
             reg = item.content.region or 'global'
             regions[reg] = regions.get(reg, 0) + 1
             
-            # Count by provider
-            if item.content.provider:
-                prov = item.content.provider.name
-                providers[prov] = providers.get(prov, 0) + 1
+            # Count by provider from content metadata
+            provider_info = item.content.content_metadata if item.content.content_metadata else {}
+            if isinstance(provider_info, str):
+                import json
+                try:
+                    provider_info = json.loads(provider_info)
+                except:
+                    provider_info = {}
+            
+            prov = provider_info.get('provider', 'Historical News Generator')
+            providers[prov] = providers.get(prov, 0) + 1
         
         return {
             'categories': categories,
@@ -426,6 +451,51 @@ class DailyEditionComposer:
             'total_segments': len(selected_content),
             'average_duration': sum(item.duration_sec for item in selected_content) / len(selected_content)
         }
+    
+    def _adjust_to_exact_duration(self, selected: List[ContentRanking], target_duration: int) -> List[ContentRanking]:
+        """Adjust selection to exactly target duration (10800 seconds for 3 hours)"""
+        if not selected:
+            return selected
+            
+        current_duration = sum(item.duration_sec for item in selected)
+        
+        if current_duration == target_duration:
+            return selected
+        elif current_duration < target_duration:
+            # Need to add more content - repeat the last item to fill gap
+            gap = target_duration - current_duration
+            if gap > 0 and selected:
+                # Duplicate last item with adjusted duration
+                last_item = selected[-1]
+                filler_duration = min(gap, last_item.duration_sec)
+                filler_item = ContentRanking(
+                    content=last_item.content,
+                    score=last_item.score - 10,  # Lower score for filler
+                    duration_sec=filler_duration,
+                    category_priority=last_item.category_priority,
+                    region_priority=last_item.region_priority
+                )
+                selected.append(filler_item)
+        else:
+            # Need to trim content - adjust last item duration
+            excess = current_duration - target_duration
+            if excess > 0 and selected:
+                last_item = selected[-1]
+                if last_item.duration_sec > excess:
+                    # Reduce last item duration
+                    last_item.duration_sec -= excess
+                else:
+                    # Remove items until we reach target
+                    while selected and sum(item.duration_sec for item in selected) > target_duration:
+                        selected.pop()
+                    
+                    # Fine-tune last item if needed
+                    if selected:
+                        current = sum(item.duration_sec for item in selected)
+                        if current < target_duration:
+                            selected[-1].duration_sec += (target_duration - current)
+                            
+        return selected
 
 
 def test_composition():

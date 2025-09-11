@@ -268,13 +268,10 @@ class BackgroundTaskManager:
     
     def enqueue_historical_backfill(self, start_date: date, end_date: date) -> List[int]:
         """Enqueue historical backfill jobs in manageable batches"""
-        # For real RSS feeds, focus on recent dates where content is available
-        from datetime import date as date_class
-        today = date_class.today()
-        
-        # Use recent dates instead of historical dates (RSS feeds only have recent content)
-        actual_start_date = today - timedelta(days=7)  # Last 7 days
-        actual_end_date = today
+        # Restore full historical range as requested by user
+        # User specifically wants content from 2018-01-01 onwards
+        actual_start_date = start_date  # Use the original start_date (2018-01-01)
+        actual_end_date = end_date      # Use the original end_date (2025-09-11)
         job_ids = []
         
         with app.app_context():
@@ -307,7 +304,7 @@ class BackgroundTaskManager:
                 for job in batch_jobs:
                     job_ids.append(job.id)
             
-            self.logger.info(f"Enqueued {len(job_ids)} recent news jobs for {actual_start_date} to {actual_end_date}")
+            self.logger.info(f"Enqueued {len(job_ids)} historical news jobs for {actual_start_date} to {actual_end_date}")
         
         return job_ids
     

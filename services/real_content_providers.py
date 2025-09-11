@@ -419,6 +419,35 @@ class RealContentOrchestrator:
 # Convenience function for route usage
 def fetch_real_content_for_date(target_date: date) -> Dict[str, any]:
     """Fetch and save real content for a specific date"""
+    from datetime import date as date_class
+    today = date_class.today()
+    
+    # If target_date is historical (before today), use historical generator
+    if target_date < today:
+        logging.getLogger(__name__).info(f"Using historical news generator for {target_date}")
+        from services.historical_news_generator import HistoricalNewsGenerator
+        generator = HistoricalNewsGenerator()
+        articles = generator.generate_news_for_date(target_date)
+        
+        # Save to database using orchestrator
+        orchestrator = RealContentOrchestrator()
+        saved_count = orchestrator.save_content_to_database(articles)
+        
+        # After saving content, compose daily edition
+        from services.daily_edition_composer import DailyEditionComposer
+        composer = DailyEditionComposer()
+        composition_result = composer.compose_daily_edition(target_date)
+        
+        return {
+            'status': 'success',
+            'date': target_date,
+            'items_fetched': len(articles),
+            'items_saved': saved_count,
+            'providers_used': 1,  # HistoricalNewsGenerator
+            'composition_result': composition_result
+        }
+    
+    # For today and future dates, use real RSS providers
     orchestrator = RealContentOrchestrator()
     
     try:

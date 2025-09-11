@@ -865,6 +865,37 @@ def start_news_sync():
     return redirect(url_for('daily_news_area'))
 
 
+@app.route('/api/test_historical/<date_str>')
+def test_historical_news(date_str):
+    """Test endpoint to generate and compose historical news for a specific date"""
+    try:
+        # Parse date
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # Import required services
+        from services.real_content_providers import fetch_real_content_for_date
+        
+        # Generate and compose content for the date
+        result = fetch_real_content_for_date(target_date)
+        
+        return jsonify({
+            'status': 'success',
+            'target_date': date_str,
+            'result': result
+        })
+        
+    except ValueError as e:
+        return jsonify({
+            'status': 'error',
+            'error': f'Invalid date format. Use YYYY-MM-DD: {e}'
+        }), 400
+    except Exception as e:
+        logging.error(f"Error testing historical news for {date_str}: {e}")
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
 @app.route('/view_daily_edition/<int:edition_id>')
 def view_daily_edition(edition_id):
     """View and practice with a daily edition"""
