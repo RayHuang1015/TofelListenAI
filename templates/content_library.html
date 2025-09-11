@@ -75,7 +75,7 @@
                             <option value="">All Levels</option>
                             {% for difficulty in difficulties %}
                             <option value="{{ difficulty }}" {% if request.args.get('difficulty') == difficulty %}selected{% endif %}>
-                                {{ difficulty.title() }}
+                                {{ difficulty.title() if difficulty else 'Unknown' }}
                             </option>
                             {% endfor %}
                         </select>
@@ -112,7 +112,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="badge bg-secondary">{{ content.name }}</span>
                         <span class="badge bg-{% if content.difficulty_level == 'beginner' %}success{% elif content.difficulty_level == 'intermediate' %}warning{% else %}danger{% endif %}">
-                            {{ content.difficulty_level.title() }}
+                            {{ content.difficulty_level.title() if content.difficulty_level else 'Unknown' }}
                         </span>
                     </div>
                 </div>

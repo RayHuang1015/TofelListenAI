@@ -166,12 +166,9 @@ def daily_news_area():
     try:
         from models import DailyEdition, EditionSegment, ProviderSource
         
-        # Get all daily editions with eager loading to avoid N+1 queries  
+        # Get daily editions with limited segments loading for better performance
         query_start = time.time()
-        from sqlalchemy.orm import selectinload
-        daily_editions = DailyEdition.query.options(
-            selectinload(DailyEdition.segments)
-        ).order_by(DailyEdition.date.desc()).all()  # Order by date to include all years
+        daily_editions = DailyEdition.query.order_by(DailyEdition.date.desc()).all()
         logging.info(f"Daily editions query took {(time.time() - query_start) * 1000:.2f}ms")
         
         # Group by year for better organization
@@ -431,18 +428,45 @@ def content_library():
         # 獲取其他唯一來源類型（限制查詢以提高性能，排除小站TPO相關選項）
         other_sources = db.session.query(ContentSource.name).filter(
             ~ContentSource.type.in_(['tpo', 'smallstation_tpo']),
-            ~ContentSource.name.like('%小站TPO%')
+            ~ContentSource.name.like('%小站TPO%'),
+            ContentSource.name.isnot(None),
+            ContentSource.name != '',
+            ContentSource.name != 'None'
         ).distinct().limit(20).all()
-        content_types.extend([s[0] for s in other_sources if s[0]])
+        # 多層過濾確保不包含None值
+        valid_sources = []
+        for s in other_sources:
+            if s and s[0] and str(s[0]).strip() and str(s[0]) != 'None':
+                valid_sources.append(str(s[0]).strip())
+        content_types.extend(valid_sources)
         
-        difficulties = db.session.query(ContentSource.difficulty_level).distinct().all()
-        topics = db.session.query(ContentSource.topic).distinct().all()
+        difficulties = db.session.query(ContentSource.difficulty_level).filter(
+            ContentSource.difficulty_level.isnot(None),
+            ContentSource.difficulty_level != '',
+            ContentSource.difficulty_level != 'None'
+        ).distinct().all()
+        topics = db.session.query(ContentSource.topic).filter(
+            ContentSource.topic.isnot(None),
+            ContentSource.topic != '',
+            ContentSource.topic != 'None'
+        ).distinct().all()
+        
+        # 多層過濾確保不包含None值
+        valid_difficulties = []
+        for d in difficulties:
+            if d and d[0] and str(d[0]).strip() and str(d[0]) != 'None':
+                valid_difficulties.append(str(d[0]).strip())
+                
+        valid_topics = []
+        for t in topics:
+            if t and t[0] and str(t[0]).strip() and str(t[0]) != 'None':
+                valid_topics.append(str(t[0]).strip())
         
         return render_template('content_library.html',
                              content_items=content_items,
                              sources=content_types,
-                             difficulties=[d[0] for d in difficulties if d[0]],
-                             topics=[t[0] for t in topics if t[0]])
+                             difficulties=valid_difficulties,
+                             topics=valid_topics)
     
     except Exception as e:
         logging.error(f"Content library error: {e}")
@@ -460,9 +484,9 @@ def audio_labs():
         total_count = ContentSource.query.filter_by(type='smallstation_tpo').count()
         logging.info(f"Practice TPO total count: {total_count}")
         
-        # 只顯示小站TPO內容 (TPO 1-64)
+        # 只顯示小站TPO內容 (TPO 1-64) - 按降序排列 
         pagination = ContentSource.query.filter_by(type='smallstation_tpo').order_by(
-            ContentSource.id.asc()  # 從TPO 1開始順序顯示
+            ContentSource.id.desc()  # 最新的TPO排在前面
         ).paginate(
             page=page, per_page=per_page, error_out=False
         )
@@ -499,9 +523,9 @@ def premium_tpo():
         topic = request.args.get('topic', '')
         official_num = request.args.get('official', '')
         
-        # 構建查詢 - 只查詢新東方官方TPO內容
+        # 構建查詢 - 查詢新東方官方TPO內容，如果沒有則查詢小站TPO
         query = ContentSource.query.filter(
-            ContentSource.type == 'tpo_official'
+            ContentSource.type.in_(['tpo_official', 'smallstation_tpo'])
         )
         
         if difficulty:
@@ -521,9 +545,9 @@ def premium_tpo():
         )
         content_items = pagination.items
         
-        # 統計信息 - 只包含新東方官方TPO內容
+        # 統計信息 - 包含新東方官方和小站TPO內容  
         total_count = ContentSource.query.filter(
-            ContentSource.type == 'tpo_official'
+            ContentSource.type.in_(['tpo_official', 'smallstation_tpo'])
         ).count()
         logging.info(f"Official TPO total count: {total_count}")
         logging.info(f"Current page items: {len(content_items)}")
