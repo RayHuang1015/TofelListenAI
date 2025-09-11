@@ -92,10 +92,6 @@
                     </div>
                 </div>
                 
-                <!-- TTS Debug Info -->
-                <div id="tts-debug" class="alert alert-secondary" style="max-height: 200px; overflow-y: auto; font-size: 0.8em;">
-                    <strong>TTS Debug:</strong> Ready to test
-                </div>
                 
                 <!-- Playback Controls -->
                 <div class="row align-items-center">
@@ -219,66 +215,19 @@
 
 {% block scripts %}
 <script>
-console.log('=== 簡化TTS系統啟動 ===');
-
 // 全局變量
 let currentUtterance = null;
 let isPlaying = false;
+let playbackStartTime = null;
+let timerInterval = null;
+let totalSegments = 0;
+let currentSegmentIndex = 0;
 
-// 測試TTS功能
-function testTTS() {
-    debugLog('=== 測試TTS功能開始 ===');
-    
-    if (!window.speechSynthesis) {
-        alert('瀏覽器不支持Text-to-Speech功能');
-        debugLog('錯誤: 瀏覽器不支持TTS');
-        return;
-    }
-    
-    debugLog('瀏覽器支持TTS，開始測試');
-    
-    try {
-        const testText = "Hello, this is a test of the text to speech system. The system is working correctly.";
-        const utterance = new SpeechSynthesisUtterance(testText);
-        
-        utterance.rate = 1;
-        utterance.volume = 1;
-        
-        utterance.onstart = () => {
-            debugLog('✅ TTS測試開始播放');
-            isPlaying = true;
-            showPlaying('TTS Test');
-        };
-        
-        utterance.onend = () => {
-            debugLog('✅ TTS測試播放完成');
-            isPlaying = false;
-            hidePlaying();
-        };
-        
-        utterance.onerror = (e) => {
-            debugLog('❌ TTS測試錯誤: ' + e.error);
-            isPlaying = false;
-            hidePlaying();
-        };
-        
-        debugLog('發送TTS測試命令');
-        speechSynthesis.speak(utterance);
-        currentUtterance = utterance;
-        
-    } catch (error) {
-        debugLog('❌ TTS測試異常: ' + error.message);
-        alert('TTS測試失敗: ' + error.message);
-    }
-}
 
 // 從按鈕播放段落TTS
 function playSegmentFromButton(button) {
     const text = button.getAttribute('data-segment-text');
     const title = button.getAttribute('data-segment-title');
-    
-    debugLog(`從按鈕播放段落: ${title}`);
-    debugLog(`文字長度: ${text ? text.length : 0}`);
     
     if (!window.speechSynthesis) {
         alert('瀏覽器不支持語音合成');
@@ -286,71 +235,47 @@ function playSegmentFromButton(button) {
     }
     
     if (!text || text.trim() === '') {
-        debugLog('錯誤: 沒有文字內容');
         alert('這個段落沒有文字內容');
         return;
     }
     
     // 停止當前播放
     if (isPlaying) {
-        speechSynthesis.cancel();
-        isPlaying = false;
-        debugLog('停止當前播放');
+        stopTTS();
     }
     
     try {
         // 清理文字，移除多餘的空白和換行
         const cleanText = text.replace(/\s+/g, ' ').trim();
-        debugLog(`清理後的文字長度: ${cleanText.length}`);
-        debugLog(`文字前50字符: ${cleanText.substring(0, 50)}...`);
-        
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        
-        utterance.rate = 1;
-        utterance.pitch = 1;
-        utterance.volume = 1;
+        const utterance = createNewsAnchorUtterance(cleanText);
         
         utterance.onstart = () => {
-            debugLog(`✅ 開始播放: ${title}`);
             isPlaying = true;
             showPlaying(title);
+            startTimer();
         };
         
         utterance.onend = () => {
-            debugLog(`✅ 播放完成: ${title}`);
             isPlaying = false;
             hidePlaying();
+            stopTimer();
         };
         
         utterance.onerror = (e) => {
-            debugLog(`❌ 播放錯誤: ${e.error}`);
             isPlaying = false;
             hidePlaying();
+            stopTimer();
             alert('語音播放出錯: ' + e.error);
         };
         
-        debugLog('發送語音命令');
         speechSynthesis.speak(utterance);
         currentUtterance = utterance;
         
     } catch (error) {
-        debugLog('❌ TTS異常: ' + error.message);
         alert('TTS錯誤: ' + error.message);
     }
 }
 
-// 調試日志函數
-function debugLog(message) {
-    const timestamp = new Date().toLocaleTimeString();
-    console.log(`[${timestamp}] ${message}`);
-    
-    const debugDiv = document.getElementById('tts-debug');
-    if (debugDiv) {
-        debugDiv.innerHTML += `<br>${timestamp}: ${message}`;
-        // 自動滾動到最底部
-        debugDiv.scrollTop = debugDiv.scrollHeight;
-    }
-}
 
 // 顯示播放狀態
 function showPlaying(title) {
@@ -372,38 +297,31 @@ function hidePlaying() {
 
 // 播放所有段落
 function playAllSegments() {
-    debugLog('開始播放所有段落');
-    
     const segmentButtons = document.querySelectorAll('button[data-segment-text]');
     if (segmentButtons.length === 0) {
-        debugLog('沒有找到段落按鈕');
         alert('沒有找到可播放的段落');
         return;
     }
     
-    debugLog(`找到 ${segmentButtons.length} 個段落`);
-    
-    let currentIndex = 0;
+    totalSegments = segmentButtons.length;
+    currentSegmentIndex = 0;
     
     function playNextSegment() {
-        if (currentIndex >= segmentButtons.length) {
-            debugLog('✅ 所有段落播放完成');
+        if (currentSegmentIndex >= segmentButtons.length) {
             hidePlaying();
+            stopTimer();
             return;
         }
         
-        const button = segmentButtons[currentIndex];
+        const button = segmentButtons[currentSegmentIndex];
         const text = button.getAttribute('data-segment-text');
         const title = button.getAttribute('data-segment-title');
         
         if (!text || text.trim() === '') {
-            debugLog(`跳過段落 ${currentIndex + 1}: 沒有文字`);
-            currentIndex++;
+            currentSegmentIndex++;
             setTimeout(playNextSegment, 100);
             return;
         }
-        
-        debugLog(`播放段落 ${currentIndex + 1}: ${title}`);
         
         // 停止當前播放
         if (speechSynthesis.speaking) {
@@ -412,36 +330,32 @@ function playAllSegments() {
         
         try {
             const cleanText = text.replace(/\s+/g, ' ').trim();
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            
-            utterance.rate = 1;
-            utterance.pitch = 1;
-            utterance.volume = 1;
+            const utterance = createNewsAnchorUtterance(cleanText);
             
             utterance.onstart = () => {
-                debugLog(`▶️ 開始播放: ${title}`);
                 isPlaying = true;
-                showPlaying(title);
+                showPlaying(`段落 ${currentSegmentIndex + 1}: ${title}`);
+                
+                if (currentSegmentIndex === 0) {
+                    startTimer();
+                }
                 
                 // 高亮當前段落
                 button.closest('.segment-card')?.classList.add('border-primary', 'bg-light');
             };
             
             utterance.onend = () => {
-                debugLog(`✅ 播放完成: ${title}`);
-                
                 // 移除高亮
                 button.closest('.segment-card')?.classList.remove('border-primary', 'bg-light');
                 
-                currentIndex++;
+                currentSegmentIndex++;
                 // 短暫暫停後播放下一段
                 setTimeout(playNextSegment, 800);
             };
             
             utterance.onerror = (e) => {
-                debugLog(`❌ 段落播放錯誤 ${currentIndex + 1}: ${e.error}`);
                 button.closest('.segment-card')?.classList.remove('border-primary', 'bg-light');
-                currentIndex++;
+                currentSegmentIndex++;
                 setTimeout(playNextSegment, 500);
             };
             
@@ -449,8 +363,7 @@ function playAllSegments() {
             currentUtterance = utterance;
             
         } catch (error) {
-            debugLog(`❌ 段落 ${currentIndex + 1} 異常: ${error.message}`);
-            currentIndex++;
+            currentSegmentIndex++;
             setTimeout(playNextSegment, 500);
         }
     }
@@ -460,18 +373,14 @@ function playAllSegments() {
 
 // 停止TTS
 function stopTTS() {
-    debugLog('停止TTS請求');
-    
     if (speechSynthesis.speaking || speechSynthesis.pending) {
         speechSynthesis.cancel();
-        debugLog('🛑 TTS已停止');
-    } else {
-        debugLog('沒有正在播放的TTS');
     }
     
     isPlaying = false;
     currentUtterance = null;
     hidePlaying();
+    stopTimer();
     
     // 清除所有高亮
     document.querySelectorAll('.segment-card').forEach(card => {
@@ -479,36 +388,122 @@ function stopTTS() {
     });
 }
 
+// 創建新聞主播風格的語音設定
+function createNewsAnchorUtterance(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // 獲取用戶設定
+    const rateSelect = document.getElementById('speech-rate');
+    const pitchSelect = document.getElementById('speech-pitch');
+    const voiceSelect = document.getElementById('voice-select');
+    
+    // 強制使用新聞主播風格設定（不依賴HTML默認值）
+    utterance.rate = rateSelect && rateSelect.value !== '1' ? parseFloat(rateSelect.value) : 0.9;
+    utterance.pitch = pitchSelect && pitchSelect.value !== '1' ? parseFloat(pitchSelect.value) : 0.8;
+    utterance.volume = 1;
+    
+    // 選擇適合的語音
+    const voices = speechSynthesis.getVoices();
+    const preferredLang = voiceSelect ? voiceSelect.value : 'en-US';
+    
+    // 尋找最適合的語音(優先女性新聞主播聲音)
+    let selectedVoice = voices.find(voice => 
+        voice.lang.startsWith(preferredLang) && 
+        (voice.name.includes('News') || voice.name.includes('Professional') || voice.name.includes('Female'))
+    ) || voices.find(voice => voice.lang.startsWith(preferredLang) && voice.default) ||
+       voices.find(voice => voice.lang.startsWith('en'));
+    
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
+    }
+    
+    return utterance;
+}
+
+// 啟動計時器
+function startTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+    
+    playbackStartTime = Date.now();
+    timerInterval = setInterval(updateTimer, 1000);
+}
+
+// 停止計時器
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+// 更新計時器顯示
+function updateTimer() {
+    if (!playbackStartTime) return;
+    
+    const elapsed = Math.floor((Date.now() - playbackStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    
+    const currentTimeElement = document.getElementById('current-time');
+    if (currentTimeElement) {
+        currentTimeElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // 使用實際的版本總時長 (10800秒 = 3小時)
+    const totalDuration = 10800; // 與版本實際時長一致
+    const progress = Math.min((elapsed / totalDuration) * 100, 100);
+    
+    const progressBar = document.getElementById('progress-bar');
+    if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+    }
+}
+
 // 頁面載入時初始化
 document.addEventListener('DOMContentLoaded', function() {
-    debugLog('=== 頁面載入完成，初始化TTS ===');
-    
     // 檢查瀏覽器支援
     if (!window.speechSynthesis) {
-        debugLog('❌ 瀏覽器不支持Speech Synthesis');
         alert('您的瀏覽器不支持Text-to-Speech功能');
         return;
-    } else {
-        debugLog('✅ 瀏覽器支持Speech Synthesis');
     }
     
-    // 檢查語音可用性
-    const voices = speechSynthesis.getVoices();
-    debugLog(`可用語音數量: ${voices.length}`);
+    // 設置新聞主播風格的默認值
+    const rateSelect = document.getElementById('speech-rate');
+    const pitchSelect = document.getElementById('speech-pitch');
     
-    if (voices.length === 0) {
-        // 語音可能還沒載入，等待voiceschanged事件
-        speechSynthesis.addEventListener('voiceschanged', function() {
-            const updatedVoices = speechSynthesis.getVoices();
-            debugLog(`語音載入完成，可用數量: ${updatedVoices.length}`);
-        });
+    if (rateSelect) {
+        rateSelect.value = '0.9';
+    }
+    if (pitchSelect) {
+        pitchSelect.value = '0.8';
     }
     
-    // 統計按鈕數量
-    const segmentButtons = document.querySelectorAll('button[data-segment-text]');
-    debugLog(`找到 ${segmentButtons.length} 個段落播放按鈕`);
-    
-    debugLog('=== TTS初始化完成 ===');
+    // 添加轉錄稿切換功能
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('toggle-transcript') || e.target.closest('.toggle-transcript')) {
+            const button = e.target.classList.contains('toggle-transcript') ? e.target : e.target.closest('.toggle-transcript');
+            const targetId = button.getAttribute('data-target');
+            const targetDiv = document.getElementById(targetId);
+            
+            if (targetDiv) {
+                const isHidden = targetDiv.style.display === 'none';
+                targetDiv.style.display = isHidden ? 'block' : 'none';
+                
+                // 更新按鈕文字
+                const icon = button.querySelector('i');
+                const text = button.querySelector('span') || button;
+                if (isHidden) {
+                    if (icon) icon.className = 'fas fa-eye-slash';
+                    text.textContent = text.textContent.replace('Show', 'Hide');
+                } else {
+                    if (icon) icon.className = 'fas fa-eye';
+                    text.textContent = text.textContent.replace('Hide', 'Show');
+                }
+            }
+        }
+    });
 });
 </script>
 {% endblock %}
