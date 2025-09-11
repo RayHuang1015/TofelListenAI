@@ -892,3 +892,43 @@ def restore_abc_news():
     except Exception as e:
         flash(f'Error during ABC News restoration: {e}', 'error')
         return redirect(url_for('abc_news_area'))
+
+@app.route('/watch_abc_news/<int:news_id>')
+def watch_abc_news(news_id):
+    """觀看ABC News影片"""
+    content = ContentSource.query.get_or_404(news_id)
+    if content.name != 'ABC News':
+        flash('Content not found in ABC News Area', 'error')
+        return redirect(url_for('abc_news_area'))
+    
+    # 創建archive.org信息
+    archive_info = {
+        'archive_url': content.url,
+        'is_playlist': False,
+        'playlist_urls': [],
+        'archive_identifiers': [],
+        'embed_url': content.url
+    }
+    
+    try:
+        if content.content_metadata:
+            import json
+            metadata = json.loads(content.content_metadata) if isinstance(content.content_metadata, str) else content.content_metadata
+            
+            if metadata.get('source') == 'archive_org':
+                archive_info['is_playlist'] = metadata.get('content_quality', {}).get('has_playlist', False)
+                archive_info['playlist_urls'] = metadata.get('playlist_urls', [])
+                archive_info['archive_identifiers'] = metadata.get('archive_identifiers', [])
+                
+                # 創建Archive.org嵌入URL
+                if content.url and 'archive.org/details/' in content.url:
+                    identifier = content.url.split('/details/')[-1]
+                    archive_info['embed_url'] = f'https://archive.org/embed/{identifier}'
+                elif content.url and 'archive.org/embed/' in content.url:
+                    archive_info['embed_url'] = content.url
+    except Exception as e:
+        logging.error(f'Error parsing archive metadata for content {news_id}: {e}')
+    
+    return render_template('watch_abc_news.html', 
+                         content=content, 
+                         archive_info=archive_info)
