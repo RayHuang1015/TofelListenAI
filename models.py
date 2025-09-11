@@ -114,10 +114,10 @@ class ProviderSource(db.Model):
 
 
 class DailyEdition(db.Model):
-    """3-hour daily international news compilation"""
+    """5-hour daily international news compilation"""
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)  # Edition date
-    edition_number = db.Column(db.Integer, default=1)  # Multiple editions per day (1-8 for every 3 hours)
+    edition_number = db.Column(db.Integer, default=1)  # Multiple editions per day (1-5 for every 5 hours)
     
     # Unique constraint for one edition per date+slot
     __table_args__ = (
@@ -125,7 +125,7 @@ class DailyEdition(db.Model):
         db.Index('idx_edition_date', 'date'),
     )
     title = db.Column(db.String(200), nullable=False)
-    total_duration_sec = db.Column(db.Integer, default=0)  # Target: 3 hours = 10800 seconds
+    total_duration_sec = db.Column(db.Integer, default=0)  # Target: 5 hours = 18000 seconds
     word_count = db.Column(db.Integer, default=0)
     status = db.Column(db.String(20), default='draft')  # 'draft', 'ready', 'failed'
     edition_metadata = db.Column(JSON)  # Statistics, sources used, etc.
@@ -143,7 +143,7 @@ class EditionSegment(db.Model):
     source_content_id = db.Column(db.Integer, db.ForeignKey('content_source.id'), nullable=True)
     
     seq = db.Column(db.Integer, nullable=False)  # Order within edition
-    start_sec = db.Column(db.Integer, default=0)  # Start time in 3-hour compilation
+    start_sec = db.Column(db.Integer, default=0)  # Start time in 5-hour compilation
     duration_sec = db.Column(db.Integer, nullable=False)
     
     headline = db.Column(db.String(300), nullable=False)
