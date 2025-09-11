@@ -1,5 +1,7 @@
 import os
 import logging
+import sqlalchemy
+import sqlalchemy.pool
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
@@ -23,6 +25,12 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:/
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
+    "pool_size": 15,
+    "max_overflow": 5,
+    "pool_timeout": 5,
+    "connect_args": {
+        "options": "-c statement_timeout=5000"
+    }
 }
 
 # Initialize the app with the extension
@@ -36,10 +44,12 @@ with app.app_context():
     import models
     db.create_all()
     
-    # Initialize background task manager
-    try:
-        from services.background_task_manager import get_task_manager
-        task_manager = get_task_manager()
-        logging.info("Background task manager initialized")
-    except Exception as e:
-        logging.error(f"Failed to initialize background task manager: {e}")
+    # Temporarily disable background task manager to restore responsiveness
+    # TODO: Re-enable after fixing database contention
+    # try:
+    #     from services.background_task_manager import get_task_manager
+    #     task_manager = get_task_manager()
+    #     logging.info("Background task manager initialized")
+    # except Exception as e:
+    #     logging.error(f"Failed to initialize background task manager: {e}")
+    logging.info("Background task manager temporarily disabled")

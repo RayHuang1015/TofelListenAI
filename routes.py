@@ -13,12 +13,12 @@ import logging
 @app.route('/')
 def index():
     """Home page with overview and quick start options"""
-    recent_content = ContentSource.query.order_by(ContentSource.created_at.desc()).limit(6).all()
+    recent_content = ContentSource.query.order_by(ContentSource.id.desc()).limit(6).all()
     user_id = session.get('user_id')
     recent_scores = []
     
     if user_id:
-        recent_scores = Score.query.filter_by(user_id=user_id).order_by(Score.created_at.desc()).limit(3).all()
+        recent_scores = Score.query.filter_by(user_id=user_id).order_by(Score.id.desc()).limit(3).all()
     
     return render_template('index.html', recent_content=recent_content, recent_scores=recent_scores)
 
@@ -137,8 +137,8 @@ def daily_news_area():
     """Daily International News Area - 3-hour daily international news transcripts"""
     from models import DailyEdition, EditionSegment, ProviderSource
     
-    # Get all daily editions, ordered by date (newest first)
-    daily_editions = DailyEdition.query.order_by(DailyEdition.date.desc()).all()
+    # Get limited daily editions, ordered by date (newest first) - use pagination for performance
+    daily_editions = DailyEdition.query.order_by(DailyEdition.id.desc()).limit(100).all()
     
     # Group by year for better organization
     editions_by_year = {}
@@ -151,13 +151,13 @@ def daily_news_area():
     # Sort years in descending order
     sorted_years = sorted(editions_by_year.keys(), reverse=True)
     
-    # Get statistics
-    total_editions = len(daily_editions)
-    total_duration = sum(edition.total_duration_sec for edition in daily_editions)
+    # Get statistics - use database aggregation instead of Python loops
+    total_editions = DailyEdition.query.count()
+    total_duration = db.session.query(db.func.sum(DailyEdition.total_duration_sec)).scalar() or 0
     avg_duration = total_duration / total_editions if total_editions > 0 else 0
     
-    # Get provider statistics
-    providers = ProviderSource.query.filter_by(active=True).all()
+    # Get provider statistics - limit results
+    providers = ProviderSource.query.filter_by(active=True).limit(20).all()
     
     return render_template('daily_news_area.html', 
                          editions_by_year=editions_by_year, 
@@ -372,7 +372,7 @@ def content_library():
                 page=page, per_page=per_page, error_out=False
             ).items
         else:
-            content_items = query.order_by(ContentSource.name.asc()).limit(100).all()
+            content_items = query.order_by(ContentSource.id.desc()).limit(100).all()
         
         # 獲取過濾選項 - 為TPO提供統一的選項
         content_types = ['Practice TPO Collection']  # 手動添加Practice TPO作為主要類型
