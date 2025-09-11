@@ -350,15 +350,17 @@ function playAllSegments() {
                 // 移除高亮
                 button.closest('.segment-card')?.classList.remove('border-primary', 'bg-light');
                 
-                currentSegmentIndex++;
-                // 短暫暫停後播放下一段
-                setTimeout(playNextSegment, 800);
+                // 添加流暢過渡，不要重複增加currentSegmentIndex
+                setTimeout(() => {
+                    addTransitionAndPlay();
+                }, 1200);
             };
             
             utterance.onerror = (e) => {
                 button.closest('.segment-card')?.classList.remove('border-primary', 'bg-light');
-                currentSegmentIndex++;
-                setTimeout(playNextSegment, 500);
+                setTimeout(() => {
+                    addTransitionAndPlay();
+                }, 500);
             };
             
             speechSynthesis.speak(utterance);
@@ -371,6 +373,43 @@ function playAllSegments() {
     }
     
     playNextSegment();
+    
+    // 添加流暢過渡的輔助函數
+    function addTransitionAndPlay() {
+        // 先移動到下一段落
+        currentSegmentIndex++;
+        
+        if (currentSegmentIndex >= segmentButtons.length) {
+            hidePlaying();
+            stopTimer();
+            return;
+        }
+        
+        // 段落間的過渡詞句
+        const transitions = [
+            "Moving on to our next story...",
+            "In other news...", 
+            "Meanwhile...",
+            "Continuing our coverage...",
+            "Now turning to...",
+            "In related developments..."
+        ];
+        
+        const transition = transitions[Math.floor(Math.random() * transitions.length)];
+        const transitionUtterance = createNewsAnchorUtterance(transition);
+        transitionUtterance.rate = 0.95;
+        transitionUtterance.pitch = 0.75;
+        
+        transitionUtterance.onend = () => {
+            setTimeout(playNextSegment, 500);
+        };
+        
+        transitionUtterance.onerror = () => {
+            setTimeout(playNextSegment, 300);
+        };
+        
+        speechSynthesis.speak(transitionUtterance);
+    }
 }
 
 // 停止TTS
@@ -408,10 +447,17 @@ function createNewsAnchorUtterance(text) {
     const voices = speechSynthesis.getVoices();
     const preferredLang = voiceSelect ? voiceSelect.value : 'en-US';
     
-    // 尋找最適合的語音(優先女性新聞主播聲音)
+    // 尋找最適合的女性語音（優先選擇女性新聞主播聲音）
     let selectedVoice = voices.find(voice => 
         voice.lang.startsWith(preferredLang) && 
-        (voice.name.includes('News') || voice.name.includes('Professional') || voice.name.includes('Female'))
+        (voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman'))
+    ) || voices.find(voice => 
+        voice.lang.startsWith(preferredLang) && 
+        (voice.name.toLowerCase().includes('samantha') || voice.name.toLowerCase().includes('susan') || 
+         voice.name.toLowerCase().includes('karen') || voice.name.toLowerCase().includes('zira'))
+    ) || voices.find(voice => 
+        voice.lang.startsWith(preferredLang) && 
+        (voice.name.includes('News') || voice.name.includes('Professional'))
     ) || voices.find(voice => voice.lang.startsWith(preferredLang) && voice.default) ||
        voices.find(voice => voice.lang.startsWith('en'));
     
