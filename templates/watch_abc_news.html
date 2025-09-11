@@ -107,8 +107,9 @@
         <div class="col-lg-8">
             <div class="card bg-dark border-secondary">
                 <div class="card-body p-0">
-                    {% if video_id %}
                     <div class="video-container">
+                        {% if video_id %}
+                        <!-- YouTube 內嵌播放器 -->
                         <iframe 
                             id="youtube-player"
                             src="https://www.youtube.com/embed/{{ video_id }}?enablejsapi=1&cc_load_policy=1&cc_lang_pref=zh-TW&hl=zh-TW&autoplay=0"
@@ -116,17 +117,81 @@
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                             allowfullscreen>
                         </iframe>
+                        {% elif 'abcnews.go.com' in content.url %}
+                        <!-- ABC News 官方直播流 -->
+                        <iframe 
+                            id="abc-player"
+                            src="https://abcnews.go.com/Live/embed"
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                        {% elif 'pluto.tv' in content.url %}
+                        <!-- Pluto TV 內嵌播放器 -->
+                        <iframe 
+                            id="pluto-player"
+                            src="https://pluto.tv/us/live-tv/6508be683a0d700008c534e4?embed=true"
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                        {% elif 'abc7.com' in content.url or 'abc7ny.com' in content.url or 'abc13.com' in content.url or '6abc.com' in content.url or 'abc11.com' in content.url %}
+                        <!-- ABC 地區分台直播 -->
+                        <div class="embedded-stream-container">
+                            <div class="stream-info text-center py-4">
+                                <i class="fas fa-broadcast-tower fa-3x text-danger mb-3"></i>
+                                <h4>ABC地區分台直播</h4>
+                                <p class="text-muted mb-4">點擊下方按鈕在新視窗觀看直播，或使用內嵌播放器</p>
+                                <a href="{{ content.url }}" target="_blank" class="btn btn-danger me-2">
+                                    <i class="fas fa-external-link-alt me-1"></i>新視窗觀看
+                                </a>
+                                <button class="btn btn-outline-light" onclick="loadEmbeddedStream()">
+                                    <i class="fas fa-play me-1"></i>內嵌播放
+                                </button>
+                            </div>
+                            <iframe 
+                                id="regional-player" 
+                                style="display:none;"
+                                src=""
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                        {% else %}
+                        <!-- 通用播放器或備用方案 -->
+                        <div class="universal-player-container">
+                            <div class="text-center py-4">
+                                <i class="fas fa-play-circle fa-3x text-danger mb-3"></i>
+                                <h4>ABC News Live Stream</h4>
+                                <p class="text-muted mb-4">選擇您偏好的觀看方式：</p>
+                                
+                                <!-- 多個播放選項 -->
+                                <div class="player-options">
+                                    <button class="btn btn-danger me-2 mb-2" onclick="loadYouTubeBackup()">
+                                        <i class="fab fa-youtube me-1"></i>YouTube直播
+                                    </button>
+                                    <button class="btn btn-info me-2 mb-2" onclick="loadAbcOfficial()">
+                                        <i class="fas fa-tv me-1"></i>ABC官方
+                                    </button>
+                                    <button class="btn btn-success mb-2" onclick="loadPlutoTV()">
+                                        <i class="fas fa-satellite me-1"></i>Pluto TV
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 動態載入的播放器 -->
+                            <iframe 
+                                id="dynamic-player" 
+                                style="display:none;"
+                                src=""
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% else %}
-                    <div class="text-center p-5">
-                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                        <h4>影片無法載入</h4>
-                        <p class="text-muted">抱歉，無法找到有效的影片ID。</p>
-                        <a href="{{ content.url }}" target="_blank" class="btn btn-danger">
-                            <i class="fas fa-external-link-alt me-2"></i>在YouTube觀看
-                        </a>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
 
@@ -240,29 +305,102 @@
 </div>
 
 <script>
-// Enhanced subtitle control with language switching
-function changeSubtitleLanguage(language) {
-    const iframe = document.getElementById('youtube-player');
-    const currentSrc = iframe.src;
-    
-    // Extract video ID from current src
-    const videoIdMatch = currentSrc.match(/embed\/([^?]+)/);
-    if (!videoIdMatch) return;
-    
-    const videoId = videoIdMatch[1];
-    let newSrc;
-    
-    if (language === 'off') {
-        newSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&cc_load_policy=0&autoplay=0`;
-    } else {
-        newSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&cc_load_policy=1&cc_lang_pref=${language}&hl=${language}&autoplay=0`;
+// 統一播放器管理系統
+class ABCPlayerManager {
+    constructor() {
+        this.currentPlayer = null;
+        this.playerType = null;
     }
     
-    iframe.src = newSrc;
-    console.log('Subtitle language changed to:', language);
+    getCurrentPlayer() {
+        // 找出當前活躍的播放器
+        const players = ['youtube-player', 'abc-player', 'pluto-player', 'regional-player', 'dynamic-player'];
+        for (let id of players) {
+            const player = document.getElementById(id);
+            if (player && player.style.display !== 'none') {
+                this.currentPlayer = player;
+                this.playerType = id.split('-')[0];
+                return player;
+            }
+        }
+        return null;
+    }
     
-    // Show feedback
-    showSubtitleFeedback(language);
+    changeSubtitleLanguage(language) {
+        const player = this.getCurrentPlayer();
+        if (!player) return;
+        
+        if (this.playerType === 'youtube') {
+            this.changeYouTubeSubtitles(player, language);
+        } else {
+            // 對於非YouTube播放器，顯示適當的消息
+            this.showNonYouTubeSubtitleMessage(language);
+        }
+    }
+    
+    changeYouTubeSubtitles(iframe, language) {
+        const currentSrc = iframe.src;
+        const videoIdMatch = currentSrc.match(/embed\/([^?]+)/);
+        if (!videoIdMatch) return;
+        
+        const videoId = videoIdMatch[1];
+        let newSrc;
+        
+        if (language === 'off') {
+            newSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&cc_load_policy=0&autoplay=0`;
+        } else {
+            newSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&cc_load_policy=1&cc_lang_pref=${language}&hl=${language}&autoplay=0`;
+        }
+        
+        iframe.src = newSrc;
+        console.log('YouTube subtitle language changed to:', language);
+        this.showSubtitleFeedback(language);
+    }
+    
+    showNonYouTubeSubtitleMessage(language) {
+        const messages = {
+            'en': '此播放器支援原生英文字幕',
+            'zh-TW': '此播放器不支援中文字幕，但提供原生英文內容',
+            'zh-CN': '此播放器不支援中文字幕，但提供原生英文內容',
+            'off': '字幕控制僅適用於YouTube播放器'
+        };
+        
+        this.showSubtitleFeedback(language, messages[language]);
+    }
+    
+    showSubtitleFeedback(language, customMessage = null) {
+        const messages = {
+            'en': '✓ 已切換至英文字幕',
+            'zh-TW': '✓ 已切換至繁體中文字幕',
+            'zh-CN': '✓ 已切換至简体中文字幕',
+            'off': '✓ 已關閉字幕'
+        };
+        
+        let feedback = document.getElementById('subtitle-feedback');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.id = 'subtitle-feedback';
+            feedback.className = 'alert alert-success mt-2';
+            feedback.style.display = 'none';
+            document.querySelector('.subtitle-controls').appendChild(feedback);
+        }
+        
+        const message = customMessage || messages[language] || '字幕設定已更新';
+        feedback.innerHTML = `<i class="fas fa-check-circle me-2"></i>${message}`;
+        feedback.style.display = 'block';
+        
+        setTimeout(() => {
+            feedback.style.display = 'none';
+        }, 4000);
+    }
+}
+
+// 全域播放器管理器
+const playerManager = new ABCPlayerManager();
+
+// Enhanced subtitle control with language switching
+function changeSubtitleLanguage(language) {
+    playerManager.changeSubtitleLanguage(language);
 }
 
 function showSubtitleFeedback(language) {
@@ -313,10 +451,72 @@ document.addEventListener('DOMContentLoaded', function() {
         changeSubtitleLanguage('en');
     });
     
-    // Auto-enable Chinese subtitles on page load
+    // Auto-enable Chinese subtitles on page load for YouTube videos
     setTimeout(() => {
-        changeSubtitleLanguage('zh-TW');
+        const youtubePlayer = document.getElementById('youtube-player');
+        if (youtubePlayer) {
+            changeSubtitleLanguage('zh-TW');
+        }
     }, 1000);
 });
+
+// 播放器載入函數
+function loadEmbeddedStream() {
+    const regionalPlayer = document.getElementById('regional-player');
+    const streamInfo = document.querySelector('.stream-info');
+    
+    if (regionalPlayer && streamInfo) {
+        streamInfo.style.display = 'none';
+        regionalPlayer.style.display = 'block';
+        regionalPlayer.src = '{{ content.url }}';
+    }
+}
+
+function loadYouTubeBackup() {
+    const dynamicPlayer = document.getElementById('dynamic-player');
+    const playerOptions = document.querySelector('.player-options');
+    
+    if (dynamicPlayer) {
+        // 使用備用的YouTube ABC News Live
+        dynamicPlayer.src = 'https://www.youtube.com/embed/f-hdqyDPxs8?enablejsapi=1&cc_load_policy=1&cc_lang_pref=zh-TW&hl=zh-TW&autoplay=0';
+        dynamicPlayer.style.display = 'block';
+        if (playerOptions) playerOptions.style.display = 'none';
+        
+        // 更新播放器ID以支援字幕控制
+        dynamicPlayer.id = 'youtube-player';
+        
+        setTimeout(() => {
+            changeSubtitleLanguage('zh-TW');
+        }, 1000);
+    }
+}
+
+function loadAbcOfficial() {
+    const dynamicPlayer = document.getElementById('dynamic-player');
+    const playerOptions = document.querySelector('.player-options');
+    
+    if (dynamicPlayer) {
+        dynamicPlayer.src = 'https://abcnews.go.com/Live/embed';
+        dynamicPlayer.style.display = 'block';
+        if (playerOptions) playerOptions.style.display = 'none';
+        
+        // 更新播放器ID
+        dynamicPlayer.id = 'abc-player';
+    }
+}
+
+function loadPlutoTV() {
+    const dynamicPlayer = document.getElementById('dynamic-player');
+    const playerOptions = document.querySelector('.player-options');
+    
+    if (dynamicPlayer) {
+        dynamicPlayer.src = 'https://pluto.tv/us/live-tv/6508be683a0d700008c534e4?embed=true';
+        dynamicPlayer.style.display = 'block';
+        if (playerOptions) playerOptions.style.display = 'none';
+        
+        // 更新播放器ID
+        dynamicPlayer.id = 'pluto-player';
+    }
+}
 </script>
 {% endblock %}
