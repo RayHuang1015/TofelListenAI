@@ -146,7 +146,7 @@
     </div>
     {% else %}
     <!-- Daily Editions by Year -->
-    {% for year in sorted_years[:3] %}<!-- Limit to latest 3 years for performance -->
+    {% for year in sorted_years %}<!-- Show all years -->
     <div class="row mb-4 year-section" data-year="{{ year }}">
         <div class="col-12">
             <div class="d-flex align-items-center mb-3">
@@ -155,7 +155,7 @@
             </div>
             
             <div class="row">
-                {% for edition in editions_by_year[year][:12] %}<!-- Limit to 12 editions per year -->
+                {% for edition in editions_by_year[year] %}<!-- Show all editions -->
                 <div class="col-lg-6 col-xl-4 mb-3">
                     <div class="card news-card h-100">
                         <div class="card-body">

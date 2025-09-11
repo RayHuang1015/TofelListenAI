@@ -44,12 +44,11 @@ with app.app_context():
     import models
     db.create_all()
     
-    # Temporarily disable background task manager to restore responsiveness
-    # TODO: Re-enable after fixing database contention
-    # try:
-    #     from services.background_task_manager import get_task_manager
-    #     task_manager = get_task_manager()
-    #     logging.info("Background task manager initialized")
-    # except Exception as e:
-    #     logging.error(f"Failed to initialize background task manager: {e}")
-    logging.info("Background task manager temporarily disabled")
+    # Re-enable background task manager for daily content generation
+    try:
+        from services.background_task_manager import get_task_manager
+        task_manager = get_task_manager()
+        logging.info("Background task manager initialized")
+    except Exception as e:
+        logging.error(f"Failed to initialize background task manager: {e}")
+        logging.info("Background task manager temporarily disabled")

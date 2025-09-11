@@ -171,7 +171,7 @@ def daily_news_area():
         from sqlalchemy.orm import selectinload
         daily_editions = DailyEdition.query.options(
             selectinload(DailyEdition.segments)
-        ).order_by(DailyEdition.id.desc()).limit(30).all()  # Reduce to 30 for better performance
+        ).order_by(DailyEdition.id.desc()).limit(115).all()  # Show all available editions
         logging.info(f"Daily editions query took {(time.time() - query_start) * 1000:.2f}ms")
         
         # Group by year for better organization
