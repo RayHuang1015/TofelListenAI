@@ -166,12 +166,12 @@ def daily_news_area():
     try:
         from models import DailyEdition, EditionSegment, ProviderSource
         
-        # Get limited daily editions with eager loading to avoid N+1 queries  
+        # Get all daily editions with eager loading to avoid N+1 queries  
         query_start = time.time()
         from sqlalchemy.orm import selectinload
         daily_editions = DailyEdition.query.options(
             selectinload(DailyEdition.segments)
-        ).order_by(DailyEdition.id.desc()).limit(115).all()  # Show all available editions
+        ).order_by(DailyEdition.date.desc()).all()  # Order by date to include all years
         logging.info(f"Daily editions query took {(time.time() - query_start) * 1000:.2f}ms")
         
         # Group by year for better organization
