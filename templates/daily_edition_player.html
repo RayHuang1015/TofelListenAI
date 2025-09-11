@@ -168,7 +168,7 @@
                                 </div>
                                 
                                 <div class="d-grid gap-2">
-                                    <button class="btn btn-sm btn-success" onclick="playSegmentTTS('{{ segment.transcript_text if segment.transcript_text else segment.headline }}', 'Segment {{ segment.seq }}')">
+                                    <button class="btn btn-sm btn-success" data-segment-text="{{ segment.transcript_text if segment.transcript_text else segment.headline }}" data-segment-title="Segment {{ segment.seq }}" onclick="playSegmentFromButton(this)">
                                         <i class="fas fa-volume-up me-1"></i>Listen to This Segment
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary toggle-transcript" data-target="transcript-{{ segment.id }}">
@@ -272,9 +272,13 @@ function testTTS() {
     }
 }
 
-// 播放段落TTS
-function playSegmentTTS(text, title) {
-    debugLog(`播放段落: ${title}`);
+// 從按鈕播放段落TTS
+function playSegmentFromButton(button) {
+    const text = button.getAttribute('data-segment-text');
+    const title = button.getAttribute('data-segment-title');
+    
+    debugLog(`從按鈕播放段落: ${title}`);
+    debugLog(`文字長度: ${text ? text.length : 0}`);
     
     if (!window.speechSynthesis) {
         alert('瀏覽器不支持語音合成');
@@ -295,9 +299,10 @@ function playSegmentTTS(text, title) {
     }
     
     try {
-        // 清理文字中的特殊字符
-        const cleanText = text.replace(/['"]/g, ' ').replace(/\s+/g, ' ').trim();
+        // 清理文字，移除多餘的空白和換行
+        const cleanText = text.replace(/\s+/g, ' ').trim();
         debugLog(`清理後的文字長度: ${cleanText.length}`);
+        debugLog(`文字前50字符: ${cleanText.substring(0, 50)}...`);
         
         const utterance = new SpeechSynthesisUtterance(cleanText);
         
@@ -407,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 統計按鈕數量
-    const segmentButtons = document.querySelectorAll('button[onclick*="playSegmentTTS"]');
+    const segmentButtons = document.querySelectorAll('button[data-segment-text]');
     debugLog(`找到 ${segmentButtons.length} 個段落播放按鈕`);
     
     debugLog('=== TTS初始化完成 ===');
