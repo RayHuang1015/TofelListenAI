@@ -9,6 +9,26 @@ from services.ai_feedback_service import AIFeedbackService
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import logging
+import time
+
+# Health check endpoints  
+@app.route('/_healthz')
+def health_check():
+    """Simple health check without database"""
+    return 'ok', 200
+
+@app.route('/_db_ping')
+def db_ping():
+    """Database health check with timing"""
+    start_time = time.time()
+    try:
+        db.session.execute(db.text('SELECT 1'))
+        duration = (time.time() - start_time) * 1000
+        return f'db_ok {duration:.2f}ms', 200
+    except Exception as e:
+        duration = (time.time() - start_time) * 1000
+        logging.error(f"DB ping failed after {duration:.2f}ms: {e}")
+        return f'db_error {duration:.2f}ms', 500
 
 @app.route('/')
 def index():
