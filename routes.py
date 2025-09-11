@@ -45,6 +45,9 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """User registration"""
+    start_time = time.time()
+    logging.info(f"Register route started at {start_time}")
+    
     if request.method == 'POST':
         username = request.form['username']
         email = request.form['email']
@@ -78,6 +81,8 @@ def register():
             flash('Registration failed. Please try again.', 'error')
             return redirect(url_for('register'))
     
+    duration = (time.time() - start_time) * 1000
+    logging.info(f"Register route completed in {duration:.2f}ms")
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -155,37 +160,54 @@ def abc_news_area():
 @app.route('/daily_news_area')
 def daily_news_area():
     """Daily International News Area - 3-hour daily international news transcripts"""
-    from models import DailyEdition, EditionSegment, ProviderSource
+    start_time = time.time()
+    logging.info(f"Daily news area route started at {start_time}")
     
-    # Get limited daily editions, ordered by date (newest first) - use pagination for performance
-    daily_editions = DailyEdition.query.order_by(DailyEdition.id.desc()).limit(100).all()
-    
-    # Group by year for better organization
-    editions_by_year = {}
-    for edition in daily_editions:
-        year = edition.date.year
-        if year not in editions_by_year:
-            editions_by_year[year] = []
-        editions_by_year[year].append(edition)
-    
-    # Sort years in descending order
-    sorted_years = sorted(editions_by_year.keys(), reverse=True)
-    
-    # Get statistics - use database aggregation instead of Python loops
-    total_editions = DailyEdition.query.count()
-    total_duration = db.session.query(db.func.sum(DailyEdition.total_duration_sec)).scalar() or 0
-    avg_duration = total_duration / total_editions if total_editions > 0 else 0
-    
-    # Get provider statistics - limit results
-    providers = ProviderSource.query.filter_by(active=True).limit(20).all()
-    
-    return render_template('daily_news_area.html', 
-                         editions_by_year=editions_by_year, 
-                         sorted_years=sorted_years,
-                         total_editions=total_editions,
-                         total_duration=total_duration,
-                         avg_duration=avg_duration,
-                         providers=providers)
+    try:
+        from models import DailyEdition, EditionSegment, ProviderSource
+        
+        # Get limited daily editions, ordered by date (newest first) - use pagination for performance
+        query_start = time.time()
+        daily_editions = DailyEdition.query.order_by(DailyEdition.id.desc()).limit(50).all()
+        logging.info(f"Daily editions query took {(time.time() - query_start) * 1000:.2f}ms")
+        
+        # Group by year for better organization
+        editions_by_year = {}
+        for edition in daily_editions:
+            year = edition.date.year
+            if year not in editions_by_year:
+                editions_by_year[year] = []
+            editions_by_year[year].append(edition)
+        
+        # Sort years in descending order
+        sorted_years = sorted(editions_by_year.keys(), reverse=True)
+        
+        # Simplified statistics to avoid expensive aggregations
+        total_editions = len(daily_editions)
+        total_duration = sum(edition.total_duration_sec for edition in daily_editions)
+        avg_duration = total_duration / total_editions if total_editions > 0 else 0
+        
+        # Skip providers for now to isolate performance issue
+        providers = []
+        
+        template_start = time.time()
+        result = render_template('daily_news_area.html', 
+                             editions_by_year=editions_by_year, 
+                             sorted_years=sorted_years,
+                             total_editions=total_editions,
+                             total_duration=total_duration,
+                             avg_duration=avg_duration,
+                             providers=providers)
+        logging.info(f"Template render took {(time.time() - template_start) * 1000:.2f}ms")
+        
+        duration = (time.time() - start_time) * 1000
+        logging.info(f"Daily news area route completed in {duration:.2f}ms")
+        return result
+        
+    except Exception as e:
+        duration = (time.time() - start_time) * 1000
+        logging.error(f"Daily news area route failed after {duration:.2f}ms: {e}")
+        return f"Error loading daily news area: {str(e)}", 500
 
 @app.route('/sync_news_date', methods=['GET', 'POST'])
 def sync_news_date():
