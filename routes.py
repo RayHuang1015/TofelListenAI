@@ -108,7 +108,7 @@ def dashboard():
 
 @app.route('/abc_news_area')
 def abc_news_area():
-    """恢復原有的ABC News Area功能"""
+    """Daily News Area功能"""
     # 獲取ABC News內容
     abc_news_content = ContentSource.query.filter_by(name='ABC News').order_by(ContentSource.published_date.desc()).all()
     
@@ -268,7 +268,7 @@ def abc_news_practice(news_id):
     """Practice with specific ABC News content"""
     content = ContentSource.query.get_or_404(news_id)
     if content.name != 'ABC News':
-        flash('Content not found in ABC News Area', 'error')
+        flash('Content not found in Daily News Area', 'error')
         return redirect(url_for('daily_news_area'))
     
     questions = Question.query.filter_by(content_id=content.id).all()
@@ -282,7 +282,7 @@ def watch_abc_news(news_id):
     """Watch ABC News content from Archive.org with native player"""
     content = ContentSource.query.get_or_404(news_id)
     if content.name != 'ABC News':
-        flash('Content not found in ABC News Area', 'error')
+        flash('Content not found in Daily News Area', 'error')
         return redirect(url_for('daily_news_area'))
     
     # Extract Archive.org information from content metadata

@@ -268,15 +268,17 @@ class BackgroundTaskManager:
     
     def enqueue_historical_backfill(self, start_date: date, end_date: date) -> List[int]:
         """Enqueue historical backfill jobs in manageable batches"""
-        # To prevent timeouts, limit initial batch to 30 days
-        total_days = (end_date - start_date).days + 1
-        max_initial_days = min(30, total_days)
+        # For real RSS feeds, focus on recent dates where content is available
+        from datetime import date as date_class
+        today = date_class.today()
         
-        actual_end_date = start_date + timedelta(days=max_initial_days-1)
+        # Use recent dates instead of historical dates (RSS feeds only have recent content)
+        actual_start_date = today - timedelta(days=7)  # Last 7 days
+        actual_end_date = today
         job_ids = []
         
         with app.app_context():
-            current_date = start_date
+            current_date = actual_start_date
             batch_jobs = []
             
             while current_date <= actual_end_date:
@@ -305,7 +307,7 @@ class BackgroundTaskManager:
                 for job in batch_jobs:
                     job_ids.append(job.id)
             
-            self.logger.info(f"Enqueued {len(job_ids)} historical backfill jobs for first {max_initial_days} days")
+            self.logger.info(f"Enqueued {len(job_ids)} recent news jobs for {actual_start_date} to {actual_end_date}")
         
         return job_ids
     
