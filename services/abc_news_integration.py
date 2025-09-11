@@ -1,7 +1,7 @@
 import os
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict
 from app import db
 from models import ContentSource, Question
@@ -171,6 +171,110 @@ class ABCNewsIntegration:
         except Exception as e:
             logging.error(f"Error generating questions for content {content.id}: {e}")
     
+    def sync_daily_editions(self, start_date: datetime, end_date: datetime) -> Dict:
+        """Sync authentic daily news editions for specific date range"""
+        results = {
+            'total_days_processed': 0,
+            'successful_days': 0,
+            'daily_editions_created': 0,
+            'errors': []
+        }
+        
+        try:
+            current_date = start_date
+            while current_date <= end_date:
+                logging.info(f"Processing daily edition for {current_date.date()}")
+                
+                # Check if we already have content for this date
+                existing = ContentSource.query.filter(
+                    ContentSource.name == 'ABC News',
+                    db.func.date(ContentSource.published_date) == current_date.date()
+                ).first()
+                
+                if existing and not existing.url.startswith('https://abcnews.go.com/Live'):
+                    # Skip if we already have authentic content for this date
+                    current_date += timedelta(days=1)
+                    continue
+                
+                # Fetch daily edition from YouTube
+                daily_edition = self.youtube_fetcher.search_abc_daily_news_videos(current_date)
+                
+                if daily_edition['video_count'] > 0:
+                    # Save daily edition to database
+                    saved = self._save_daily_edition_to_database(daily_edition)
+                    if saved:
+                        results['daily_editions_created'] += 1
+                        results['successful_days'] += 1
+                
+                results['total_days_processed'] += 1
+                current_date += timedelta(days=1)
+                
+                # Rate limiting
+                import time
+                time.sleep(0.3)
+                
+        except Exception as e:
+            error_msg = f"Error during daily editions sync: {e}"
+            logging.error(error_msg)
+            results['errors'].append(error_msg)
+            
+        return results
+    
+    def _save_daily_edition_to_database(self, daily_edition: Dict) -> bool:
+        """Save a daily edition composite playlist to database"""
+        try:
+            date = daily_edition['date']
+            
+            # Remove existing entry for this date if it exists
+            existing = ContentSource.query.filter(
+                ContentSource.name == 'ABC News',
+                db.func.date(ContentSource.published_date) == date
+            ).first()
+            
+            if existing:
+                db.session.delete(existing)
+                
+            # Create content metadata for composite playlist
+            content_metadata = {
+                'composite': True,
+                'daily_edition': True,
+                'date': str(date),
+                'total_duration': daily_edition['total_duration'],
+                'video_count': daily_edition['video_count'],
+                'segments': daily_edition['videos'],
+                'playlist_url': daily_edition.get('playlist_url'),
+                'source': 'youtube_daily_search',
+                'fetched_at': datetime.now().isoformat()
+            }
+            
+            # Create main video info from first segment for compatibility
+            main_video = daily_edition['videos'][0] if daily_edition['videos'] else {}
+            
+            # Create ContentSource entry
+            content = ContentSource(
+                name='ABC News',
+                type='news',
+                url=daily_edition.get('playlist_url') or main_video.get('video_url', ''),
+                description=daily_edition['description'],
+                category=main_video.get('category', 'General News'),
+                difficulty_level='intermediate',
+                duration=daily_edition['total_duration'],
+                topic='Daily News',
+                published_date=datetime.combine(date, datetime.min.time()),
+                content_metadata=json.dumps(content_metadata, ensure_ascii=False, default=str)
+            )
+            
+            db.session.add(content)
+            db.session.commit()
+            
+            logging.info(f"Saved daily edition for {date}: {daily_edition['video_count']} segments, {daily_edition['total_duration']//3600}h {(daily_edition['total_duration']%3600)//60}m")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Error saving daily edition for {daily_edition.get('date')}: {e}")
+            db.session.rollback()
+            return False
+    
     def update_abc_news_area(self) -> Dict:
         """Update ABC News area with latest content"""
         try:
@@ -189,6 +293,54 @@ class ABCNewsIntegration:
             
         except Exception as e:
             logging.error(f"Error updating ABC News area: {e}")
+            return {'error': str(e)}
+    
+    def backfill_authentic_daily_content(self, start_year: int = 2024, end_year: int = 2025) -> Dict:
+        """Replace fake content with authentic daily editions for 2024-2025"""
+        try:
+            results = {
+                'total_backfilled': 0,
+                'years_processed': [],
+                'errors': []
+            }
+            
+            for year in range(start_year, min(end_year + 1, datetime.now().year + 1)):
+                logging.info(f"Backfilling authentic content for {year}")
+                
+                # Process each month to avoid hitting API limits
+                for month in range(1, 13):
+                    start_date = datetime(year, month, 1)
+                    
+                    # Calculate end date for the month
+                    if month == 12:
+                        end_date = datetime(year + 1, 1, 1) - timedelta(days=1)
+                    else:
+                        end_date = datetime(year, month + 1, 1) - timedelta(days=1)
+                    
+                    # Don't process future dates
+                    if start_date > datetime.now():
+                        break
+                    
+                    # Ensure we don't go beyond today
+                    if end_date > datetime.now():
+                        end_date = datetime.now()
+                    
+                    logging.info(f"Backfilling {year}-{month:02d}: {start_date.date()} to {end_date.date()}")
+                    
+                    month_results = self.sync_daily_editions(start_date, end_date)
+                    results['total_backfilled'] += month_results['daily_editions_created']
+                    results['errors'].extend(month_results['errors'])
+                
+                results['years_processed'].append(year)
+                
+                # Longer delay between years
+                import time
+                time.sleep(1)
+            
+            return results
+            
+        except Exception as e:
+            logging.error(f"Error during backfill: {e}")
             return {'error': str(e)}
     
     def get_abc_news_statistics(self) -> Dict:

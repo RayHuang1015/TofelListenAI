@@ -155,6 +155,154 @@ class YouTubeContentFetcher:
         
         return 'General News'
     
+    def search_abc_daily_news_videos(self, target_date: datetime, max_results: int = 20) -> Dict:
+        """Search for ABC News daily videos for a specific date and create composite playlist"""
+        try:
+            # Search for videos published on the target date (24-hour window)
+            start_date = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = start_date.replace(hour=23, minute=59, second=59)
+            
+            published_after = start_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+            published_before = end_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+            
+            # Multiple searches for different types of daily content
+            search_queries = [
+                'World News Tonight', 
+                'ABC News Prime',
+                'Good Morning America',
+                'breaking news',
+                'full episode'
+            ]
+            
+            all_videos = []
+            
+            for query in search_queries:
+                search_url = f"{self.base_url}/search"
+                search_params = {
+                    'part': 'snippet',
+                    'channelId': self.abc_news_channel_id,
+                    'q': query,
+                    'type': 'video',
+                    'order': 'relevance',
+                    'publishedAfter': published_after,
+                    'publishedBefore': published_before,
+                    'maxResults': 10,
+                    'key': self.api_key
+                }
+                
+                search_response = requests.get(search_url, params=search_params)
+                search_response.raise_for_status()
+                search_data = search_response.json()
+                
+                if 'items' in search_data:
+                    video_ids = [item['id']['videoId'] for item in search_data['items']]
+                    
+                    # Get detailed video information
+                    videos_url = f"{self.base_url}/videos"
+                    videos_params = {
+                        'part': 'snippet,contentDetails,statistics',
+                        'id': ','.join(video_ids),
+                        'key': self.api_key
+                    }
+                    
+                    videos_response = requests.get(videos_url, params=videos_params)
+                    videos_response.raise_for_status()
+                    videos_data = videos_response.json()
+                    
+                    query_videos = self._process_video_data(videos_data.get('items', []))
+                    all_videos.extend(query_videos)
+                
+                # Small delay between searches
+                import time
+                time.sleep(0.1)
+            
+            # Remove duplicates and sort by duration (longest first)
+            unique_videos = {}
+            for video in all_videos:
+                video_id = video['video_id']
+                if video_id not in unique_videos or video['duration'] > unique_videos[video_id]['duration']:
+                    unique_videos[video_id] = video
+            
+            sorted_videos = sorted(unique_videos.values(), key=lambda x: x['duration'], reverse=True)
+            
+            # Create composite playlist to reach 1-2 hours (3600-7200 seconds)
+            return self._create_daily_composite_playlist(sorted_videos, target_date)
+            
+        except Exception as e:
+            logging.error(f"Error searching daily ABC News for {target_date.date()}: {e}")
+            return self._create_empty_daily_playlist(target_date)
+    
+    def _create_daily_composite_playlist(self, videos: List[Dict], target_date: datetime) -> Dict:
+        """Create a composite playlist from videos to reach 1-2 hour target duration"""
+        target_min = 3600  # 1 hour minimum
+        target_max = 7200  # 2 hours maximum
+        
+        selected_videos = []
+        total_duration = 0
+        
+        # First, try to find one long video that meets the requirement
+        for video in videos:
+            if target_min <= video['duration'] <= target_max:
+                selected_videos = [video]
+                total_duration = video['duration']
+                break
+        
+        # If no single video meets requirement, combine multiple videos
+        if not selected_videos:
+            for video in videos:
+                if total_duration + video['duration'] <= target_max:
+                    selected_videos.append(video)
+                    total_duration += video['duration']
+                    
+                    if total_duration >= target_min:
+                        break
+        
+        # If still no videos, take the longest available ones
+        if not selected_videos and videos:
+            selected_videos = videos[:3]  # Take top 3 longest videos
+            total_duration = sum(v['duration'] for v in selected_videos)
+        
+        return {
+            'date': target_date.date(),
+            'total_duration': total_duration,
+            'video_count': len(selected_videos),
+            'videos': selected_videos,
+            'composite': True,
+            'title': f'ABC News Daily Edition - {target_date.strftime("%B %d, %Y")}',
+            'description': f'Compiled ABC News content from {target_date.strftime("%B %d, %Y")} ({len(selected_videos)} segments, {total_duration//3600}h {(total_duration%3600)//60}m)',
+            'playlist_url': self._generate_playlist_url(selected_videos) if selected_videos else None
+        }
+    
+    def _create_empty_daily_playlist(self, target_date: datetime) -> Dict:
+        """Create empty playlist when no videos found"""
+        return {
+            'date': target_date.date(),
+            'total_duration': 0,
+            'video_count': 0,
+            'videos': [],
+            'composite': True,
+            'title': f'ABC News Daily Edition - {target_date.strftime("%B %d, %Y")} (No Content)',
+            'description': f'No ABC News content available for {target_date.strftime("%B %d, %Y")}',
+            'playlist_url': None
+        }
+    
+    def _generate_playlist_url(self, videos: List[Dict]) -> str:
+        """Generate YouTube playlist URL for multiple videos"""
+        if not videos:
+            return None
+        
+        # Use first video as main video, add others as playlist
+        main_video_id = videos[0]['video_id']
+        
+        if len(videos) == 1:
+            return f"https://www.youtube.com/watch?v={main_video_id}"
+        
+        # Create playlist parameter with video IDs
+        video_ids = [v['video_id'] for v in videos]
+        playlist_param = ','.join(video_ids)
+        
+        return f"https://www.youtube.com/watch?v={main_video_id}&list={playlist_param}"
+
     def fetch_abc_news_content_by_year(self, year: int, max_videos_per_month: int = 20) -> List[Dict]:
         """Fetch ABC News Live content for a specific year"""
         all_videos = []
@@ -186,6 +334,26 @@ class YouTubeContentFetcher:
             time.sleep(0.1)
         
         return all_videos
+    
+    def fetch_daily_editions_for_date_range(self, start_date: datetime, end_date: datetime) -> List[Dict]:
+        """Fetch daily editions for a range of dates"""
+        daily_editions = []
+        current_date = start_date
+        
+        while current_date <= end_date:
+            logging.info(f"Fetching daily edition for {current_date.date()}")
+            
+            daily_edition = self.search_abc_daily_news_videos(current_date)
+            if daily_edition['video_count'] > 0:
+                daily_editions.append(daily_edition)
+            
+            current_date += timedelta(days=1)
+            
+            # Rate limiting
+            import time
+            time.sleep(0.2)
+        
+        return daily_editions
     
     def get_video_transcript_placeholder(self, video_data: Dict) -> str:
         """Generate a placeholder transcript based on video metadata"""
