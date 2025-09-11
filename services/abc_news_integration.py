@@ -7,6 +7,7 @@ from app import db
 from models import ContentSource, Question
 from services.youtube_content_fetcher import YouTubeContentFetcher
 from services.ai_question_generator import AIQuestionGenerator
+from services.archive_org_integration import ArchiveOrgIntegration
 
 class ABCNewsIntegration:
     """Service for integrating ABC News Live content from YouTube"""
@@ -14,6 +15,7 @@ class ABCNewsIntegration:
     def __init__(self):
         self.youtube_fetcher = YouTubeContentFetcher()
         self.question_generator = AIQuestionGenerator()
+        self.archive_org = ArchiveOrgIntegration()
         
     def sync_abc_news_content(self, start_year: int = 2019, end_year: int = 2025) -> Dict:
         """Sync ABC News Live content from YouTube for specified year range"""
@@ -172,53 +174,22 @@ class ABCNewsIntegration:
             logging.error(f"Error generating questions for content {content.id}: {e}")
     
     def sync_daily_editions(self, start_date: datetime, end_date: datetime) -> Dict:
-        """Sync authentic daily news editions for specific date range"""
-        results = {
-            'total_days_processed': 0,
-            'successful_days': 0,
-            'daily_editions_created': 0,
-            'errors': []
+        """Sync authentic daily news editions from Archive.org for specific date range"""
+        logging.info(f"Syncing ABC News from Archive.org for {start_date.date()} to {end_date.date()}")
+        
+        # Use Archive.org integration for authentic daily content
+        results = self.archive_org.sync_date_range(start_date, end_date)
+        
+        # Convert Archive.org results to match expected format
+        formatted_results = {
+            'total_days_processed': results['total_days'],
+            'successful_days': results['successful_days'],
+            'daily_editions_created': results['content_created'],
+            'errors': results['errors']
         }
         
-        try:
-            current_date = start_date
-            while current_date <= end_date:
-                logging.info(f"Processing daily edition for {current_date.date()}")
-                
-                # Check if we already have content for this date
-                existing = ContentSource.query.filter(
-                    ContentSource.name == 'ABC News',
-                    db.func.date(ContentSource.published_date) == current_date.date()
-                ).first()
-                
-                if existing and not existing.url.startswith('https://abcnews.go.com/Live'):
-                    # Skip if we already have authentic content for this date
-                    current_date += timedelta(days=1)
-                    continue
-                
-                # Fetch daily edition from YouTube
-                daily_edition = self.youtube_fetcher.search_abc_daily_news_videos(current_date)
-                
-                if daily_edition['video_count'] > 0:
-                    # Save daily edition to database
-                    saved = self._save_daily_edition_to_database(daily_edition)
-                    if saved:
-                        results['daily_editions_created'] += 1
-                        results['successful_days'] += 1
-                
-                results['total_days_processed'] += 1
-                current_date += timedelta(days=1)
-                
-                # Rate limiting
-                import time
-                time.sleep(0.3)
-                
-        except Exception as e:
-            error_msg = f"Error during daily editions sync: {e}"
-            logging.error(error_msg)
-            results['errors'].append(error_msg)
-            
-        return results
+        logging.info(f"Archive.org sync completed: {results['content_created']} authentic daily editions created")
+        return formatted_results
     
     def _save_daily_edition_to_database(self, daily_edition: Dict) -> bool:
         """Save a daily edition composite playlist to database"""
@@ -276,19 +247,27 @@ class ABCNewsIntegration:
             return False
     
     def update_abc_news_area(self) -> Dict:
-        """Update ABC News area with latest content"""
+        """Update ABC News area with latest authentic content from Archive.org"""
         try:
-            # Get current date
-            current_date = datetime.now()
+            logging.info("Updating ABC News area with Archive.org content")
             
-            # Sync content from 2019 to current year
-            results = self.sync_abc_news_content(2019, current_date.year)
+            # Sync recent content from Archive.org (last 30 days)
+            archive_results = self.archive_org.sync_recent_content(days_back=30)
+            
+            # Also backfill any missing 2024-2025 content
+            backfill_results = self.backfill_authentic_daily_content(2024, 2025)
             
             # Get total count of ABC News content
             total_content = ContentSource.query.filter_by(name='ABC News').count()
             
-            results['total_in_database'] = total_content
+            results = {
+                'recent_sync': archive_results,
+                'backfill': backfill_results,
+                'total_in_database': total_content,
+                'source': 'archive_org'
+            }
             
+            logging.info(f"ABC News area update completed: {total_content} total items in database")
             return results
             
         except Exception as e:
@@ -296,52 +275,22 @@ class ABCNewsIntegration:
             return {'error': str(e)}
     
     def backfill_authentic_daily_content(self, start_year: int = 2024, end_year: int = 2025) -> Dict:
-        """Replace fake content with authentic daily editions for 2024-2025"""
-        try:
-            results = {
-                'total_backfilled': 0,
-                'years_processed': [],
-                'errors': []
-            }
-            
-            for year in range(start_year, min(end_year + 1, datetime.now().year + 1)):
-                logging.info(f"Backfilling authentic content for {year}")
-                
-                # Process each month to avoid hitting API limits
-                for month in range(1, 13):
-                    start_date = datetime(year, month, 1)
-                    
-                    # Calculate end date for the month
-                    if month == 12:
-                        end_date = datetime(year + 1, 1, 1) - timedelta(days=1)
-                    else:
-                        end_date = datetime(year, month + 1, 1) - timedelta(days=1)
-                    
-                    # Don't process future dates
-                    if start_date > datetime.now():
-                        break
-                    
-                    # Ensure we don't go beyond today
-                    if end_date > datetime.now():
-                        end_date = datetime.now()
-                    
-                    logging.info(f"Backfilling {year}-{month:02d}: {start_date.date()} to {end_date.date()}")
-                    
-                    month_results = self.sync_daily_editions(start_date, end_date)
-                    results['total_backfilled'] += month_results['daily_editions_created']
-                    results['errors'].extend(month_results['errors'])
-                
-                results['years_processed'].append(year)
-                
-                # Longer delay between years
-                import time
-                time.sleep(1)
-            
-            return results
-            
-        except Exception as e:
-            logging.error(f"Error during backfill: {e}")
-            return {'error': str(e)}
+        """Replace fake content with authentic daily editions from Archive.org for 2024-2025"""
+        logging.info(f"Starting Archive.org backfill for {start_year}-{end_year}")
+        
+        # Use Archive.org integration for comprehensive backfill
+        archive_results = self.archive_org.backfill_2024_2025_content()
+        
+        # Convert to expected format
+        results = {
+            'total_backfilled': archive_results['total_content_created'],
+            'years_processed': archive_results['years_processed'],
+            'errors': [f"Total errors: {archive_results['total_errors']}"],
+            'year_breakdown': archive_results['year_results']
+        }
+        
+        logging.info(f"Archive.org backfill completed: {archive_results['total_content_created']} authentic daily editions")
+        return results
     
     def get_abc_news_statistics(self) -> Dict:
         """Get statistics about ABC News content in database"""

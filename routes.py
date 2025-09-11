@@ -131,17 +131,89 @@ def abc_news_area():
 
 @app.route('/sync_abc_news')
 def sync_abc_news():
-    """Manual sync endpoint for ABC News content"""
+    """Manual sync endpoint for ABC News content from Archive.org"""
     try:
         from services.abc_news_integration import ABCNewsIntegration
         
         abc_integration = ABCNewsIntegration()
         results = abc_integration.update_abc_news_area()
         
-        flash(f"ABC News sync completed! Fetched: {results.get('total_fetched', 0)}, Saved: {results.get('total_saved', 0)}", 'success')
+        if 'error' in results:
+            flash(f"Error syncing ABC News: {results['error']}", 'error')
+        else:
+            recent_sync = results.get('recent_sync', {})
+            backfill = results.get('backfill', {})
+            total_db = results.get('total_in_database', 0)
+            
+            flash(f"ABC News sync completed! Recent: {recent_sync.get('content_created', 0)} items, Backfill: {backfill.get('total_backfilled', 0)} items, Total in DB: {total_db}", 'success')
         
     except Exception as e:
         flash(f"Error syncing ABC News content: {e}", 'error')
+    
+    return redirect(url_for('abc_news_area'))
+
+@app.route('/sync_abc_news_date', methods=['POST'])
+def sync_abc_news_date():
+    """Manual sync for specific date"""
+    try:
+        from services.daily_auto_sync import DailyAutoSync
+        
+        target_date = request.form.get('date')
+        if not target_date:
+            flash("Please provide a date", 'error')
+            return redirect(url_for('abc_news_area'))
+        
+        auto_sync = DailyAutoSync()
+        result = auto_sync.manual_sync_date(target_date)
+        
+        if result['status'] == 'success':
+            flash(f"Successfully synced ABC News for {target_date}: {result['shows_count']} shows", 'success')
+        elif result['status'] == 'skipped':
+            flash(f"Content for {target_date} already exists", 'info')
+        elif result['status'] == 'no_content':
+            flash(f"No ABC News content found for {target_date}", 'warning')
+        else:
+            flash(f"Error syncing {target_date}: {result['message']}", 'error')
+        
+    except Exception as e:
+        flash(f"Error syncing specific date: {e}", 'error')
+    
+    return redirect(url_for('abc_news_area'))
+
+@app.route('/abc_news_sync_status')
+def abc_news_sync_status():
+    """Get ABC News sync status"""
+    try:
+        from services.daily_auto_sync import DailyAutoSync
+        
+        auto_sync = DailyAutoSync()
+        status = auto_sync.get_sync_status()
+        
+        return jsonify(status)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/sync_abc_today')
+def sync_abc_today():
+    """Sync today's ABC News content"""
+    try:
+        from services.daily_auto_sync import DailyAutoSync
+        
+        auto_sync = DailyAutoSync()
+        result = auto_sync.sync_today_news()
+        
+        if result['status'] == 'success':
+            flash(f"Successfully synced today's ABC News: {result['shows_count']} shows", 'success')
+        elif result['status'] == 'skipped':
+            flash("Today's content already exists", 'info')
+        elif result['status'] == 'no_content':
+            flash("No ABC News content found for today yet", 'warning')
+        else:
+            flash(f"Error syncing today's content: {result['message']}", 'error')
+        
+    except Exception as e:
+        flash(f"Error syncing today's content: {e}", 'error')
     
     return redirect(url_for('abc_news_area'))
 
