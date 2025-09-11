@@ -107,12 +107,14 @@ class DailyAutoSync:
                             import json
                             metadata = json.loads(existing.content_metadata) if isinstance(existing.content_metadata, str) else existing.content_metadata
                             if metadata.get('source') == 'archive_org' and metadata.get('authentic_date_content'):
-                    logging.info(f"ABC News content for {yesterday} already exists, skipping")
-                    return {
-                        'status': 'skipped',
-                        'message': f"Content for {yesterday} already exists",
-                        'date': str(yesterday)
-                    }
+                                logging.info(f"ABC News content for {yesterday} already exists, skipping")
+                                return {
+                                    'status': 'skipped',
+                                    'message': f"Content for {yesterday} already exists",
+                                    'date': str(yesterday)
+                                }
+                    except Exception:
+                        pass  # If metadata parsing fails, continue to check other criteria
                 
                 # Fetch content for yesterday from Archive.org
                 yesterday_datetime = datetime.combine(yesterday, datetime.min.time())
