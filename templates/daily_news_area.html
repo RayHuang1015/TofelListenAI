@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}ABC News Area - TOEFL Listening Practice{% endblock %}
+{% block title %}Daily International News - TOEFL Listening Practice{% endblock %}
 
 {% block extra_head %}
 <style>
     .news-card {
         transition: transform 0.2s, box-shadow 0.2s;
-        border-left: 4px solid #dc3545;
+        border-left: 4px solid #0d6efd;
     }
     .news-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+        box-shadow: 0 4px 15px rgba(13,110,253,0.3);
     }
-    .abc-logo {
-        background: linear-gradient(45deg, #dc3545, #ff6b7a);
+    .news-logo {
+        background: linear-gradient(45deg, #0d6efd, #6610f2);
         color: white;
         padding: 0.25rem 0.5rem;
         border-radius: 0.25rem;
@@ -28,12 +28,21 @@
         font-weight: bold;
     }
     .news-stats {
-        background: linear-gradient(135deg, #dc3545, #c82333);
+        background: linear-gradient(135deg, #0d6efd, #6610f2);
         color: white;
         border-radius: 1rem;
         padding: 2rem;
         margin-bottom: 2rem;
     }
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        margin-right: 0.5rem;
+    }
+    .status-ready { background: #28a745; color: white; }
+    .status-draft { background: #ffc107; color: black; }
+    .status-failed { background: #dc3545; color: white; }
     .category-tag {
         background: var(--bs-secondary);
         color: white;
@@ -53,13 +62,13 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <h1 class="display-4 mb-0">
-                        <i class="fas fa-broadcast-tower text-danger me-3"></i>
-                        ABC News Area
+                        <i class="fas fa-globe text-primary me-3"></i>
+                        Daily International News
                     </h1>
-                    <p class="lead text-muted">Practice TOEFL listening with ABC News Live content from 2019 to present</p>
+                    <p class="lead text-muted">3-hour daily international news listening transcripts from 2018 onwards</p>
                 </div>
-                <div class="abc-logo">
-                    <i class="fas fa-tv me-1"></i>ABC LIVE
+                <div class="news-logo">
+                    <i class="fas fa-newspaper me-1"></i>INTERNATIONAL
                 </div>
             </div>
         </div>
@@ -71,20 +80,20 @@
             <div class="news-stats text-center">
                 <div class="row">
                     <div class="col-md-3">
-                        <h3 class="mb-1">{{ total_news }}</h3>
-                        <small>Total News Stories</small>
+                        <h3 class="mb-1">{{ total_editions }}</h3>
+                        <small>Daily Editions</small>
                     </div>
                     <div class="col-md-3">
                         <h3 class="mb-1">{{ sorted_years|length }}</h3>
                         <small>Years of Coverage</small>
                     </div>
                     <div class="col-md-3">
-                        <h3 class="mb-1">2019-2025</h3>
-                        <small>Time Range</small>
+                        <h3 class="mb-1">{{ "%.1f"|format(avg_duration/3600) }}h</h3>
+                        <small>Avg Duration</small>
                     </div>
                     <div class="col-md-3">
-                        <h3 class="mb-1"><i class="fas fa-play-circle"></i></h3>
-                        <small>Local Player</small>
+                        <h3 class="mb-1">{{ providers|length }}</h3>
+                        <small>News Sources</small>
                     </div>
                 </div>
             </div>
@@ -101,10 +110,10 @@
                     </h5>
                     <div class="btn-group flex-wrap" role="group" aria-label="Year filter">
                         <input type="radio" class="btn-check" name="yearFilter" id="yearAll" value="all" checked>
-                        <label class="btn btn-outline-danger" for="yearAll">全部年份 ({{ total_news }})</label>
+                        <label class="btn btn-outline-primary" for="yearAll">全部年份 ({{ total_editions }})</label>
                         {% for year in sorted_years %}
                         <input type="radio" class="btn-check" name="yearFilter" id="year{{ year }}" value="{{ year }}">
-                        <label class="btn btn-outline-danger" for="year{{ year }}">{{ year }}年 ({{ news_by_year[year]|length }})</label>
+                        <label class="btn btn-outline-primary" for="year{{ year }}">{{ year }}年 ({{ editions_by_year[year]|length }})</label>
                         {% endfor %}
                     </div>
                 </div>
@@ -112,20 +121,20 @@
         </div>
     </div>
 
-    {% if total_news == 0 %}
+    {% if total_editions == 0 %}
     <!-- No content message with sync option -->
     <div class="row">
         <div class="col-12">
             <div class="alert alert-info text-center">
                 <i class="fas fa-info-circle fa-2x mb-3"></i>
-                <h4>ABC News Live Content</h4>
-                <p>Ready to load comprehensive ABC News Live content from 2019 to present.<br>
-                Click the button below to fetch real ABC News videos from YouTube!</p>
+                <h4>International News System Ready</h4>
+                <p>Ready to load comprehensive international news content from multiple sources.<br>
+                Start by syncing content from January 1, 2018 onwards!</p>
                 <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <a href="{{ url_for('sync_abc_news') }}" class="btn btn-danger btn-lg">
-                        <i class="fas fa-download me-2"></i>Load ABC News Content
+                    <a href="{{ url_for('start_news_sync') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-download me-2"></i>Start News Sync (2018-Present)
                     </a>
-                    <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-robot me-2"></i>Try AI TPO Practice Meanwhile
                     </a>
                 </div>
@@ -133,54 +142,80 @@
         </div>
     </div>
     {% else %}
-    <!-- News Content by Year -->
+    <!-- Daily Editions by Year -->
     {% for year in sorted_years %}
     <div class="row mb-4 year-section" data-year="{{ year }}">
         <div class="col-12">
             <div class="d-flex align-items-center mb-3">
                 <span class="year-badge me-3">{{ year }}</span>
-                <h3 class="mb-0">{{ news_by_year[year]|length }} Stories</h3>
+                <h3 class="mb-0">{{ editions_by_year[year]|length }} Daily Editions</h3>
             </div>
             
             <div class="row">
-                {% for news in news_by_year[year] %}
+                {% for edition in editions_by_year[year] %}
                 <div class="col-lg-6 col-xl-4 mb-3">
                     <div class="card news-card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="abc-logo">ABC</span>
-                                {% if news.category %}
-                                <span class="category-tag">{{ news.category }}</span>
-                                {% endif %}
+                                <span class="news-logo">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Edition {{ edition.edition_number }}
+                                </span>
+                                <span class="status-badge status-{{ edition.status }}">{{ edition.status|title }}</span>
                             </div>
                             
-                            <h5 class="card-title">{{ news.description[:80] }}{% if news.description|length > 80 %}...{% endif %}</h5>
+                            <h5 class="card-title">{{ edition.title }}</h5>
                             
                             <div class="mb-3">
                                 <small class="text-muted">
                                     <i class="fas fa-calendar me-1"></i>
-                                    {{ news.published_date.strftime('%B %d, %Y') if news.published_date }}
+                                    {{ edition.date.strftime('%B %d, %Y') }}
                                 </small>
                                 <br>
                                 <small class="text-muted">
                                     <i class="fas fa-clock me-1"></i>
-                                    {{ (news.duration // 60) }}:{{ '{:02d}'.format(news.duration % 60) if news.duration else '0:00' }}
+                                    {{ "%.1f"|format(edition.total_duration_sec/3600) }} hours
                                 </small>
                                 <br>
                                 <small class="text-muted">
-                                    <i class="fas fa-layer-group me-1"></i>
-                                    {{ news.difficulty_level|title if news.difficulty_level else 'Intermediate' }}
+                                    <i class="fas fa-list me-1"></i>
+                                    {{ edition.segments|length if edition.segments else 0 }} segments
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-font me-1"></i>
+                                    {{ "{:,}".format(edition.word_count) }} words
                                 </small>
                             </div>
                             
-                            {% if news.topic %}
-                            <p class="card-text text-muted small">{{ news.topic }}</p>
+                            {% if edition.edition_metadata %}
+                            <div class="mb-2">
+                                {% if edition.edition_metadata.categories %}
+                                <div class="mb-1">
+                                    {% for category in edition.edition_metadata.categories[:3] %}
+                                    <span class="badge bg-secondary me-1">{{ category|title }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if edition.edition_metadata.regions %}
+                                <div class="mb-1">
+                                    {% for region in edition.edition_metadata.regions[:3] %}
+                                    <span class="badge bg-info me-1">{{ region|title }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
                             {% endif %}
                         </div>
                         <div class="card-footer bg-transparent border-0 pt-0">
-                            <a href="{{ url_for('watch_abc_news', news_id=news.id) }}" class="btn btn-danger w-100">
-                                <i class="fas fa-play me-2"></i>觀看影片
-                            </a>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('view_daily_edition', edition_id=edition.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-play me-2"></i>Listen & Practice
+                                </a>
+                                <a href="{{ url_for('view_edition_transcript', edition_id=edition.id) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-file-text me-2"></i>View Transcript
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -233,21 +268,21 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Quick Actions -->
     <div class="row mt-5">
         <div class="col-12">
-            <div class="card border-danger">
+            <div class="card border-primary">
                 <div class="card-body text-center">
                     <h5 class="card-title">
                         <i class="fas fa-lightning-bolt text-warning me-2"></i>
                         Quick Actions
                     </h5>
                     <div class="d-flex justify-content-center gap-3 flex-wrap">
-                        <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('sync_news_date') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-download me-1"></i>Sync News
+                        </a>
+                        <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-success">
                             <i class="fas fa-robot me-1"></i>AI TPO Practice
                         </a>
-                        <a href="{{ url_for('premium_tpo') }}" class="btn btn-outline-success">
+                        <a href="{{ url_for('premium_tpo') }}" class="btn btn-outline-warning">
                             <i class="fas fa-certificate me-1"></i>Official TPO
-                        </a>
-                        <a href="{{ url_for('content_library') }}" class="btn btn-outline-info">
-                            <i class="fas fa-book me-1"></i>Content Library
                         </a>
                         {% if session.user_id %}
                         <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">

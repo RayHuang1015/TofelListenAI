@@ -106,51 +106,71 @@ def dashboard():
                          avg_score=avg_score,
                          scores=scores)
 
-@app.route('/abc_news_area')
-def abc_news_area():
-    """ABC News Area - dedicated section for ABC News Live content"""
-    # Get ABC News content from 2019 to present
-    abc_news_content = ContentSource.query.filter_by(name='ABC News').order_by(ContentSource.published_date.desc()).all()
+@app.route('/daily_news_area')
+def daily_news_area():
+    """Daily International News Area - 3-hour daily international news transcripts"""
+    from models import DailyEdition, EditionSegment, ProviderSource
+    
+    # Get all daily editions, ordered by date (newest first)
+    daily_editions = DailyEdition.query.order_by(DailyEdition.date.desc()).all()
     
     # Group by year for better organization
-    news_by_year = {}
-    for content in abc_news_content:
-        if content.published_date:
-            year = content.published_date.year
-            if year not in news_by_year:
-                news_by_year[year] = []
-            news_by_year[year].append(content)
+    editions_by_year = {}
+    for edition in daily_editions:
+        year = edition.date.year
+        if year not in editions_by_year:
+            editions_by_year[year] = []
+        editions_by_year[year].append(edition)
     
     # Sort years in descending order
-    sorted_years = sorted(news_by_year.keys(), reverse=True)
+    sorted_years = sorted(editions_by_year.keys(), reverse=True)
     
-    return render_template('abc_news_area.html', 
-                         news_by_year=news_by_year, 
+    # Get statistics
+    total_editions = len(daily_editions)
+    total_duration = sum(edition.total_duration_sec for edition in daily_editions)
+    avg_duration = total_duration / total_editions if total_editions > 0 else 0
+    
+    # Get provider statistics
+    providers = ProviderSource.query.filter_by(active=True).all()
+    
+    return render_template('daily_news_area.html', 
+                         editions_by_year=editions_by_year, 
                          sorted_years=sorted_years,
-                         total_news=len(abc_news_content))
+                         total_editions=total_editions,
+                         total_duration=total_duration,
+                         avg_duration=avg_duration,
+                         providers=providers)
 
-@app.route('/sync_abc_news')
-def sync_abc_news():
-    """Manual sync endpoint for ABC News content from Archive.org"""
-    try:
-        from services.abc_news_integration import ABCNewsIntegration
-        
-        abc_integration = ABCNewsIntegration()
-        results = abc_integration.update_abc_news_area()
-        
-        if 'error' in results:
-            flash(f"Error syncing ABC News: {results['error']}", 'error')
-        else:
-            recent_sync = results.get('recent_sync', {})
-            backfill = results.get('backfill', {})
-            total_db = results.get('total_in_database', 0)
+@app.route('/sync_news_date', methods=['GET', 'POST'])
+def sync_news_date():
+    """Sync international news for a specific date"""
+    if request.method == 'POST':
+        try:
+            from services.international_news_integration import InternationalNewsIntegration
+            from datetime import datetime
             
-            flash(f"ABC News sync completed! Recent: {recent_sync.get('content_created', 0)} items, Backfill: {backfill.get('total_backfilled', 0)} items, Total in DB: {total_db}", 'success')
+            target_date_str = request.form.get('date')
+            if not target_date_str:
+                flash("Please provide a date", 'error')
+                return redirect(url_for('daily_news_area'))
+            
+            target_date = datetime.strptime(target_date_str, '%Y-%m-%d').date()
+            
+            integration = InternationalNewsIntegration()
+            result = integration.ingest_for_date(target_date)
+            
+            if result['status'] == 'success':
+                flash(f"Successfully synced international news for {target_date}: {result['items_saved']} items", 'success')
+            else:
+                flash(f"Error syncing {target_date}: {result.get('error', 'Unknown error')}", 'error')
+            
+        except Exception as e:
+            flash(f"Error syncing news: {e}", 'error')
         
-    except Exception as e:
-        flash(f"Error syncing ABC News content: {e}", 'error')
+        return redirect(url_for('daily_news_area'))
     
-    return redirect(url_for('abc_news_area'))
+    # GET request - show form
+    return render_template('sync_news_form.html')
 
 @app.route('/sync_abc_news_date', methods=['POST'])
 def sync_abc_news_date():
@@ -161,7 +181,7 @@ def sync_abc_news_date():
         target_date = request.form.get('date')
         if not target_date:
             flash("Please provide a date", 'error')
-            return redirect(url_for('abc_news_area'))
+            return redirect(url_for('daily_news_area'))
         
         auto_sync = DailyAutoSync()
         result = auto_sync.manual_sync_date(target_date)
@@ -178,7 +198,7 @@ def sync_abc_news_date():
     except Exception as e:
         flash(f"Error syncing specific date: {e}", 'error')
     
-    return redirect(url_for('abc_news_area'))
+    return redirect(url_for('daily_news_area'))
 
 @app.route('/abc_news_sync_status')
 def abc_news_sync_status():
@@ -215,7 +235,7 @@ def sync_abc_today():
     except Exception as e:
         flash(f"Error syncing today's content: {e}", 'error')
     
-    return redirect(url_for('abc_news_area'))
+    return redirect(url_for('daily_news_area'))
 
 @app.route('/abc_news/<int:news_id>')
 def abc_news_practice(news_id):
@@ -223,7 +243,7 @@ def abc_news_practice(news_id):
     content = ContentSource.query.get_or_404(news_id)
     if content.name != 'ABC News':
         flash('Content not found in ABC News Area', 'error')
-        return redirect(url_for('abc_news_area'))
+        return redirect(url_for('daily_news_area'))
     
     questions = Question.query.filter_by(content_id=content.id).all()
     
@@ -237,7 +257,7 @@ def watch_abc_news(news_id):
     content = ContentSource.query.get_or_404(news_id)
     if content.name != 'ABC News':
         flash('Content not found in ABC News Area', 'error')
-        return redirect(url_for('abc_news_area'))
+        return redirect(url_for('daily_news_area'))
     
     # Extract Archive.org information from content metadata
     archive_info = {
@@ -780,3 +800,40 @@ def internal_error(error):
     """Handle 500 errors"""
     db.session.rollback()
     return render_template('404.html'), 500
+
+
+# International News Management Routes
+@app.route('/view_edition_transcript/<int:edition_id>')
+def view_edition_transcript(edition_id):
+    """View full transcript of a daily edition"""
+    from models import DailyEdition, EditionSegment
+    
+    edition = DailyEdition.query.get_or_404(edition_id)
+    segments = EditionSegment.query.filter_by(edition_id=edition_id).order_by(EditionSegment.seq).all()
+    
+    # Temporary redirect to daily news area (template not yet created)
+    flash(f'Transcript for {edition.title} - {len(segments)} segments', 'info')
+    return redirect(url_for('daily_news_area'))
+
+@app.route('/start_news_sync')
+def start_news_sync():
+    """Start comprehensive news sync from 2018"""
+    try:
+        from services.international_news_integration import InternationalNewsIntegration
+        from datetime import date
+        
+        integration = InternationalNewsIntegration()
+        
+        # Start with a test date
+        test_date = date(2024, 1, 1)
+        result = integration.ingest_for_date(test_date)
+        
+        if result['status'] == 'success':
+            flash(f'News sync started! Test sync for {test_date}: {result["items_saved"]} items', 'success')
+        else:
+            flash(f'Error starting news sync: {result.get("error", "Unknown error")}', 'error')
+            
+    except Exception as e:
+        flash(f'Error starting news sync: {e}', 'error')
+    
+    return redirect(url_for('daily_news_area'))
