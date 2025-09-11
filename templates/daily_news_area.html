@@ -121,21 +121,24 @@
         </div>
     </div>
 
-    {% if total_editions == 0 %}
+    {% if total_editions < 100 %}
     <!-- No content message with sync option -->
     <div class="row">
         <div class="col-12">
             <div class="alert alert-info text-center">
                 <i class="fas fa-info-circle fa-2x mb-3"></i>
-                <h4>International News System Ready</h4>
-                <p>Ready to load comprehensive international news content from multiple sources.<br>
-                Start by syncing content from January 1, 2018 onwards!</p>
+                <h4>Historical Content Loading Required</h4>
+                <p>Currently: {{ total_editions }} daily editions loaded. Ready to load 2000+ days of 3-hour daily international news content from January 1, 2018 to September 11, 2025.<br>
+                This will populate your daily news area with complete historical coverage!</p>
                 <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <a href="{{ url_for('start_news_sync') }}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-download me-2"></i>Start News Sync (2018-Present)
+                    <a href="{{ url_for('start_historical_backfill') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-history me-2"></i>Load Historical Content (2018-2025)
+                    </a>
+                    <a href="{{ url_for('backfill_progress') }}" class="btn btn-outline-info">
+                        <i class="fas fa-chart-line me-2"></i>View Progress
                     </a>
                     <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-robot me-2"></i>Try AI TPO Practice Meanwhile
+                        <i class="fas fa-robot me-2"></i>AI TPO Practice
                     </a>
                 </div>
             </div>

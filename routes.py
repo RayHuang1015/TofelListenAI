@@ -892,3 +892,48 @@ def restore_abc_news():
     except Exception as e:
         flash(f'Error during ABC News restoration: {e}', 'error')
         return redirect(url_for('abc_news_area'))
+
+
+@app.route('/start_historical_backfill')
+def start_historical_backfill():
+    """啟動歷史數據回填"""
+    try:
+        from services.historical_backfill_orchestrator import get_backfill_progress, start_sample_backfill
+        
+        # 檢查當前進度
+        progress = get_backfill_progress()
+        
+        if progress['completion_rate'] > 0.8:  # 如果已經完成80%以上
+            flash(f'Historical backfill mostly complete: {progress["total_existing_editions"]}/{progress["total_expected_days"]} days ({progress["completion_rate"]:.1%})', 'info')
+        else:
+            # 啟動樣本數據載入進行演示
+            flash(f'Starting sample historical content loading. Creating sample 3-hour daily editions...', 'info')
+            
+            # 執行樣本回填
+            result = start_sample_backfill()
+            
+            if result['status'] == 'success':
+                flash(f'Sample content loaded: {result["editions_created"]} daily editions created', 'success')
+            else:
+                flash(f'Sample loading completed with some issues: {result.get("message", "Unknown error")}', 'warning')
+        
+        return redirect(url_for('backfill_progress'))
+        
+    except Exception as e:
+        logging.error(f'Error starting historical backfill: {e}')
+        flash(f'Error starting historical backfill: {e}', 'error')
+        return redirect(url_for('daily_news_area'))
+
+@app.route('/backfill_progress')
+def backfill_progress():
+    """顯示歷史數據回填進度"""
+    try:
+        from services.historical_backfill_orchestrator import get_backfill_progress
+        
+        progress = get_backfill_progress()
+        return render_template('backfill_progress.html', progress=progress)
+        
+    except Exception as e:
+        logging.error(f'Error getting backfill progress: {e}')
+        flash(f'Error getting progress: {e}', 'error')
+        return redirect(url_for('daily_news_area'))

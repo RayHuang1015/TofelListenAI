@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Historical Content Progress - TOEFL Listening Practice{% endblock %}
+
+{% block extra_head %}
+<style>
+    .progress-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid #28a745;
+    }
+    .progress-stats {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .year-progress {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="display-4 mb-0">
+                        <i class="fas fa-chart-line text-success me-3"></i>
+                        Historical Content Progress
+                    </h1>
+                    <p class="lead text-muted">Loading status for 2018-2025 daily international news content</p>
+                </div>
+                <div class="progress-logo">
+                    <i class="fas fa-history me-1"></i>BACKFILL
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Progress Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress-stats text-center">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h3 class="mb-1">{{ progress.total_existing_editions }}</h3>
+                        <small>Content Loaded</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="mb-1">{{ progress.total_expected_days }}</h3>
+                        <small>Total Days Needed</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="mb-1">{{ "{:.1%}".format(progress.completion_rate) }}</h3>
+                        <small>Completion Rate</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="mb-1">{{ progress.missing_days }}</h3>
+                        <small>Days Remaining</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Progress Bar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card progress-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-tasks me-2"></i>Overall Progress
+                        </h5>
+                        <span class="badge bg-success">{{ "{:.1%}".format(progress.completion_rate) }}</span>
+                    </div>
+                    <div class="progress progress-bar-custom mb-2">
+                        <div class="progress-bar bg-success" 
+                             style="width: {{ progress.completion_rate * 100 }}%" 
+                             role="progressbar"></div>
+                    </div>
+                    <small class="text-muted">
+                        {{ progress.total_existing_editions }} of {{ progress.total_expected_days }} days completed
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress by Year -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">
+                <i class="fas fa-calendar-alt me-2"></i>Progress by Year
+            </h3>
+            
+            {% for year in range(2018, 2026) %}
+            {% set existing = progress.editions_by_year.get(year, 0) %}
+            {% set expected = progress.expected_by_year.get(year, 0) %}
+            {% set year_completion = (existing / expected) if expected > 0 else 0 %}
+            
+            <div class="year-progress">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">{{ year }}</h6>
+                    <span class="badge bg-{% if year_completion == 1 %}success{% elif year_completion > 0.5 %}warning{% else %}secondary{% endif %}">
+                        {{ existing }}/{{ expected }} days
+                    </span>
+                </div>
+                <div class="progress progress-bar-custom">
+                    <div class="progress-bar 
+                         {% if year_completion == 1 %}bg-success{% elif year_completion > 0.5 %}bg-warning{% else %}bg-secondary{% endif %}" 
+                         style="width: {{ year_completion * 100 }}%" 
+                         role="progressbar"></div>
+                </div>
+                <small class="text-muted">{{ "{:.1%}".format(year_completion) }} complete</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h5 class="card-title text-info">
+                        <i class="fas fa-info-circle me-2"></i>Loading Status
+                    </h5>
+                    
+                    {% if progress.completion_rate >= 1.0 %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Complete!</strong> All historical content has been loaded successfully. 
+                        You now have {{ progress.total_existing_editions }} days of 3-hour international news content.
+                    </div>
+                    {% elif progress.completion_rate >= 0.8 %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-clock me-2"></i>
+                        <strong>Nearly Complete!</strong> {{ "{:.1%}".format(progress.completion_rate) }} of content loaded. 
+                        Only {{ progress.missing_days }} days remaining.
+                    </div>
+                    {% elif progress.completion_rate >= 0.1 %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner me-2"></i>
+                        <strong>In Progress...</strong> {{ "{:.1%}".format(progress.completion_rate) }} of content loaded. 
+                        {{ progress.missing_days }} days still need to be processed.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-light">
+                        <i class="fas fa-play me-2"></i>
+                        <strong>Ready to Start!</strong> Historical content loading has not begun yet. 
+                        Click the button below to start loading your 2000+ days of content.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-cogs text-primary me-2"></i>
+                        Actions
+                    </h5>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        {% if progress.completion_rate < 0.9 %}
+                        <a href="{{ url_for('start_historical_backfill') }}" class="btn btn-success">
+                            <i class="fas fa-play me-1"></i>
+                            {% if progress.completion_rate == 0 %}Start{% else %}Continue{% endif %} Loading
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('daily_news_area') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Daily News
+                        </a>
+                        <a href="{{ url_for('backfill_progress') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-refresh me-1"></i>Refresh Status
+                        </a>
+                        {% if progress.completion_rate > 0.5 %}
+                        <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-success">
+                            <i class="fas fa-robot me-1"></i>Start Practice
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-refresh every 30 seconds if loading is in progress -->
+{% if 0.01 <= progress.completion_rate < 1.0 %}
+<script>
+setTimeout(function() {
+    window.location.reload();
+}, 30000);
+</script>
+{% endif %}
+
+{% endblock %}
