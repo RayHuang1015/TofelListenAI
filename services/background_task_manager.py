@@ -87,7 +87,7 @@ class BackgroundTaskManager:
                         'started_at': datetime.utcnow()
                     }
                     
-                    self.logger.info(f"Started processing job {job.id} for date {job.start_date}")
+                    self.logger.info(f"Started processing job {job.id} for date {job.date}")
         
         except Exception as e:
             self.logger.error(f"Error processing pending tasks: {e}")
