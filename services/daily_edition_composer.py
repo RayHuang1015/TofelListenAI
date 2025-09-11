@@ -360,9 +360,9 @@ class DailyEditionComposer:
                     provider = ProviderSource(
                         key=provider_key,
                         name='Historical News Generator',
-                        api_url=None,
-                        api_key=None,
-                        status='active'
+                        type='historical',
+                        base_url=None,
+                        active=True
                     )
                     db.session.add(provider)
                     db.session.flush()
