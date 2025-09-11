@@ -159,26 +159,29 @@ class DailyEditionComposer:
         return content
     
     def _select_content_for_edition(self, available_content: List[ContentSource]) -> List[ContentRanking]:
-        """Select and rank content to fill approximately 3 hours"""
+        """Select and rank content to fill approximately 3 hours with deduplication"""
+        
+        # Deduplicate content first
+        deduplicated_content = self._deduplicate_content(available_content)
         
         # Create ranked content items
         ranked_items = []
-        for content in available_content:
+        for content in deduplicated_content:
             ranking = self._calculate_content_ranking(content)
             ranked_items.append(ranking)
         
         # Sort by score (highest first)
         ranked_items.sort(key=lambda x: x.score, reverse=True)
         
-        # Select items to fill exactly target duration 
+        # Select items to fill target duration 
         selected = self._optimize_content_selection(ranked_items)
         
-        # Ensure exactly 3 hours (10800 seconds)
+        # Adjust to reasonable duration range
         selected = self._adjust_to_exact_duration(selected, self.TARGET_DURATION)
         
         self.logger.info(
             f"Selected {len(selected)} items from {len(available_content)} available "
-            f"(duration: {sum(item.duration_sec for item in selected)}s)"
+            f"({len(deduplicated_content)} after deduplication, duration: {sum(item.duration_sec for item in selected)}s)"
         )
         
         return selected
@@ -355,31 +358,54 @@ class DailyEditionComposer:
         edition: DailyEdition, 
         selected_content: List[ContentRanking]
     ) -> int:
-        """Create edition segments from selected content"""
+        """Create edition segments from selected content with deduplication"""
         
-        # Clear existing segments
+        # Clear existing segments to ensure idempotency
         EditionSegment.query.filter_by(edition_id=edition.id).delete()
+        db.session.commit()
+        
+        # Deduplicate content by content ID
+        seen_content_ids = set()
+        unique_content = []
+        
+        for item in selected_content:
+            if item.content.id not in seen_content_ids:
+                unique_content.append(item)
+                seen_content_ids.add(item.content.id)
+            else:
+                self.logger.info(f"Skipping duplicate content ID {item.content.id}")
         
         current_time = 0
         segments_created = 0
         
-        for seq, item in enumerate(selected_content, 1):
+        # Create a provider entry if needed
+        from models import ProviderSource
+        provider_key = 'HistoricalNewsGenerator'
+        provider = ProviderSource.query.filter_by(key=provider_key).first()
+        if not provider:
+            provider = ProviderSource(
+                key=provider_key,
+                name='Historical News Generator',
+                type='historical',
+                base_url=None,
+                active=True
+            )
+            db.session.add(provider)
+            db.session.flush()
+        
+        for seq, item in enumerate(unique_content, 1):
             try:
-                # Create segment
-                # Create a provider entry if needed
-                from models import ProviderSource
-                provider_key = 'HistoricalNewsGenerator'
-                provider = ProviderSource.query.filter_by(key=provider_key).first()
-                if not provider:
-                    provider = ProviderSource(
-                        key=provider_key,
-                        name='Historical News Generator',
-                        type='historical',
-                        base_url=None,
-                        active=True
+                # Check for existing segment with same content to prevent accidental duplicates
+                existing_segment = EditionSegment.query.filter_by(
+                    edition_id=edition.id,
+                    source_content_id=item.content.id
+                ).first()
+                
+                if existing_segment:
+                    self.logger.warning(
+                        f"Segment with content ID {item.content.id} already exists in edition {edition.id}, skipping"
                     )
-                    db.session.add(provider)
-                    db.session.flush()
+                    continue
                 
                 segment = EditionSegment(
                     edition_id=edition.id,
@@ -388,7 +414,7 @@ class DailyEditionComposer:
                     seq=seq,
                     start_sec=current_time,
                     duration_sec=item.duration_sec,
-                    headline=item.content.description[:300] if item.content.description else 'News Update',
+                    headline=item.content.description[:300] if item.content.description else f'News Update {seq}',
                     region=item.content.region or 'global',
                     category=item.content.category or 'general',
                     transcript_text=item.content.transcript_text,
@@ -400,7 +426,8 @@ class DailyEditionComposer:
                     segment_metadata={
                         'original_url': item.content.url,
                         'published_date': item.content.published_date.isoformat() if item.content.published_date else None,
-                        'provider_key': 'HistoricalNewsGenerator'
+                        'provider_key': 'HistoricalNewsGenerator',
+                        'dedup_processed': True
                     }
                 )
                 
@@ -413,7 +440,7 @@ class DailyEditionComposer:
                 continue
         
         db.session.commit()
-        self.logger.info(f"Created {segments_created} segments for edition {edition.id}")
+        self.logger.info(f"Created {segments_created} unique segments for edition {edition.id}")
         return segments_created
     
     def _finalize_edition(self, edition: DailyEdition, selected_content: List[ContentRanking]):
@@ -429,6 +456,44 @@ class DailyEditionComposer:
         
         db.session.commit()
         self.logger.info(f"Edition {edition.id} finalized and marked ready")
+    
+    def _deduplicate_content(self, content_list: List[ContentSource]) -> List[ContentSource]:
+        """Remove duplicate content based on normalized title and content similarity"""
+        
+        import hashlib
+        
+        seen_hashes = set()
+        seen_titles = set() 
+        unique_content = []
+        duplicates_removed = 0
+        
+        for content in content_list:
+            # Create normalized title (lowercase, remove punctuation)
+            normalized_title = ''.join(c.lower() for c in (content.description or 'untitled') if c.isalnum() or c.isspace()).strip()
+            normalized_title = ' '.join(normalized_title.split())  # Remove extra whitespace
+            
+            # Create content hash from transcript text
+            content_text = content.transcript_text or ''
+            content_hash = hashlib.md5(content_text.encode('utf-8')).hexdigest()[:16]  # First 16 chars of MD5
+            
+            # Skip if we've seen this URL, title, or content before
+            if (content.url in {c.url for c in unique_content} or 
+                normalized_title in seen_titles or 
+                content_hash in seen_hashes):
+                duplicates_removed += 1
+                self.logger.debug(f"Removing duplicate: {content.url} (title: {normalized_title[:50]})")
+                continue
+            
+            # Add to unique content
+            unique_content.append(content)
+            seen_titles.add(normalized_title)
+            seen_hashes.add(content_hash)
+        
+        self.logger.info(
+            f"Deduplication complete: {len(unique_content)} unique items, {duplicates_removed} duplicates removed"
+        )
+        
+        return unique_content
     
     def _generate_coverage_summary(self, selected_content: List[ContentRanking]) -> Dict[str, Any]:
         """Generate coverage summary for the edition"""
@@ -463,88 +528,64 @@ class DailyEditionComposer:
             'regions': regions,
             'providers': providers,
             'total_segments': len(selected_content),
-            'average_duration': sum(item.duration_sec for item in selected_content) / len(selected_content)
+            'average_duration': sum(item.duration_sec for item in selected_content) / len(selected_content) if selected_content else 0
         }
     
     def _adjust_to_exact_duration(self, selected: List[ContentRanking], target_duration: int) -> List[ContentRanking]:
-        """Adjust selection to exactly target duration (10800 seconds for 3 hours)"""
+        """Adjust selection to reach target duration without duplicating content"""
         if not selected:
             return selected
-            
+        
+        # Remove duplicates first - ensure each content item appears only once
+        seen_content_ids = set()
+        unique_selected = []
+        for item in selected:
+            if item.content.id not in seen_content_ids:
+                unique_selected.append(item)
+                seen_content_ids.add(item.content.id)
+        
+        selected = unique_selected
         current_duration = sum(item.duration_sec for item in selected)
         
-        if current_duration == target_duration:
-            return selected
-        elif current_duration < target_duration:
-            # Need to add more content - cycle through all items to fill large gaps
-            gap = target_duration - current_duration
-            self.logger.info(f"Need to fill {gap} seconds gap to reach target {target_duration}s")
-            
-            if gap > 0 and selected:
-                filler_items = []
-                remaining_gap = gap
-                cycle_index = 0
+        if current_duration >= self.MIN_DURATION:
+            # We have sufficient content, trim if needed
+            if current_duration > self.MAX_DURATION:
+                # Trim excess by removing items or adjusting duration
+                trimmed = []
+                running_duration = 0
                 
-                # Cycle through selected items multiple times to fill the gap
-                while remaining_gap > 60:  # Stop when gap is less than 1 minute
-                    source_item = selected[cycle_index % len(selected)]
-                    
-                    # Use full duration or remaining gap, whichever is smaller
-                    filler_duration = min(remaining_gap, source_item.duration_sec)
-                    
-                    filler_item = ContentRanking(
-                        content=source_item.content,
-                        score=source_item.score - 5 - (cycle_index // len(selected)),  # Gradually reduce score
-                        duration_sec=filler_duration,
-                        category_priority=source_item.category_priority,
-                        region_priority=source_item.region_priority
-                    )
-                    
-                    filler_items.append(filler_item)
-                    remaining_gap -= filler_duration
-                    cycle_index += 1
-                    
-                    # Safety check to prevent infinite loop
-                    if cycle_index > len(selected) * 10:  # Max 10 cycles
+                for item in selected:
+                    if running_duration + item.duration_sec <= self.MAX_DURATION:
+                        trimmed.append(item)
+                        running_duration += item.duration_sec
+                    else:
+                        # Add partial duration to reach exactly MAX_DURATION
+                        remaining = self.MAX_DURATION - running_duration
+                        if remaining > 30:  # Only if at least 30 seconds
+                            partial_item = ContentRanking(
+                                content=item.content,
+                                score=item.score,
+                                duration_sec=remaining,
+                                category_priority=item.category_priority,
+                                region_priority=item.region_priority
+                            )
+                            trimmed.append(partial_item)
                         break
                 
-                # Add a final small filler if needed
-                if remaining_gap > 0:
-                    last_filler = ContentRanking(
-                        content=selected[0].content,
-                        score=selected[0].score - 10,
-                        duration_sec=remaining_gap,
-                        category_priority=selected[0].category_priority,
-                        region_priority=selected[0].region_priority
-                    )
-                    filler_items.append(last_filler)
-                
-                selected.extend(filler_items)
-                self.logger.info(f"Added {len(filler_items)} filler items to reach target duration")
-                
+                selected = trimmed
+            
+            final_duration = sum(item.duration_sec for item in selected)
+            self.logger.info(f"Final duration after adjustment: {final_duration}s (target: {target_duration}s)")
+            return selected
+        
         else:
-            # Need to trim content - adjust last item duration
-            excess = current_duration - target_duration
-            if excess > 0 and selected:
-                last_item = selected[-1]
-                if last_item.duration_sec > excess:
-                    # Reduce last item duration
-                    last_item.duration_sec -= excess
-                else:
-                    # Remove items until we reach target
-                    while selected and sum(item.duration_sec for item in selected) > target_duration:
-                        selected.pop()
-                    
-                    # Fine-tune last item if needed
-                    if selected:
-                        current = sum(item.duration_sec for item in selected)
-                        if current < target_duration:
-                            selected[-1].duration_sec += (target_duration - current)
-                            
-        # Verify final duration
-        final_duration = sum(item.duration_sec for item in selected)
-        self.logger.info(f"Final duration after adjustment: {final_duration}s (target: {target_duration}s)")
-        return selected
+            # Insufficient content - log warning but proceed
+            gap = target_duration - current_duration
+            self.logger.warning(
+                f"Insufficient content: {current_duration}s available, {gap}s gap to target. "
+                f"Proceeding with {len(selected)} unique items."
+            )
+            return selected
 
 
 def test_composition():
