@@ -38,11 +38,59 @@
             </div>
             <div class="card-body">
                 <!-- Audio Element -->
-                <audio id="audio-player" class="w-100 mb-3" controls preload="metadata">
-                    <source src="/static/audio/daily_edition_{{ edition.id }}.mp3" type="audio/mpeg">
-                    <source src="/static/audio/daily_edition_{{ edition.id }}.wav" type="audio/wav">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Text-to-Speech Mode:</strong> This edition uses AI-generated speech from news transcripts. Use the controls below to listen to each segment.
+                </div>
+                
+                <!-- TTS Audio Element (hidden, controlled by JS) -->
+                <audio id="audio-player" class="w-100 mb-3" controls preload="none" style="display: none;">
                     Your browser does not support the audio element.
                 </audio>
+                
+                <!-- TTS Controls -->
+                <div id="tts-controls" class="mb-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label for="voice-select" class="form-label">Voice:</label>
+                            <select id="voice-select" class="form-select">
+                                <option value="en-US">English (US)</option>
+                                <option value="en-GB">English (UK)</option>
+                                <option value="en-AU">English (AU)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="speech-rate" class="form-label">Speech Rate:</label>
+                            <select id="speech-rate" class="form-select">
+                                <option value="0.5">0.5x (Slow)</option>
+                                <option value="0.75">0.75x</option>
+                                <option value="1" selected>1x (Normal)</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x (Fast)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="speech-pitch" class="form-label">Pitch:</label>
+                            <select id="speech-pitch" class="form-select">
+                                <option value="0.5">Low</option>
+                                <option value="1" selected>Normal</option>
+                                <option value="1.5">High</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Current Playing Info -->
+                <div id="current-playing" class="alert alert-primary d-none">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Now Playing:</strong> <span id="current-segment-title">-</span>
+                        </div>
+                        <button id="stop-tts" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                    </div>
+                </div>
                 
                 <!-- Playback Controls -->
                 <div class="row align-items-center">
@@ -174,67 +222,270 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const audio = document.getElementById('audio-player');
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const stopBtn = document.getElementById('stop-btn');
-    const replayBtn = document.getElementById('replay-btn');
-    const speedControl = document.getElementById('speed-control');
-    const currentTimeDisplay = document.getElementById('current-time');
-    const progressBar = document.getElementById('progress-bar');
-    
-    // Play/Pause functionality
-    playPauseBtn.addEventListener('click', function() {
-        if (audio.paused) {
-            audio.play();
-            this.innerHTML = '<i class="fas fa-pause"></i> Pause';
-        } else {
-            audio.pause();
-            this.innerHTML = '<i class="fas fa-play"></i> Play';
-        }
-    });
-    
-    // Stop functionality
-    stopBtn.addEventListener('click', function() {
-        audio.pause();
-        audio.currentTime = 0;
-        playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
-    });
-    
-    // Replay functionality
-    replayBtn.addEventListener('click', function() {
-        audio.currentTime = 0;
-        audio.play();
-        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
-    });
-    
-    // Speed control
-    speedControl.addEventListener('change', function() {
-        audio.playbackRate = parseFloat(this.value);
-    });
-    
-    // Time update
-    audio.addEventListener('timeupdate', function() {
-        const currentMinutes = Math.floor(audio.currentTime / 60);
-        const currentSeconds = Math.floor(audio.currentTime % 60);
-        currentTimeDisplay.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+class DailyEditionTTSPlayer {
+    constructor() {
+        this.speechSynthesis = window.speechSynthesis;
+        this.currentUtterance = null;
+        this.isPlaying = false;
+        this.currentSegmentIndex = 0;
+        this.segments = [];
+        this.voices = [];
         
-        const progress = (audio.currentTime / audio.duration) * 100;
-        progressBar.style.width = progress + '%';
-    });
+        this.initializePlayer();
+        this.loadVoices();
+    }
     
-    // Audio ended
-    audio.addEventListener('ended', function() {
-        playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
-    });
+    initializePlayer() {
+        // Collect all segments data
+        document.querySelectorAll('.segment-card').forEach((card, index) => {
+            const transcriptId = card.querySelector('.toggle-transcript').dataset.target;
+            const transcriptElement = document.getElementById(transcriptId);
+            const text = transcriptElement ? transcriptElement.textContent.trim() : '';
+            
+            this.segments.push({
+                index: index,
+                element: card,
+                text: text,
+                title: card.querySelector('.card-title').textContent,
+                startTime: parseFloat(card.dataset.startTime) || 0,
+                duration: parseFloat(card.dataset.duration) || 0
+            });
+        });
+        
+        console.log(`Loaded ${this.segments.length} segments for TTS`);
+    }
     
-    // Jump to segment functionality
-    document.querySelectorAll('.jump-to-segment').forEach(button => {
+    loadVoices() {
+        const updateVoices = () => {
+            this.voices = this.speechSynthesis.getVoices();
+            const voiceSelect = document.getElementById('voice-select');
+            
+            // Clear existing options
+            voiceSelect.innerHTML = '';
+            
+            // Filter English voices
+            const englishVoices = this.voices.filter(voice => 
+                voice.lang.startsWith('en')
+            );
+            
+            if (englishVoices.length > 0) {
+                englishVoices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.name;
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    voiceSelect.appendChild(option);
+                });
+            } else {
+                // Fallback options
+                const fallbackOptions = [
+                    { value: 'default', text: 'Default Voice' }
+                ];
+                fallbackOptions.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.textContent = opt.text;
+                    voiceSelect.appendChild(option);
+                });
+            }
+        };
+        
+        // Load voices
+        updateVoices();
+        this.speechSynthesis.onvoiceschanged = updateVoices;
+    }
+    
+    getSelectedVoice() {
+        const voiceSelect = document.getElementById('voice-select');
+        const selectedVoiceName = voiceSelect.value;
+        return this.voices.find(voice => voice.name === selectedVoiceName) || this.voices[0];
+    }
+    
+    speak(text, segmentTitle = '', onStart = null, onEnd = null) {
+        if (this.isPlaying) {
+            this.stop();
+        }
+        
+        if (!text || text.trim().length === 0) {
+            console.warn('No text to speak');
+            return;
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Configure voice settings
+        const voice = this.getSelectedVoice();
+        if (voice) utterance.voice = voice;
+        
+        utterance.rate = parseFloat(document.getElementById('speech-rate').value) || 1;
+        utterance.pitch = parseFloat(document.getElementById('speech-pitch').value) || 1;
+        utterance.volume = 1;
+        
+        // Event handlers
+        utterance.onstart = () => {
+            this.isPlaying = true;
+            this.currentUtterance = utterance;
+            
+            // Show current playing info
+            const currentPlaying = document.getElementById('current-playing');
+            const currentTitle = document.getElementById('current-segment-title');
+            currentTitle.textContent = segmentTitle || 'Daily Edition';
+            currentPlaying.classList.remove('d-none');
+            
+            if (onStart) onStart();
+        };
+        
+        utterance.onend = () => {
+            this.isPlaying = false;
+            this.currentUtterance = null;
+            
+            // Hide current playing info
+            document.getElementById('current-playing').classList.add('d-none');
+            
+            if (onEnd) onEnd();
+        };
+        
+        utterance.onerror = (event) => {
+            console.error('Speech synthesis error:', event);
+            this.isPlaying = false;
+            this.currentUtterance = null;
+            document.getElementById('current-playing').classList.add('d-none');
+        };
+        
+        this.speechSynthesis.speak(utterance);
+    }
+    
+    stop() {
+        if (this.isPlaying && this.currentUtterance) {
+            this.speechSynthesis.cancel();
+            this.isPlaying = false;
+            this.currentUtterance = null;
+            document.getElementById('current-playing').classList.add('d-none');
+        }
+    }
+    
+    playSegment(segmentIndex) {
+        if (segmentIndex < 0 || segmentIndex >= this.segments.length) {
+            console.warn('Invalid segment index:', segmentIndex);
+            return;
+        }
+        
+        const segment = this.segments[segmentIndex];
+        this.currentSegmentIndex = segmentIndex;
+        
+        // Highlight current segment
+        this.highlightSegment(segmentIndex);
+        
+        this.speak(
+            segment.text,
+            segment.title,
+            () => {
+                console.log(`Started playing segment ${segmentIndex + 1}: ${segment.title}`);
+            },
+            () => {
+                console.log(`Finished playing segment ${segmentIndex + 1}`);
+                this.clearHighlights();
+            }
+        );
+    }
+    
+    playAllSegments() {
+        if (this.segments.length === 0) return;
+        
+        const playNext = (index) => {
+            if (index >= this.segments.length) {
+                console.log('Finished playing all segments');
+                return;
+            }
+            
+            const segment = this.segments[index];
+            this.currentSegmentIndex = index;
+            this.highlightSegment(index);
+            
+            this.speak(
+                segment.text,
+                `Segment ${index + 1}: ${segment.title}`,
+                null,
+                () => {
+                    this.clearHighlights();
+                    // Play next segment after a short pause
+                    setTimeout(() => playNext(index + 1), 500);
+                }
+            );
+        };
+        
+        playNext(0);
+    }
+    
+    highlightSegment(index) {
+        this.clearHighlights();
+        if (this.segments[index]) {
+            this.segments[index].element.classList.add('border-primary', 'bg-light');
+        }
+    }
+    
+    clearHighlights() {
+        this.segments.forEach(segment => {
+            segment.element.classList.remove('border-primary', 'bg-light');
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize TTS Player
+    const ttsPlayer = new DailyEditionTTSPlayer();
+    
+    // Update original play/pause button to play all segments
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', function() {
+            if (!ttsPlayer.isPlaying) {
+                ttsPlayer.playAllSegments();
+                this.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            } else {
+                ttsPlayer.stop();
+                this.innerHTML = '<i class="fas fa-play"></i> Play';
+            }
+        });
+    }
+    
+    // Stop button
+    const stopBtn = document.getElementById('stop-btn');
+    if (stopBtn) {
+        stopBtn.addEventListener('click', function() {
+            ttsPlayer.stop();
+            if (playPauseBtn) {
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+            }
+        });
+    }
+    
+    // TTS Stop button
+    const stopTTSBtn = document.getElementById('stop-tts');
+    if (stopTTSBtn) {
+        stopTTSBtn.addEventListener('click', function() {
+            ttsPlayer.stop();
+            if (playPauseBtn) {
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+            }
+        });
+    }
+    
+    // Replay button
+    const replayBtn = document.getElementById('replay-btn');
+    if (replayBtn) {
+        replayBtn.addEventListener('click', function() {
+            ttsPlayer.playAllSegments();
+            if (playPauseBtn) {
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            }
+        });
+    }
+    
+    // Individual segment play buttons
+    document.querySelectorAll('.jump-to-segment').forEach((button, index) => {
         button.addEventListener('click', function() {
-            const time = parseFloat(this.dataset.time);
-            audio.currentTime = time;
-            audio.play();
-            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            const segmentIndex = parseInt(this.closest('.segment-card').querySelector('.card-title').textContent.match(/\d+/)[0]) - 1;
+            ttsPlayer.playSegment(segmentIndex);
         });
     });
     
@@ -254,20 +505,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Highlight current segment (optional enhancement)
-    audio.addEventListener('timeupdate', function() {
-        const currentTime = audio.currentTime;
-        document.querySelectorAll('.segment-card').forEach(card => {
-            const startTime = parseFloat(card.dataset.startTime);
-            const duration = parseFloat(card.dataset.duration);
-            const endTime = startTime + duration;
-            
-            if (currentTime >= startTime && currentTime <= endTime) {
-                card.classList.add('border-primary', 'bg-light');
-            } else {
-                card.classList.remove('border-primary', 'bg-light');
-            }
-        });
+    // Voice settings change handlers
+    ['voice-select', 'speech-rate', 'speech-pitch'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', function() {
+                console.log(`Updated ${id}:`, this.value);
+            });
+        }
     });
 });
 </script>
