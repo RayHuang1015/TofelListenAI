@@ -837,3 +837,16 @@ def start_news_sync():
         flash(f'Error starting news sync: {e}', 'error')
     
     return redirect(url_for('daily_news_area'))
+
+
+@app.route('/view_daily_edition/<int:edition_id>')
+def view_daily_edition(edition_id):
+    """View and practice with a daily edition"""
+    from models import DailyEdition, EditionSegment
+    
+    edition = DailyEdition.query.get_or_404(edition_id)
+    segments = EditionSegment.query.filter_by(edition_id=edition_id).order_by(EditionSegment.seq).all()
+    
+    # 臨時重定向到每日新聞區域（模板尚未建立）
+    flash(f'Edition: {edition.title} - {len(segments)} segments', 'info')
+    return redirect(url_for('daily_news_area'))
