@@ -182,7 +182,9 @@ class IngestionJob(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Index for performance  
+    # Constraints and indexes for performance and data integrity
     __table_args__ = (
+        db.UniqueConstraint('date', name='unique_ingestion_date'),
+        db.Index('idx_ingestionjob_status_date', 'status', 'date'),
         db.Index('idx_ingestion_date_status', 'date', 'status'),
     )

@@ -267,7 +267,7 @@ class BackgroundTaskManager:
                 self.logger.error(f"Error handling task error for job {job_id}: {e}")
     
     def enqueue_historical_backfill(self, start_date: date, end_date: date) -> List[int]:
-        """Enqueue historical backfill jobs in manageable batches"""
+        """Enqueue historical backfill jobs using optimized bulk operations"""
         # Restore full historical range as requested by user
         # User specifically wants content from 2018-01-01 onwards
         actual_start_date = start_date  # Use the original start_date (2018-01-01)
@@ -275,36 +275,64 @@ class BackgroundTaskManager:
         job_ids = []
         
         with app.app_context():
-            current_date = actual_start_date
-            batch_jobs = []
+            # Step 1: Pre-load all existing job dates with single range query
+            existing_dates = set(
+                d[0] for d in db.session.query(IngestionJob.date)
+                .filter(IngestionJob.date.between(actual_start_date, actual_end_date))
+                .all()
+            )
             
+            # Step 2: Calculate missing dates without individual queries
+            missing_dates = []
+            current_date = actual_start_date
             while current_date <= actual_end_date:
-                # Check if job already exists
-                existing_job = IngestionJob.query.filter_by(date=current_date).first()
-                
-                if not existing_job:
-                    # Create new job
-                    job = IngestionJob()
-                    job.date = current_date
-                    job.status = 'pending'
-                    job.attempts = 0
-                    job.stats = {
-                        'job_type': 'daily_backfill',
-                        'providers': ['BBC World Service', 'Reuters International', 'AP News International']
-                    }
-                    batch_jobs.append(job)
-                
+                if current_date not in existing_dates:
+                    missing_dates.append(current_date)
                 current_date += timedelta(days=1)
             
-            # Bulk insert for efficiency
-            if batch_jobs:
-                db.session.add_all(batch_jobs)
-                db.session.commit()
-                
-                for job in batch_jobs:
-                    job_ids.append(job.id)
+            # Step 3: Batch insert missing jobs (process in chunks of 500)
+            batch_size = 500
+            total_created = 0
             
-            self.logger.info(f"Enqueued {len(job_ids)} historical news jobs for {actual_start_date} to {actual_end_date}")
+            for i in range(0, len(missing_dates), batch_size):
+                batch_dates = missing_dates[i:i + batch_size]
+                batch_jobs = []
+                
+                for date_val in batch_dates:
+                    job_data = {
+                        'date': date_val,
+                        'status': 'pending',
+                        'attempts': 0,
+                        'stats': {
+                            'job_type': 'daily_backfill',
+                            'providers': ['BBC World Service', 'Reuters International', 'AP News International']
+                        },
+                        'created_at': datetime.utcnow()
+                    }
+                    batch_jobs.append(job_data)
+                
+                # Use bulk_insert_mappings for maximum efficiency
+                if batch_jobs:
+                    db.session.bulk_insert_mappings(IngestionJob, batch_jobs)
+                    db.session.commit()
+                    total_created += len(batch_jobs)
+                    
+                    # Log progress for large batches
+                    if total_created % 1000 == 0:
+                        self.logger.info(f"Created {total_created} jobs so far...")
+            
+            # Step 4: Retrieve job IDs for the newly created jobs
+            if total_created > 0:
+                # Query for jobs that were just created (within last minute)
+                cutoff_time = datetime.utcnow() - timedelta(minutes=1)
+                new_jobs = IngestionJob.query.filter(
+                    IngestionJob.date.between(actual_start_date, actual_end_date),
+                    IngestionJob.created_at >= cutoff_time
+                ).all()
+                job_ids = [job.id for job in new_jobs]
+            
+            self.logger.info(f"Enqueued {total_created} new historical news jobs for {actual_start_date} to {actual_end_date}")
+            self.logger.info(f"Found {len(existing_dates)} existing jobs, created {total_created} new jobs")
         
         return job_ids
     
