@@ -94,30 +94,22 @@
                 
                 <!-- Playback Controls -->
                 <div class="row align-items-center">
-                    <div class="col-md-6">
+                    <div class="col-md-8">
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-primary" id="play-pause-btn">
-                                <i class="fas fa-play"></i> Play
+                            <button type="button" class="btn btn-primary" id="play-all-btn">
+                                <i class="fas fa-play"></i> Play All Segments
                             </button>
-                            <button type="button" class="btn btn-outline-secondary" id="stop-btn">
+                            <button type="button" class="btn btn-danger" id="stop-all-btn">
                                 <i class="fas fa-stop"></i> Stop
-                            </button>
-                            <button type="button" class="btn btn-outline-info" id="replay-btn">
-                                <i class="fas fa-redo"></i> Replay
                             </button>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <label for="speed-control" class="form-label me-2 mb-0">Speed:</label>
-                            <select id="speed-control" class="form-select" style="width: auto;">
-                                <option value="0.5">0.5x</option>
-                                <option value="0.75">0.75x</option>
-                                <option value="1" selected>1x</option>
-                                <option value="1.25">1.25x</option>
-                                <option value="1.5">1.5x</option>
-                                <option value="2">2x</option>
-                            </select>
+                    <div class="col-md-4">
+                        <div class="text-end">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Click segment buttons below to play individual parts
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -171,8 +163,8 @@
                                 </div>
                                 
                                 <div class="d-grid gap-2">
-                                    <button class="btn btn-sm btn-primary jump-to-segment" data-time="{{ segment.start_sec }}">
-                                        <i class="fas fa-play me-1"></i>Jump to This Segment
+                                    <button class="btn btn-sm btn-success play-segment-btn" data-segment-index="{{ loop.index0 }}" data-segment-text="{{ segment.transcript_text if segment.transcript_text else segment.headline }}">
+                                        <i class="fas fa-volume-up me-1"></i>Listen to This Segment
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary toggle-transcript" data-target="transcript-{{ segment.id }}">
                                         <i class="fas fa-eye me-1"></i>Show Transcript
@@ -222,51 +214,270 @@
 
 {% block extra_js %}
 <script>
-class DailyEditionTTSPlayer {
+// 簡化的TTS播放器
+class SimpleTTSPlayer {
     constructor() {
         this.speechSynthesis = window.speechSynthesis;
         this.currentUtterance = null;
         this.isPlaying = false;
-        this.currentSegmentIndex = 0;
         this.segments = [];
-        this.voices = [];
         
-        this.initializePlayer();
-        this.loadVoices();
+        this.init();
     }
     
-    initializePlayer() {
-        // Collect all segments data
-        document.querySelectorAll('.segment-card').forEach((card, index) => {
-            const transcriptId = card.querySelector('.toggle-transcript').dataset.target;
-            const transcriptElement = document.getElementById(transcriptId);
-            const text = transcriptElement ? transcriptElement.textContent.trim() : '';
+    init() {
+        console.log('Initializing Simple TTS Player...');
+        this.loadSegments();
+        this.setupEventListeners();
+    }
+    
+    loadSegments() {
+        // 收集所有段落按鈕
+        document.querySelectorAll('.play-segment-btn').forEach((btn, index) => {
+            const text = btn.dataset.segmentText;
+            const segmentIndex = btn.dataset.segmentIndex;
             
             this.segments.push({
-                index: index,
-                element: card,
+                index: parseInt(segmentIndex),
                 text: text,
-                title: card.querySelector('.card-title').textContent,
-                startTime: parseFloat(card.dataset.startTime) || 0,
-                duration: parseFloat(card.dataset.duration) || 0
+                button: btn,
+                title: `Segment ${index + 1}`
             });
         });
         
-        console.log(`Loaded ${this.segments.length} segments for TTS`);
+        console.log(`Loaded ${this.segments.length} segments`);
     }
     
-    loadVoices() {
-        const updateVoices = () => {
-            this.voices = this.speechSynthesis.getVoices();
-            const voiceSelect = document.getElementById('voice-select');
+    setupEventListeners() {
+        // Play All 按鈕
+        const playAllBtn = document.getElementById('play-all-btn');
+        if (playAllBtn) {
+            playAllBtn.addEventListener('click', () => {
+                this.playAllSegments();
+            });
+        }
+        
+        // Stop 按鈕
+        const stopAllBtn = document.getElementById('stop-all-btn');
+        if (stopAllBtn) {
+            stopAllBtn.addEventListener('click', () => {
+                this.stop();
+            });
+        }
+        
+        // TTS Stop 按鈕
+        const stopTTSBtn = document.getElementById('stop-tts');
+        if (stopTTSBtn) {
+            stopTTSBtn.addEventListener('click', () => {
+                this.stop();
+            });
+        }
+        
+        // 個別段落播放按鈕
+        document.querySelectorAll('.play-segment-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const text = e.target.dataset.segmentText;
+                const index = parseInt(e.target.dataset.segmentIndex);
+                this.playText(text, `Segment ${index + 1}`);
+            });
+        });
+    }
+    
+    playText(text, title = '') {
+        if (!text || text.trim().length === 0) {
+            alert('No text to read for this segment');
+            return;
+        }
+        
+        // 停止當前播放
+        this.stop();
+        
+        console.log(`Playing: ${title}`, text.substring(0, 100) + '...');
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // 設置語音參數
+        const rate = parseFloat(document.getElementById('speech-rate')?.value) || 1;
+        const pitch = parseFloat(document.getElementById('speech-pitch')?.value) || 1;
+        
+        utterance.rate = rate;
+        utterance.pitch = pitch;
+        utterance.volume = 1;
+        
+        // 嘗試設置英文語音
+        const voices = this.speechSynthesis.getVoices();
+        const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
+        if (englishVoice) {
+            utterance.voice = englishVoice;
+        }
+        
+        utterance.onstart = () => {
+            this.isPlaying = true;
+            this.currentUtterance = utterance;
             
-            // Clear existing options
+            // 顯示當前播放狀態
+            const currentPlaying = document.getElementById('current-playing');
+            const currentTitle = document.getElementById('current-segment-title');
+            if (currentPlaying && currentTitle) {
+                currentTitle.textContent = title;
+                currentPlaying.classList.remove('d-none');
+            }
+            
+            console.log(`Started playing: ${title}`);
+        };
+        
+        utterance.onend = () => {
+            this.isPlaying = false;
+            this.currentUtterance = null;
+            
+            // 隱藏播放狀態
+            const currentPlaying = document.getElementById('current-playing');
+            if (currentPlaying) {
+                currentPlaying.classList.add('d-none');
+            }
+            
+            console.log(`Finished playing: ${title}`);
+        };
+        
+        utterance.onerror = (event) => {
+            console.error('TTS Error:', event);
+            this.isPlaying = false;
+            this.currentUtterance = null;
+            
+            const currentPlaying = document.getElementById('current-playing');
+            if (currentPlaying) {
+                currentPlaying.classList.add('d-none');
+            }
+            
+            alert('Speech synthesis error. Please try again.');
+        };
+        
+        this.speechSynthesis.speak(utterance);
+    }
+    
+    playAllSegments() {
+        if (this.segments.length === 0) {
+            alert('No segments available to play');
+            return;
+        }
+        
+        let currentIndex = 0;
+        
+        const playNext = () => {
+            if (currentIndex >= this.segments.length) {
+                console.log('Finished playing all segments');
+                return;
+            }
+            
+            const segment = this.segments[currentIndex];
+            const utterance = new SpeechSynthesisUtterance(segment.text);
+            
+            // 設置語音參數
+            const rate = parseFloat(document.getElementById('speech-rate')?.value) || 1;
+            const pitch = parseFloat(document.getElementById('speech-pitch')?.value) || 1;
+            
+            utterance.rate = rate;
+            utterance.pitch = pitch;
+            utterance.volume = 1;
+            
+            // 設置英文語音
+            const voices = this.speechSynthesis.getVoices();
+            const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
+            if (englishVoice) utterance.voice = englishVoice;
+            
+            utterance.onstart = () => {
+                this.isPlaying = true;
+                this.currentUtterance = utterance;
+                
+                // 高亮當前段落
+                this.highlightSegment(currentIndex);
+                
+                // 顯示播放狀態
+                const currentPlaying = document.getElementById('current-playing');
+                const currentTitle = document.getElementById('current-segment-title');
+                if (currentPlaying && currentTitle) {
+                    currentTitle.textContent = segment.title;
+                    currentPlaying.classList.remove('d-none');
+                }
+            };
+            
+            utterance.onend = () => {
+                this.clearHighlights();
+                currentIndex++;
+                // 短暫暫停後播放下一段
+                setTimeout(playNext, 500);
+            };
+            
+            utterance.onerror = () => {
+                console.error(`Error playing segment ${currentIndex + 1}`);
+                this.clearHighlights();
+                currentIndex++;
+                setTimeout(playNext, 500);
+            };
+            
+            this.speechSynthesis.speak(utterance);
+        };
+        
+        playNext();
+    }
+    
+    stop() {
+        if (this.isPlaying && this.currentUtterance) {
+            this.speechSynthesis.cancel();
+            this.isPlaying = false;
+            this.currentUtterance = null;
+            
+            // 隱藏播放狀態
+            const currentPlaying = document.getElementById('current-playing');
+            if (currentPlaying) {
+                currentPlaying.classList.add('d-none');
+            }
+            
+            this.clearHighlights();
+            console.log('TTS stopped');
+        }
+    }
+    
+    highlightSegment(index) {
+        this.clearHighlights();
+        if (this.segments[index]) {
+            const card = this.segments[index].button.closest('.segment-card');
+            if (card) {
+                card.classList.add('border-primary', 'bg-light');
+            }
+        }
+    }
+    
+    clearHighlights() {
+        document.querySelectorAll('.segment-card').forEach(card => {
+            card.classList.remove('border-primary', 'bg-light');
+        });
+    }
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing TTS...');
+    
+    // 檢查瀏覽器支援
+    if (!window.speechSynthesis) {
+        console.error('Speech Synthesis not supported');
+        alert('Your browser does not support Text-to-Speech functionality.');
+        return;
+    }
+    
+    // 初始化TTS播放器
+    const ttsPlayer = new SimpleTTSPlayer();
+    
+    // 設置語音選擇
+    const setupVoices = () => {
+        const voices = speechSynthesis.getVoices();
+        const voiceSelect = document.getElementById('voice-select');
+        
+        if (voiceSelect && voices.length > 0) {
             voiceSelect.innerHTML = '';
             
-            // Filter English voices
-            const englishVoices = this.voices.filter(voice => 
-                voice.lang.startsWith('en')
-            );
+            const englishVoices = voices.filter(v => v.lang.startsWith('en'));
             
             if (englishVoices.length > 0) {
                 englishVoices.forEach(voice => {
@@ -276,220 +487,18 @@ class DailyEditionTTSPlayer {
                     voiceSelect.appendChild(option);
                 });
             } else {
-                // Fallback options
-                const fallbackOptions = [
-                    { value: 'default', text: 'Default Voice' }
-                ];
-                fallbackOptions.forEach(opt => {
-                    const option = document.createElement('option');
-                    option.value = opt.value;
-                    option.textContent = opt.text;
-                    voiceSelect.appendChild(option);
-                });
+                const option = document.createElement('option');
+                option.value = 'default';
+                option.textContent = 'Default Voice';
+                voiceSelect.appendChild(option);
             }
-        };
-        
-        // Load voices
-        updateVoices();
-        this.speechSynthesis.onvoiceschanged = updateVoices;
-    }
-    
-    getSelectedVoice() {
-        const voiceSelect = document.getElementById('voice-select');
-        const selectedVoiceName = voiceSelect.value;
-        return this.voices.find(voice => voice.name === selectedVoiceName) || this.voices[0];
-    }
-    
-    speak(text, segmentTitle = '', onStart = null, onEnd = null) {
-        if (this.isPlaying) {
-            this.stop();
         }
-        
-        if (!text || text.trim().length === 0) {
-            console.warn('No text to speak');
-            return;
-        }
-        
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        // Configure voice settings
-        const voice = this.getSelectedVoice();
-        if (voice) utterance.voice = voice;
-        
-        utterance.rate = parseFloat(document.getElementById('speech-rate').value) || 1;
-        utterance.pitch = parseFloat(document.getElementById('speech-pitch').value) || 1;
-        utterance.volume = 1;
-        
-        // Event handlers
-        utterance.onstart = () => {
-            this.isPlaying = true;
-            this.currentUtterance = utterance;
-            
-            // Show current playing info
-            const currentPlaying = document.getElementById('current-playing');
-            const currentTitle = document.getElementById('current-segment-title');
-            currentTitle.textContent = segmentTitle || 'Daily Edition';
-            currentPlaying.classList.remove('d-none');
-            
-            if (onStart) onStart();
-        };
-        
-        utterance.onend = () => {
-            this.isPlaying = false;
-            this.currentUtterance = null;
-            
-            // Hide current playing info
-            document.getElementById('current-playing').classList.add('d-none');
-            
-            if (onEnd) onEnd();
-        };
-        
-        utterance.onerror = (event) => {
-            console.error('Speech synthesis error:', event);
-            this.isPlaying = false;
-            this.currentUtterance = null;
-            document.getElementById('current-playing').classList.add('d-none');
-        };
-        
-        this.speechSynthesis.speak(utterance);
-    }
+    };
     
-    stop() {
-        if (this.isPlaying && this.currentUtterance) {
-            this.speechSynthesis.cancel();
-            this.isPlaying = false;
-            this.currentUtterance = null;
-            document.getElementById('current-playing').classList.add('d-none');
-        }
-    }
+    setupVoices();
+    speechSynthesis.onvoiceschanged = setupVoices;
     
-    playSegment(segmentIndex) {
-        if (segmentIndex < 0 || segmentIndex >= this.segments.length) {
-            console.warn('Invalid segment index:', segmentIndex);
-            return;
-        }
-        
-        const segment = this.segments[segmentIndex];
-        this.currentSegmentIndex = segmentIndex;
-        
-        // Highlight current segment
-        this.highlightSegment(segmentIndex);
-        
-        this.speak(
-            segment.text,
-            segment.title,
-            () => {
-                console.log(`Started playing segment ${segmentIndex + 1}: ${segment.title}`);
-            },
-            () => {
-                console.log(`Finished playing segment ${segmentIndex + 1}`);
-                this.clearHighlights();
-            }
-        );
-    }
-    
-    playAllSegments() {
-        if (this.segments.length === 0) return;
-        
-        const playNext = (index) => {
-            if (index >= this.segments.length) {
-                console.log('Finished playing all segments');
-                return;
-            }
-            
-            const segment = this.segments[index];
-            this.currentSegmentIndex = index;
-            this.highlightSegment(index);
-            
-            this.speak(
-                segment.text,
-                `Segment ${index + 1}: ${segment.title}`,
-                null,
-                () => {
-                    this.clearHighlights();
-                    // Play next segment after a short pause
-                    setTimeout(() => playNext(index + 1), 500);
-                }
-            );
-        };
-        
-        playNext(0);
-    }
-    
-    highlightSegment(index) {
-        this.clearHighlights();
-        if (this.segments[index]) {
-            this.segments[index].element.classList.add('border-primary', 'bg-light');
-        }
-    }
-    
-    clearHighlights() {
-        this.segments.forEach(segment => {
-            segment.element.classList.remove('border-primary', 'bg-light');
-        });
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize TTS Player
-    const ttsPlayer = new DailyEditionTTSPlayer();
-    
-    // Update original play/pause button to play all segments
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    if (playPauseBtn) {
-        playPauseBtn.addEventListener('click', function() {
-            if (!ttsPlayer.isPlaying) {
-                ttsPlayer.playAllSegments();
-                this.innerHTML = '<i class="fas fa-pause"></i> Pause';
-            } else {
-                ttsPlayer.stop();
-                this.innerHTML = '<i class="fas fa-play"></i> Play';
-            }
-        });
-    }
-    
-    // Stop button
-    const stopBtn = document.getElementById('stop-btn');
-    if (stopBtn) {
-        stopBtn.addEventListener('click', function() {
-            ttsPlayer.stop();
-            if (playPauseBtn) {
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
-            }
-        });
-    }
-    
-    // TTS Stop button
-    const stopTTSBtn = document.getElementById('stop-tts');
-    if (stopTTSBtn) {
-        stopTTSBtn.addEventListener('click', function() {
-            ttsPlayer.stop();
-            if (playPauseBtn) {
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
-            }
-        });
-    }
-    
-    // Replay button
-    const replayBtn = document.getElementById('replay-btn');
-    if (replayBtn) {
-        replayBtn.addEventListener('click', function() {
-            ttsPlayer.playAllSegments();
-            if (playPauseBtn) {
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
-            }
-        });
-    }
-    
-    // Individual segment play buttons
-    document.querySelectorAll('.jump-to-segment').forEach((button, index) => {
-        button.addEventListener('click', function() {
-            const segmentIndex = parseInt(this.closest('.segment-card').querySelector('.card-title').textContent.match(/\d+/)[0]) - 1;
-            ttsPlayer.playSegment(segmentIndex);
-        });
-    });
-    
-    // Toggle transcript functionality
+    // 顯示轉錄按鈕功能
     document.querySelectorAll('.toggle-transcript').forEach(button => {
         button.addEventListener('click', function() {
             const targetId = this.dataset.target;
@@ -505,15 +514,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Voice settings change handlers
-    ['voice-select', 'speech-rate', 'speech-pitch'].forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('change', function() {
-                console.log(`Updated ${id}:`, this.value);
-            });
-        }
-    });
+    console.log('TTS Player initialized successfully');
 });
 </script>
 {% endblock %}
