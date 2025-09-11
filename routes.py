@@ -233,22 +233,43 @@ def abc_news_practice(news_id):
 
 @app.route('/watch/abc_news/<int:news_id>')
 def watch_abc_news(news_id):
-    """Watch ABC News video with subtitles"""
+    """Watch ABC News content from Archive.org with native player"""
     content = ContentSource.query.get_or_404(news_id)
     if content.name != 'ABC News':
         flash('Content not found in ABC News Area', 'error')
         return redirect(url_for('abc_news_area'))
     
-    # Extract YouTube video ID from URL
-    video_id = None
-    if content.url and 'youtube.com/watch?v=' in content.url:
-        video_id = content.url.split('watch?v=')[1].split('&')[0]
-    elif content.url and 'youtu.be/' in content.url:
-        video_id = content.url.split('youtu.be/')[1].split('?')[0]
+    # Extract Archive.org information from content metadata
+    archive_info = {
+        'archive_url': content.url,
+        'is_playlist': False,
+        'playlist_urls': [],
+        'archive_identifiers': [],
+        'embed_url': content.url
+    }
+    
+    try:
+        if content.content_metadata:
+            import json
+            metadata = json.loads(content.content_metadata) if isinstance(content.content_metadata, str) else content.content_metadata
+            
+            if metadata.get('source') == 'archive_org':
+                archive_info['is_playlist'] = metadata.get('content_quality', {}).get('has_playlist', False)
+                archive_info['playlist_urls'] = metadata.get('playlist_urls', [])
+                archive_info['archive_identifiers'] = metadata.get('archive_identifiers', [])
+                
+                # Create appropriate embed URL for Archive.org
+                if content.url and 'archive.org/details/' in content.url:
+                    identifier = content.url.split('/details/')[-1]
+                    archive_info['embed_url'] = f"https://archive.org/embed/{identifier}"
+                elif content.url and 'archive.org/embed/' in content.url:
+                    archive_info['embed_url'] = content.url
+    except Exception as e:
+        logging.error(f"Error parsing archive metadata for content {news_id}: {e}")
     
     return render_template('watch_abc_news.html', 
                          content=content, 
-                         video_id=video_id)
+                         archive_info=archive_info)
 
 @app.route('/select_practice')
 def select_practice():

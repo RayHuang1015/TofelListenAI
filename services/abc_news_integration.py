@@ -17,35 +17,53 @@ class ABCNewsIntegration:
         self.question_generator = AIQuestionGenerator()
         self.archive_org = ArchiveOrgIntegration()
         
-    def sync_abc_news_content(self, start_year: int = 2019, end_year: int = 2025) -> Dict:
-        """Sync ABC News Live content from YouTube for specified year range"""
+    def sync_abc_news_content(self, start_year: int = 2024, end_year: int = 2025) -> Dict:
+        """Sync ABC News authentic content from Archive.org for specified year range"""
+        logging.info(f"Syncing ABC News from Archive.org for {start_year}-{end_year}")
+        
         results = {
-            'total_fetched': 0,
-            'total_saved': 0,
+            'total_days_processed': 0,
+            'total_content_created': 0,
             'years_processed': [],
             'errors': []
         }
         
         try:
+            # Use Archive.org integration for authentic content instead of YouTube
             for year in range(start_year, min(end_year + 1, datetime.now().year + 1)):
-                logging.info(f"Processing ABC News content for year {year}")
+                logging.info(f"Processing Archive.org ABC News content for year {year}")
                 
-                # Fetch videos for this year
-                year_videos = self.youtube_fetcher.fetch_abc_news_content_by_year(year)
-                results['total_fetched'] += len(year_videos)
+                # Create date range for the year
+                start_date = datetime(year, 1, 1)
                 
-                # Process and save videos
-                saved_count = self._save_videos_to_database(year_videos)
-                results['total_saved'] += saved_count
+                # Calculate end date for the year (don't go beyond current date)
+                if year == datetime.now().year:
+                    end_date = datetime.now()
+                else:
+                    end_date = datetime(year, 12, 31)
+                
+                # Use Archive.org integration for authentic daily content
+                year_results = self.archive_org.sync_date_range(start_date, end_date)
+                
+                results['total_days_processed'] += year_results['total_days']
+                results['total_content_created'] += year_results['content_created']
                 results['years_processed'].append(year)
                 
-                logging.info(f"Year {year}: Fetched {len(year_videos)} videos, saved {saved_count}")
+                if year_results['errors']:
+                    results['errors'].extend([f"{year}: {error}" for error in year_results['errors']])
+                
+                logging.info(f"Year {year}: Processed {year_results['total_days']} days, created {year_results['content_created']} authentic daily editions")
+                
+                # Rate limiting between years
+                import time
+                time.sleep(1)
                 
         except Exception as e:
-            error_msg = f"Error during ABC News sync: {e}"
+            error_msg = f"Error during Archive.org ABC News sync: {e}"
             logging.error(error_msg)
             results['errors'].append(error_msg)
         
+        logging.info(f"Archive.org sync completed: {results['total_content_created']} authentic daily editions created")
         return results
     
     def _save_videos_to_database(self, videos: List[Dict]) -> int:

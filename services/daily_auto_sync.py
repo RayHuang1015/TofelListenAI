@@ -29,13 +29,21 @@ class DailyAutoSync:
                     db.func.date(ContentSource.published_date) == today
                 ).first()
                 
-                if existing and not existing.url.startswith('https://abcnews.go.com/Live'):
-                    logging.info(f"ABC News content for {today} already exists, skipping")
-                    return {
-                        'status': 'skipped',
-                        'message': f"Content for {today} already exists",
-                        'date': str(today)
-                    }
+                # Skip if we already have authentic Archive.org content for this date
+                if existing:
+                    try:
+                        if existing.content_metadata:
+                            import json
+                            metadata = json.loads(existing.content_metadata) if isinstance(existing.content_metadata, str) else existing.content_metadata
+                            if metadata.get('source') == 'archive_org' and metadata.get('authentic_date_content'):
+                                logging.info(f"Authentic ABC News content for {today} already exists, skipping")
+                                return {
+                                    'status': 'skipped',
+                                    'message': f"Authentic content for {today} already exists",
+                                    'date': str(today)
+                                }
+                    except:
+                        pass
                 
                 # Fetch content for today from Archive.org
                 today_datetime = datetime.combine(today, datetime.min.time())
@@ -92,7 +100,13 @@ class DailyAutoSync:
                     db.func.date(ContentSource.published_date) == yesterday
                 ).first()
                 
-                if existing and not existing.url.startswith('https://abcnews.go.com/Live'):
+                # Skip if we already have authentic Archive.org content for this date
+                if existing:
+                    try:
+                        if existing.content_metadata:
+                            import json
+                            metadata = json.loads(existing.content_metadata) if isinstance(existing.content_metadata, str) else existing.content_metadata
+                            if metadata.get('source') == 'archive_org' and metadata.get('authentic_date_content'):
                     logging.info(f"ABC News content for {yesterday} already exists, skipping")
                     return {
                         'status': 'skipped',
@@ -163,7 +177,13 @@ class DailyAutoSync:
                         db.func.date(ContentSource.published_date) == check_date
                     ).first()
                     
-                    if existing and not existing.url.startswith('https://abcnews.go.com/Live'):
+                    # Skip if we already have authentic Archive.org content for this date
+                if existing:
+                    try:
+                        if existing.content_metadata:
+                            import json
+                            metadata = json.loads(existing.content_metadata) if isinstance(existing.content_metadata, str) else existing.content_metadata
+                            if metadata.get('source') == 'archive_org' and metadata.get('authentic_date_content'):
                         results['days_skipped'] += 1
                         continue
                     
@@ -234,7 +254,13 @@ class DailyAutoSync:
                     db.func.date(ContentSource.published_date) == date_obj
                 ).first()
                 
-                if existing and not existing.url.startswith('https://abcnews.go.com/Live'):
+                # Skip if we already have authentic Archive.org content for this date
+                if existing:
+                    try:
+                        if existing.content_metadata:
+                            import json
+                            metadata = json.loads(existing.content_metadata) if isinstance(existing.content_metadata, str) else existing.content_metadata
+                            if metadata.get('source') == 'archive_org' and metadata.get('authentic_date_content'):
                     return {
                         'status': 'skipped',
                         'message': f"Content for {date_obj} already exists",

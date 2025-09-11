@@ -30,6 +30,14 @@ class ContentSource(db.Model):
     
     # Relationships
     practice_sessions = db.relationship('PracticeSession', backref='content', lazy=True)
+    
+    # Constraints to prevent duplicates
+    __table_args__ = (
+        # Unique constraint for URL to prevent duplicate content
+        db.UniqueConstraint('url', name='unique_content_url'),
+        # Add index for better query performance on ABC News content by date
+        db.Index('idx_abc_news_date', 'name', 'published_date'),
+    )
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
