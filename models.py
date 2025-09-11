@@ -116,7 +116,14 @@ class ProviderSource(db.Model):
 class DailyEdition(db.Model):
     """3-hour daily international news compilation"""
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, unique=True, nullable=False)  # One edition per day
+    date = db.Column(db.Date, nullable=False)  # Edition date
+    edition_number = db.Column(db.Integer, default=1)  # Multiple editions per day (1-8 for every 3 hours)
+    
+    # Unique constraint for one edition per date+slot
+    __table_args__ = (
+        db.UniqueConstraint('date', 'edition_number', name='unique_daily_edition'),
+        db.Index('idx_edition_date', 'date'),
+    )
     title = db.Column(db.String(200), nullable=False)
     total_duration_sec = db.Column(db.Integer, default=0)  # Target: 3 hours = 10800 seconds
     word_count = db.Column(db.Integer, default=0)
@@ -149,6 +156,13 @@ class EditionSegment(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Constraints and indexes for EditionSegment
+    __table_args__ = (
+        db.UniqueConstraint('edition_id', 'seq', name='unique_segment_order'),
+        db.Index('idx_segment_edition_seq', 'edition_id', 'seq'),
+        db.Index('idx_segment_provider', 'provider_id'),
+    )
+    
     # Relationships
     provider = db.relationship('ProviderSource', backref=db.backref('segments', lazy=True))
     source_content = db.relationship('ContentSource', backref=db.backref('edition_segments', lazy=True))
@@ -168,7 +182,7 @@ class IngestionJob(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Index for performance
+    # Index for performance  
     __table_args__ = (
         db.Index('idx_ingestion_date_status', 'date', 'status'),
     )
