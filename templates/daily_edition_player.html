@@ -86,10 +86,15 @@
                         <div>
                             <strong>Now Playing:</strong> <span id="current-segment-title">-</span>
                         </div>
-                        <button id="stop-tts" class="btn btn-sm btn-outline-danger">
+                        <button id="stop-tts" class="btn btn-sm btn-outline-danger" onclick="stopTTS()">
                             <i class="fas fa-stop"></i> Stop
                         </button>
                     </div>
+                </div>
+                
+                <!-- TTS Debug Info -->
+                <div id="tts-debug" class="alert alert-secondary" style="max-height: 200px; overflow-y: auto; font-size: 0.8em;">
+                    <strong>TTS Debug:</strong> Ready to test
                 </div>
                 
                 <!-- Playback Controls -->
@@ -214,20 +219,203 @@
 
 {% block extra_js %}
 <script>
-// 簡化的TTS播放器
+console.log('=== TTS Script Loading ===');
+
+// 檢查瀏覽器支援
+if (typeof window.speechSynthesis === 'undefined') {
+    console.error('❌ Speech Synthesis not supported');
+    alert('您的瀏覽器不支持語音合成功能');
+} else {
+    console.log('✅ Speech Synthesis API available');
+}
+
+// 全局變量和簡單函數
+let currentUtterance = null;
+let isPlaying = false;
+
+function debugLog(message) {
+    console.log('[TTS Debug]', message);
+    // 在頁面上顯示調試信息
+    const debugDiv = document.getElementById('tts-debug');
+    if (debugDiv) {
+        debugDiv.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + message;
+    }
+}
+
+// 簡單的TTS播放函數
+function playTTS(text, title = 'Segment') {
+    debugLog('開始播放TTS: ' + title);
+    
+    if (!window.speechSynthesis) {
+        alert('瀏覽器不支持語音合成');
+        return;
+    }
+    
+    if (!text || text.trim() === '') {
+        alert('沒有文字可以朗讀');
+        debugLog('錯誤: 沒有文字');
+        return;
+    }
+    
+    // 停止當前播放
+    if (isPlaying) {
+        speechSynthesis.cancel();
+        isPlaying = false;
+        debugLog('停止當前播放');
+    }
+    
+    try {
+        const utterance = new SpeechSynthesisUtterance(text);
+        currentUtterance = utterance;
+        
+        // 基本設置
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        
+        // 嘗試使用英語語音
+        const voices = speechSynthesis.getVoices();
+        debugLog(`可用語音數量: ${voices.length}`);
+        
+        const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
+        if (englishVoice) {
+            utterance.voice = englishVoice;
+            debugLog(`使用語音: ${englishVoice.name}`);
+        } else {
+            debugLog('使用默認語音');
+        }
+        
+        utterance.onstart = () => {
+            isPlaying = true;
+            debugLog('✅ TTS開始播放');
+            
+            // 顯示當前播放信息
+            const currentPlaying = document.getElementById('current-playing');
+            const currentTitle = document.getElementById('current-segment-title');
+            if (currentPlaying && currentTitle) {
+                currentTitle.textContent = title;
+                currentPlaying.classList.remove('d-none');
+            }
+        };
+        
+        utterance.onend = () => {
+            isPlaying = false;
+            currentUtterance = null;
+            debugLog('✅ TTS播放完成');
+            
+            // 隱藏播放信息
+            const currentPlaying = document.getElementById('current-playing');
+            if (currentPlaying) {
+                currentPlaying.classList.add('d-none');
+            }
+        };
+        
+        utterance.onerror = (event) => {
+            isPlaying = false;
+            currentUtterance = null;
+            debugLog('❌ TTS錯誤: ' + event.error);
+            
+            const currentPlaying = document.getElementById('current-playing');
+            if (currentPlaying) {
+                currentPlaying.classList.add('d-none');
+            }
+            
+            alert('語音播放出錯: ' + event.error);
+        };
+        
+        debugLog('發送語音命令...');
+        speechSynthesis.speak(utterance);
+        
+    } catch (error) {
+        debugLog('❌ TTS異常: ' + error.message);
+        alert('TTS錯誤: ' + error.message);
+    }
+}
+
+// 停止TTS
+function stopTTS() {
+    if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        isPlaying = false;
+        currentUtterance = null;
+        debugLog('🛑 TTS已停止');
+        
+        const currentPlaying = document.getElementById('current-playing');
+        if (currentPlaying) {
+            currentPlaying.classList.add('d-none');
+        }
+    }
+}
+
+// 播放所有段落
+function playAllSegments() {
+    debugLog('開始播放所有段落');
+    
+    const segmentButtons = document.querySelectorAll('.play-segment-btn');
+    if (segmentButtons.length === 0) {
+        alert('沒有找到段落');
+        return;
+    }
+    
+    let currentIndex = 0;
+    
+    function playNextSegment() {
+        if (currentIndex >= segmentButtons.length) {
+            debugLog('所有段落播放完成');
+            return;
+        }
+        
+        const button = segmentButtons[currentIndex];
+        const text = button.getAttribute('data-segment-text');
+        const title = `Segment ${currentIndex + 1}`;
+        
+        if (!text) {
+            debugLog(`跳過段落 ${currentIndex + 1}: 沒有文字`);
+            currentIndex++;
+            setTimeout(playNextSegment, 100);
+            return;
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        utterance.onstart = () => {
+            isPlaying = true;
+            debugLog(`播放段落 ${currentIndex + 1}`);
+            
+            // 高亮當前段落
+            button.closest('.segment-card')?.classList.add('border-primary', 'bg-light');
+        };
+        
+        utterance.onend = () => {
+            // 移除高亮
+            button.closest('.segment-card')?.classList.remove('border-primary', 'bg-light');
+            
+            currentIndex++;
+            setTimeout(playNextSegment, 500); // 短暫暫停
+        };
+        
+        utterance.onerror = () => {
+            debugLog(`段落 ${currentIndex + 1} 播放錯誤`);
+            button.closest('.segment-card')?.classList.remove('border-primary', 'bg-light');
+            currentIndex++;
+            setTimeout(playNextSegment, 500);
+        };
+        
+        speechSynthesis.speak(utterance);
+    }
+    
+    playNextSegment();
+}
+
+// 簡化的TTS播放器類
 class SimpleTTSPlayer {
     constructor() {
-        this.speechSynthesis = window.speechSynthesis;
-        this.currentUtterance = null;
-        this.isPlaying = false;
-        this.segments = [];
-        
+        debugLog('SimpleTTSPlayer 初始化');
         this.init();
     }
     
     init() {
-        console.log('Initializing Simple TTS Player...');
-        this.loadSegments();
+        debugLog('設置事件監聽器');
         this.setupEventListeners();
     }
     
@@ -249,11 +437,14 @@ class SimpleTTSPlayer {
     }
     
     setupEventListeners() {
+        debugLog('設置事件監聽器');
+        
         // Play All 按鈕
         const playAllBtn = document.getElementById('play-all-btn');
         if (playAllBtn) {
             playAllBtn.addEventListener('click', () => {
-                this.playAllSegments();
+                debugLog('Play All 按鈕被點擊');
+                playAllSegments();
             });
         }
         
@@ -261,26 +452,28 @@ class SimpleTTSPlayer {
         const stopAllBtn = document.getElementById('stop-all-btn');
         if (stopAllBtn) {
             stopAllBtn.addEventListener('click', () => {
-                this.stop();
-            });
-        }
-        
-        // TTS Stop 按鈕
-        const stopTTSBtn = document.getElementById('stop-tts');
-        if (stopTTSBtn) {
-            stopTTSBtn.addEventListener('click', () => {
-                this.stop();
+                debugLog('Stop All 按鈕被點擊');
+                stopTTS();
             });
         }
         
         // 個別段落播放按鈕
         document.querySelectorAll('.play-segment-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const text = e.target.dataset.segmentText;
-                const index = parseInt(e.target.dataset.segmentIndex);
-                this.playText(text, `Segment ${index + 1}`);
+                const button = e.currentTarget || e.target;
+                const text = button.getAttribute('data-segment-text');
+                const index = parseInt(button.getAttribute('data-segment-index'));
+                debugLog(`段落播放按鈕被點擊: ${index + 1}`);
+                
+                if (text) {
+                    playTTS(text, `Segment ${index + 1}`);
+                } else {
+                    debugLog('錯誤: 沒有文字數據');
+                }
             });
         });
+        
+        debugLog(`設置完成，找到 ${document.querySelectorAll('.play-segment-btn').length} 個播放按鈕`);
     }
     
     playText(text, title = '') {

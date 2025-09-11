@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { margin: 10px; padding: 10px; }
+        .output { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Text-to-Speech Test</h1>
+    
+    <div class="output" id="status">Ready to test TTS</div>
+    
+    <button onclick="testBasicTTS()">Test Basic TTS</button>
+    <button onclick="testVoices()">List Available Voices</button>
+    <button onclick="stopTTS()">Stop TTS</button>
+    
+    <hr>
+    
+    <textarea id="textInput" rows="4" cols="50" placeholder="Enter text to speak...">
+This is a test of the text-to-speech functionality. The quick brown fox jumps over the lazy dog.
+    </textarea>
+    <br>
+    <button onclick="speakCustomText()">Speak Custom Text</button>
+    
+    <script>
+        let currentUtterance = null;
+        
+        function log(message) {
+            const status = document.getElementById('status');
+            status.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + message;
+            console.log(message);
+        }
+        
+        function testBasicTTS() {
+            log('Testing basic TTS support...');
+            
+            if (!window.speechSynthesis) {
+                log('❌ Speech Synthesis not supported in this browser');
+                return;
+            }
+            
+            log('✅ Speech Synthesis is supported');
+            
+            try {
+                const utterance = new SpeechSynthesisUtterance('Hello, this is a test of text to speech.');
+                
+                utterance.onstart = () => log('✅ TTS started successfully');
+                utterance.onend = () => log('✅ TTS finished');
+                utterance.onerror = (e) => log('❌ TTS error: ' + e.error);
+                
+                speechSynthesis.speak(utterance);
+                currentUtterance = utterance;
+                
+                log('TTS command issued...');
+                
+            } catch (error) {
+                log('❌ Error creating TTS: ' + error.message);
+            }
+        }
+        
+        function testVoices() {
+            log('Testing voice availability...');
+            
+            if (!window.speechSynthesis) {
+                log('❌ Speech Synthesis not supported');
+                return;
+            }
+            
+            const voices = speechSynthesis.getVoices();
+            log(`Found ${voices.length} voices:`);
+            
+            voices.forEach((voice, index) => {
+                log(`${index + 1}. ${voice.name} (${voice.lang}) ${voice.default ? '[Default]' : ''}`);
+            });
+            
+            const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+            log(`English voices: ${englishVoices.length}`);
+        }
+        
+        function stopTTS() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                log('🛑 TTS stopped');
+            } else {
+                log('No TTS currently playing');
+            }
+        }
+        
+        function speakCustomText() {
+            const text = document.getElementById('textInput').value.trim();
+            
+            if (!text) {
+                log('❌ No text to speak');
+                return;
+            }
+            
+            if (!window.speechSynthesis) {
+                log('❌ Speech Synthesis not supported');
+                return;
+            }
+            
+            try {
+                stopTTS(); // Stop any current speech
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Try to use an English voice
+                const voices = speechSynthesis.getVoices();
+                const englishVoice = voices.find(v => v.lang.startsWith('en'));
+                if (englishVoice) {
+                    utterance.voice = englishVoice;
+                    log(`Using voice: ${englishVoice.name}`);
+                }
+                
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                
+                utterance.onstart = () => log('🔊 Speaking custom text...');
+                utterance.onend = () => log('✅ Finished speaking custom text');
+                utterance.onerror = (e) => log('❌ TTS error: ' + e.error);
+                
+                speechSynthesis.speak(utterance);
+                currentUtterance = utterance;
+                
+                log(`Speaking: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+        
+        // Load voices when page loads
+        window.addEventListener('load', () => {
+            log('Page loaded, initializing...');
+            
+            // Load voices
+            if (speechSynthesis.getVoices().length === 0) {
+                speechSynthesis.addEventListener('voiceschanged', () => {
+                    log('Voices loaded');
+                });
+            } else {
+                log('Voices already available');
+            }
+        });
+    </script>
+</body>
+</html>

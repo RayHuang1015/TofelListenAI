@@ -157,6 +157,11 @@ def abc_news_area():
                          sorted_years=sorted_years,
                          total_news=len(abc_news_content))
 
+@app.route('/tts_test')
+def tts_test():
+    """Simple TTS test page for debugging"""
+    return render_template('tts_test.html')
+
 @app.route('/daily_news_area')
 def daily_news_area():
     """Daily International News Area - 3-hour daily international news transcripts"""
