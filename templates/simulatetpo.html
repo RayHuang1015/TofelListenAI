@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block title %}Simulate TPO Collection - Koolearn Premium{% endblock %}
+
+{% block extra_css %}
+<style>
+    .premium-header {
+        background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+        color: white;
+        padding: 2.5rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .premium-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        background: var(--bs-dark);
+        border-radius: 12px;
+    }
+    
+    .premium-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(139, 92, 246, 0.2);
+        border-color: #8B5CF6;
+    }
+    
+    .difficulty-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+    }
+    
+    .premium-badge {
+        background: linear-gradient(45deg, #8B5CF6, #3B82F6);
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 15px;
+        font-weight: 600;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+        color: white;
+        border: none;
+        border-radius: 15px;
+    }
+    
+    .filter-section {
+        background: var(--bs-dark);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+    
+    .premium-icon {
+        color: #8B5CF6;
+        margin-right: 0.5rem;
+    }
+    
+    .tpo-type-badge {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8B5CF6;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        padding: 0.3rem 0.6rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Premium Header -->
+<div class="premium-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-crown me-3"></i>Simulate TPO Collection
+                </h1>
+                <p class="lead mb-0">
+                    新東方Koolearn官方TPO精選 • 高質量聽力內容 • 專業題型分析
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="stats-card card">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ total_count or 55 }}</h3>
+                        <small>官方聽力項目</small>
+                        <hr class="my-2 border-light">
+                        <small>Koolearn專業版</small>
+                        <hr class="my-2 border-light">
+                        <div class="premium-badge">
+                            <i class="fas fa-certificate me-1"></i>官方版
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation to Audio Labs -->
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info border-primary">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="alert-heading mb-1">
+                            <i class="fas fa-flask text-primary me-2"></i>探索Practice Collection？
+                        </h5>
+                        <p class="mb-0">
+                            這裡是新東方官方精選TPO內容，需要更多練習？前往小站TPO練習專區。
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="{{ url_for('audio_labs') }}" class="btn btn-success btn-lg">
+                            <i class="fas fa-dumbbell me-2"></i>Practice Collection
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="container">
+    <div class="filter-section">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label for="official" class="form-label text-light">
+                    <i class="premium-icon fas fa-hashtag"></i>TPO 編號
+                </label>
+                <select name="official" id="official" class="form-select">
+                    <option value="">全部TPO</option>
+                    {% for num in official_nums %}
+                    <option value="{{ num }}" {% if request.args.get('official') == num %}selected{% endif %}>
+                        TPO {{ num }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="difficulty" class="form-label text-light">
+                    <i class="premium-icon fas fa-chart-line"></i>難度級別
+                </label>
+                <select name="difficulty" id="difficulty" class="form-select">
+                    <option value="">全部難度</option>
+                    {% for difficulty in difficulties %}
+                    <option value="{{ difficulty }}" {% if request.args.get('difficulty') == difficulty %}selected{% endif %}>
+                        {{ difficulty }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="topic" class="form-label text-light">
+                    <i class="premium-icon fas fa-tags"></i>話題類型
+                </label>
+                <select name="topic" id="topic" class="form-select">
+                    <option value="">全部話題</option>
+                    {% for topic in topics %}
+                    <option value="{{ topic }}" {% if request.args.get('topic') == topic %}selected{% endif %}>
+                        {{ topic }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">
+                    <i class="fas fa-filter me-2"></i>過濾
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('premium_tpo') }}" class="btn btn-outline-light w-100">
+                    <i class="fas fa-refresh me-2"></i>重置
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="row">
+        {% if content_items %}
+            {% for content in content_items %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card premium-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="card-title mb-0 fw-bold text-light">
+                                {{ content.name }}
+                            </h6>
+                            {% if content.difficulty_level %}
+                            <span class="badge 
+                                {% if content.difficulty_level == '易' %}bg-success
+                                {% elif content.difficulty_level == '中' %}bg-warning text-dark
+                                {% else %}bg-danger
+                                {% endif %} difficulty-badge">
+                                {{ content.difficulty_level }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- TPO類型標識 -->
+                        <div class="mb-2">
+                            {% if '對話' in content.name %}
+                            <span class="tpo-type-badge">
+                                <i class="fas fa-comments me-1"></i>校園對話
+                            </span>
+                            {% elif '講座' in content.name %}
+                            <span class="tpo-type-badge">
+                                <i class="fas fa-chalkboard-teacher me-1"></i>學術講座
+                            </span>
+                            {% else %}
+                            <span class="tpo-type-badge">
+                                <i class="fas fa-headphones me-1"></i>聽力練習
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if content.topic %}
+                        <p class="text-muted mb-2">
+                            <i class="premium-icon fas fa-tag"></i>{{ content.topic }}
+                        </p>
+                        {% endif %}
+                        
+                        {% if content.duration %}
+                        <p class="text-muted mb-2">
+                            <i class="premium-icon fas fa-clock"></i>
+                            {{ (content.duration // 60) }} min {{ (content.duration % 60) }} sec
+                        </p>
+                        {% endif %}
+                        
+                        {% if content.description %}
+                        <p class="card-text small text-light-emphasis">{{ content.description[:80] }}...</p>
+                        {% endif %}
+                        
+                        <p class="text-muted small mb-3">
+                            <i class="premium-icon fas fa-calendar"></i>{{ content.created_at.strftime('%Y-%m-%d') if content.created_at else '2025-09-09' }}
+                        </p>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('practice', content_id=content.id) }}" 
+                               class="btn btn-primary fw-bold">
+                                <i class="fas fa-play me-2"></i>開始練習
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-search text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3 text-muted">暫無符合條件的內容</h4>
+                    <p class="text-muted">請調整過濾條件或查看完整TPO題庫</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{{ url_for('premium_tpo') }}" class="btn btn-primary">
+                            <i class="fas fa-refresh me-2"></i>重新加載
+                        </a>
+                        <a href="{{ url_for('audio_labs') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-flask me-2"></i>Audio Labs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Simple Pagination (Fixed Version) -->
+    {% if pagination and pagination.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Content pagination">
+                <ul class="pagination justify-content-center">
+                    <!-- Previous Button -->
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="/premium-tpo?page={{ pagination.prev_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Page Numbers -->
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="/premium-tpo?page={{ page_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <!-- Next Button -->
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="/premium-tpo?page={{ pagination.next_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            
+            <!-- Page Info -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    顯示第 {{ pagination.page }} 頁，共 {{ pagination.pages }} 頁 | 總共 {{ pagination.total }} 個項目
+                </small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Features Section -->
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-crown me-2"></i>Official TPO Collection特色
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <h6><i class="premium-icon fas fa-certificate"></i>官方品質</h6>
+                            <p class="small text-muted mb-0">
+                                新東方Koolearn官方精選TPO聽力材料，品質保證。
+                            </p>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <h6><i class="premium-icon fas fa-tags"></i>詳細分類</h6>
+                            <p class="small text-muted mb-0">
+                                按學科領域和話題類型細分，幫助針對性練習薄弱環節。
+                            </p>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <h6><i class="premium-icon fas fa-chart-line"></i>難度分級</h6>
+                            <p class="small text-muted mb-0">
+                                專業的難度評估系統，從易到難循序漸進提升聽力技能。
+                            </p>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <h6><i class="premium-icon fas fa-dumbbell"></i>Practice Collection</h6>
+                            <p class="small text-muted mb-0">
+                                可前往Practice Collection瀏覽小站TPO內容，進行大量練習。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 統計信息
+    const totalItems = {{ content_items|length if content_items else 0 }};
+    const totalCount = {{ total_count or 505 }};
+    
+    console.log('👑 精選TPO專區載入完成');
+    console.log(`顯示了 ${totalItems} 個聽力項目`);
+    console.log(`總共有 ${totalCount} 個精選項目`);
+    
+    // 加載動畫效果
+    const cards = document.querySelectorAll('.premium-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+    
+    // 過濾變化提示
+    const filterForm = document.querySelector('form');
+    filterForm.addEventListener('change', function() {
+        const button = document.querySelector('button[type="submit"]');
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>篩選中...';
+        setTimeout(() => {
+            button.innerHTML = '<i class="fas fa-filter me-2"></i>過濾';
+        }, 1000);
+    });
+});
+</script>
+{% endblock %}

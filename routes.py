@@ -477,9 +477,9 @@ def content_library():
         logging.error(f"Content library error: {e}")
         return f"Error loading content library: {str(e)}", 500
 
-@app.route('/audio-labs')
-def audio_labs():
-    """Practice TPO Collection - 小站TPO練習專區"""
+@app.route('/practice-tpo-collection')
+def practice_tpo_collection():
+    """Practice TPO Collection - 此TPO練習專區"""
     try:
         # 分頁處理小站TPO練習內容  
         page = request.args.get('page', 1, type=int)
@@ -505,19 +505,19 @@ def audio_labs():
         difficulties = db.session.query(ContentSource.difficulty_level).distinct().all()
         topics = db.session.query(ContentSource.topic).distinct().all()
         
-        return render_template('audio_labs.html',
+        return render_template('practice_tpo_collection.html',
                              content_items=content_items,
                              pagination=pagination,
                              difficulties=[d[0] for d in difficulties if d[0]],
                              topics=[t[0] for t in topics if t[0]])
     
     except Exception as e:
-        logging.error(f"Audio Labs error: {e}")
-        return f"Error loading Audio Labs: {str(e)}", 500
+        logging.error(f"Practice TPO Collection error: {e}")
+        return f"Error loading Practice TPO Collection: {str(e)}", 500
 
-@app.route('/premium-tpo')
-def premium_tpo():
-    """Official TPO Collection - 新東方官方TPO精選"""
+@app.route('/simulatetpo')
+def simulatetpo():
+    """Simulate TPO Collection - 新東方官方TPO精選"""
     try:
         # 分頁處理新東方官方內容
         page = request.args.get('page', 1, type=int)
@@ -570,7 +570,7 @@ def premium_tpo():
         for i in range(1, 76):  # TPO 1-75
             official_nums.append(str(i))
         
-        return render_template('premium_tpo.html',
+        return render_template('simulatetpo.html',
                              content_items=content_items,
                              pagination=pagination,
                              difficulties=[d[0] for d in difficulties if d[0]],
@@ -579,8 +579,8 @@ def premium_tpo():
                              total_count=total_count)
     
     except Exception as e:
-        logging.error(f"Premium TPO error: {e}")
-        return f"Error loading Premium TPO: {str(e)}", 500
+        logging.error(f"Simulate TPO error: {e}")
+        return f"Error loading Simulate TPO: {str(e)}", 500
 
 @app.route('/ai-tpo-practice')
 def ai_tpo_practice():

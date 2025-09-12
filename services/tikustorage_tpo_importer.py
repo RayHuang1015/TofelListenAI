@@ -166,7 +166,7 @@ class TikustorageTPOImporter:
                         audio_url = self.generate_tikustorage_audio_url(tpo_num, passage, part)
                         
                         # 創建ContentSource
-                        content_name = f"Official {tpo_num} {section_name}"
+                        content_name = f"Simulate {tpo_num} {section_name}"
                         content = ContentSource(
                             name=content_name,
                             url=audio_url,
