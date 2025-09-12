@@ -528,9 +528,9 @@ def simulatetpo():
         topic = request.args.get('topic', '')
         official_num = request.args.get('official', '')
         
-        # 構建查詢 - 查詢新東方官方TPO內容，如果沒有則查詢小站TPO
+        # 構建查詢 - 只查詢小站TPO內容（已更新為tikustorage格式）
         query = ContentSource.query.filter(
-            ContentSource.type.in_(['tpo_official', 'smallstation_tpo'])
+            ContentSource.type == 'smallstation_tpo'
         )
         
         if difficulty:
@@ -550,19 +550,19 @@ def simulatetpo():
         )
         content_items = pagination.items
         
-        # 統計信息 - 包含新東方官方和小站TPO內容  
+        # 統計信息 - 只包含小站TPO內容（已更新為tikustorage格式）  
         total_count = ContentSource.query.filter(
-            ContentSource.type.in_(['tpo_official', 'smallstation_tpo'])
+            ContentSource.type == 'smallstation_tpo'
         ).count()
         logging.info(f"Official TPO total count: {total_count}")
         logging.info(f"Current page items: {len(content_items)}")
         
-        # 獲取過濾選項 - 只包含新東方官方TPO內容
+        # 獲取過濾選項 - 只包含小站TPO內容
         difficulties = db.session.query(ContentSource.difficulty_level).filter(
-            ContentSource.type == 'tpo_official'
+            ContentSource.type == 'smallstation_tpo'
         ).distinct().all()
         topics = db.session.query(ContentSource.topic).filter(
-            ContentSource.type == 'tpo_official'
+            ContentSource.type == 'smallstation_tpo'
         ).distinct().all()
         
         # 獲取TPO編號列表

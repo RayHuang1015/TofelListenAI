@@ -283,7 +283,7 @@
                     <!-- Previous Button -->
                     {% if pagination.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" href="/premium-tpo?page={{ pagination.prev_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">
+                        <a class="page-link" href="{{ url_for('simulatetpo') }}?page={{ pagination.prev_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     </li>
@@ -294,7 +294,7 @@
                         {% if page_num %}
                             {% if page_num != pagination.page %}
                             <li class="page-item">
-                                <a class="page-link" href="/premium-tpo?page={{ page_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">{{ page_num }}</a>
+                                <a class="page-link" href="{{ url_for('simulatetpo') }}?page={{ page_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">{{ page_num }}</a>
                             </li>
                             {% else %}
                             <li class="page-item active">
@@ -311,7 +311,7 @@
                     <!-- Next Button -->
                     {% if pagination.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="/premium-tpo?page={{ pagination.next_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">
+                        <a class="page-link" href="{{ url_for('simulatetpo') }}?page={{ pagination.next_num }}{% if request.args.get('difficulty') %}&amp;difficulty={{ request.args.get('difficulty') }}{% endif %}{% if request.args.get('topic') %}&amp;topic={{ request.args.get('topic') }}{% endif %}{% if request.args.get('official') %}&amp;official={{ request.args.get('official') }}{% endif %}">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>
