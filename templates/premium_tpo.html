@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Official TPO Collection - Koolearn Premium{% endblock %}
+{% block title %}Simulate TPO Collection - Koolearn Premium{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -78,7 +78,7 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1 class="display-4 fw-bold mb-3">
-                    <i class="fas fa-crown me-3"></i>Official TPO Collection
+                    <i class="fas fa-crown me-3"></i>Simulate TPO Collection
                 </h1>
                 <p class="lead mb-0">
                     新東方Koolearn官方TPO精選 • 高質量聽力內容 • 專業題型分析
@@ -113,11 +113,11 @@
                             <i class="fas fa-flask text-primary me-2"></i>探索Practice Collection？
                         </h5>
                         <p class="mb-0">
-                            這裡是新東方官方精選TPO內容，需要更多練習？前往小站TPO練習專區。
+                            這裡是新東方官方精選TPO內容，需要更多練習？前往此TPO練習專區。
                         </p>
                     </div>
                     <div class="col-md-4 text-md-end">
-                        <a href="{{ url_for('audio_labs') }}" class="btn btn-success btn-lg">
+                        <a href="{{ url_for('practice_tpo_collection') }}" class="btn btn-success btn-lg">
                             <i class="fas fa-dumbbell me-2"></i>Practice Collection
                         </a>
                     </div>
@@ -176,7 +176,7 @@
                 </button>
             </div>
             <div class="col-md-2">
-                <a href="{{ url_for('premium_tpo') }}" class="btn btn-outline-light w-100">
+                <a href="{{ url_for('simulatetpo') }}" class="btn btn-outline-light w-100">
                     <i class="fas fa-refresh me-2"></i>重置
                 </a>
             </div>
@@ -262,10 +262,10 @@
                     <h4 class="mt-3 text-muted">暫無符合條件的內容</h4>
                     <p class="text-muted">請調整過濾條件或查看完整TPO題庫</p>
                     <div class="d-flex gap-2 justify-content-center">
-                        <a href="{{ url_for('premium_tpo') }}" class="btn btn-primary">
+                        <a href="{{ url_for('simulatetpo') }}" class="btn btn-primary">
                             <i class="fas fa-refresh me-2"></i>重新加載
                         </a>
-                        <a href="{{ url_for('audio_labs') }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('practice_tpo_collection') }}" class="btn btn-outline-primary">
                             <i class="fas fa-flask me-2"></i>Audio Labs
                         </a>
                     </div>
@@ -337,7 +337,7 @@
             <div class="card border-primary">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-crown me-2"></i>Official TPO Collection特色
+                        <i class="fas fa-crown me-2"></i>Simulate TPO Collection特色
                     </h5>
                 </div>
                 <div class="card-body">

@@ -17,7 +17,7 @@
     </div>
     <div class="col-lg-4 text-lg-end">
         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-            <a href="{{ url_for('audio_labs') }}" class="btn btn-success">
+            <a href="{{ url_for('practice_tpo_collection') }}" class="btn btn-success">
                 <i class="fas fa-flask me-2"></i>Audio Labs
             </a>
             <a href="{{ url_for('sync_content') }}" class="btn btn-outline-primary">
@@ -42,7 +42,7 @@
                     </p>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <a href="{{ url_for('audio_labs') }}" class="btn btn-success btn-lg">
+                    <a href="{{ url_for('practice_tpo_collection') }}" class="btn btn-success btn-lg">
                         <i class="fas fa-arrow-right me-2"></i>進入Audio Labs
                     </a>
                 </div>
@@ -184,7 +184,7 @@
                                         </ul>
                                     </div>
                                     <div class="col-md-4 text-center">
-                                        <a href="{{ url_for('audio_labs') }}" class="btn btn-success btn-lg">
+                                        <a href="{{ url_for('practice_tpo_collection') }}" class="btn btn-success btn-lg">
                                             <i class="fas fa-play me-2"></i>開始練習
                                         </a>
                                     </div>
@@ -219,14 +219,14 @@
                     <a href="{{ url_for('content_library') }}" class="btn btn-primary">
                         <i class="fas fa-times me-2"></i>Clear Filters
                     </a>
-                    <a href="{{ url_for('audio_labs') }}" class="btn btn-success">
+                    <a href="{{ url_for('practice_tpo_collection') }}" class="btn btn-success">
                         <i class="fas fa-flask me-2"></i>試試Audio Labs
                     </a>
                     {% else %}
                     <a href="{{ url_for('sync_content') }}" class="btn btn-primary">
                         <i class="fas fa-sync me-2"></i>Sync Content
                     </a>
-                    <a href="{{ url_for('audio_labs') }}" class="btn btn-success">
+                    <a href="{{ url_for('practice_tpo_collection') }}" class="btn btn-success">
                         <i class="fas fa-flask me-2"></i>Audio Labs
                     </a>
                     {% endif %}

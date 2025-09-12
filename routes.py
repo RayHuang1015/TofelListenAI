@@ -1149,3 +1149,14 @@ def backfill_progress():
         logging.error(f'Error getting backfill progress: {e}')
         flash(f'Error getting progress: {e}', 'error')
         return redirect(url_for('daily_news_area'))
+
+# Redirects for backward compatibility
+@app.route('/premium-tpo')
+def premium_tpo_redirect():
+    """Redirect old premium-tpo route to new simulatetpo route"""
+    return redirect(url_for('simulatetpo'), code=301)
+
+@app.route('/audio-labs')  
+def audio_labs_redirect():
+    """Redirect old audio-labs route to new practice-tpo-collection route"""
+    return redirect(url_for('practice_tpo_collection'), code=301)

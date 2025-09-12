@@ -261,8 +261,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <a href="{{ url_for('ai_tpo_practice') }}" class="btn btn-outline-success">
                             <i class="fas fa-robot me-1"></i>AI TPO Practice
                         </a>
-                        <a href="{{ url_for('premium_tpo') }}" class="btn btn-outline-warning">
-                            <i class="fas fa-certificate me-1"></i>Official TPO
+                        <a href="{{ url_for('simulatetpo') }}" class="btn btn-outline-warning">
+                            <i class="fas fa-certificate me-1"></i>Simulate TPO
                         </a>
                         {% if session.user_id %}
                         <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
