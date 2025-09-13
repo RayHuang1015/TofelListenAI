@@ -1366,3 +1366,152 @@ def backfill_year(year):
             'status': 'error',
             'message': str(e)
         }), 500
+
+@app.route('/admin/backfill_tpo_questions', methods=['POST'])
+def backfill_tpo_questions():
+    """回填 TPO 題目，確保每個段落都有正確數量的題目"""
+    # 基本認證檢查 - 安全性保護
+    if not session.get('user_id'):
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+    
+    try:
+        from services.ai_question_generator import AIQuestionGenerator
+        import re
+        
+        # 查詢所有 TPO 內容
+        tpo_content = ContentSource.query.filter(ContentSource.type == 'smallstation_tpo').all()
+        generator = AIQuestionGenerator()
+        
+        backfill_results = {
+            'processed': 0,
+            'updated': 0,
+            'skipped': 0,
+            'errors': 0,
+            'details': []
+        }
+        
+        def parse_tpo_info(content):
+            """解析 TPO 信息 - 支援中英文格式和 URL 回退"""
+            # 嘗試英文格式：TPO XX Section X Passage X
+            english_match = re.search(r'TPO (\d+) Section (\d+) Passage (\d+)', content.name)
+            if english_match:
+                return int(english_match.group(1)), int(english_match.group(2)), int(english_match.group(3))
+            
+            # 嘗試中文格式：小站TPO XX SXPX
+            chinese_match = re.search(r'小站TPO (\d+) S(\d+)P(\d+)', content.name)
+            if chinese_match:
+                return int(chinese_match.group(1)), int(chinese_match.group(2)), int(chinese_match.group(3))
+            
+            # 回退到 URL 解析：tpoXX_listening_passageX_X.mp3
+            if content.url:
+                url_match = re.search(r'tpo(\d+)_listening_passage(\d+)_(\d+)\.mp3', content.url)
+                if url_match:
+                    return int(url_match.group(1)), int(url_match.group(2)), int(url_match.group(3))
+            
+            return None, None, None
+        
+        for content in tpo_content:
+            try:
+                backfill_results['processed'] += 1
+                
+                # 解析 TPO 信息
+                tpo_num, section, part = parse_tpo_info(content)
+                
+                if not all([tpo_num, section, part]):
+                    backfill_results['skipped'] += 1
+                    backfill_results['details'].append({
+                        'content_id': content.id,
+                        'name': content.name,
+                        'status': 'skipped',
+                        'reason': 'Unable to parse TPO information'
+                    })
+                    logging.warning(f"Cannot parse TPO info for {content.name} (ID: {content.id})")
+                    continue
+                
+                # 檢查現有題目數量
+                existing_questions = Question.query.filter_by(content_id=content.id).all()
+                current_count = len(existing_questions)
+                
+                # 確定標準題目數量：對話5題，講座6題
+                required_count = 5 if part == 1 else 6
+                
+                if current_count != required_count:
+                    # 安全的事務處理：先生成新題目，再一次性替換
+                    try:
+                        # 生成新的標準題目
+                        new_questions = generator._generate_smallstation_tpo_questions_from_name(content)
+                        
+                        if len(new_questions) != required_count:
+                            logging.warning(f"Generated {len(new_questions)} questions for {content.name}, expected {required_count}")
+                        
+                        # 事務性替換：刪除舊題目並插入新題目
+                        db.session.begin()
+                        
+                        # 刪除現有題目
+                        for question in existing_questions:
+                            db.session.delete(question)
+                        
+                        # 保存新題目到數據庫
+                        for question_data in new_questions:
+                            question = Question(
+                                content_id=content.id,
+                                question_text=question_data['question'],
+                                question_type=question_data['type'],
+                                options=question_data['options'],
+                                correct_answer=question_data['answer'],
+                                explanation=question_data.get('explanation', ''),
+                                difficulty=question_data.get('difficulty', 'medium'),
+                                audio_timestamp=question_data.get('timestamp', 0.0)
+                            )
+                            db.session.add(question)
+                        
+                        # 提交事務
+                        db.session.commit()
+                        backfill_results['updated'] += 1
+                        
+                        backfill_results['details'].append({
+                            'content_id': content.id,
+                            'name': content.name,
+                            'status': 'updated',
+                            'old_count': current_count,
+                            'new_count': len(new_questions),
+                            'tpo_info': f'TPO{tpo_num} S{section}P{part}'
+                        })
+                        
+                        logging.info(f"Updated questions for {content.name}: {current_count} -> {len(new_questions)}")
+                        
+                    except Exception as transaction_error:
+                        # 回滾事務，保留原始數據
+                        db.session.rollback()
+                        raise transaction_error
+                else:
+                    backfill_results['details'].append({
+                        'content_id': content.id,
+                        'name': content.name,
+                        'status': 'correct',
+                        'count': current_count
+                    })
+                        
+            except Exception as e:
+                backfill_results['errors'] += 1
+                db.session.rollback()  # 確保會話狀態正常
+                error_msg = f"Error processing content {content.id}: {e}"
+                logging.error(error_msg)
+                backfill_results['details'].append({
+                    'content_id': content.id,
+                    'name': content.name,
+                    'status': 'error',
+                    'error': str(e)
+                })
+                continue
+        
+        return jsonify({
+            'success': True,
+            'message': f'回填完成！處理了 {backfill_results["processed"]} 個項目，更新了 {backfill_results["updated"]} 個，跳過了 {backfill_results["skipped"]} 個',
+            'results': backfill_results
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Backfill error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500

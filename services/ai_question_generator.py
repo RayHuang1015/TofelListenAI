@@ -240,15 +240,30 @@ class AIQuestionGenerator:
         # 判斷內容類型：part 1 是對話，part 2-3 是講座
         content_type = '師生討論' if part == 1 else '學術講座'
         
-        # 優先使用原本的小站TPO題目
+        # 優先使用原本的小站TPO題目，但確保題目數量正確
         original_questions = get_tpo_questions(tpo_num, section, part)
+        
+        # 確定標準題目數量：對話5題，講座6題
+        required_count = 5 if part == 1 else 6
+        
         if original_questions:
-            print(f"✅ 使用原本小站TPO題目: TPO {tpo_num} S{section}P{part}")
+            logging.info(f"✅ 使用原本小站TPO題目: TPO {tpo_num} S{section}P{part} ({len(original_questions)}題)")
+            
+            # 如果題目數量不足，補充到標準數量
+            if len(original_questions) < required_count:
+                additional_questions = generate_missing_tpo_questions(tpo_num, section, part, content_type)[:required_count - len(original_questions)]
+                original_questions.extend(additional_questions)
+                logging.info(f"📝 補充了 {len(additional_questions)} 題，總共 {len(original_questions)} 題")
+            elif len(original_questions) > required_count:
+                # 如果題目過多，截取標準數量
+                original_questions = original_questions[:required_count]
+                logging.info(f"✂️ 截取到標準數量：{len(original_questions)} 題")
+            
             return original_questions
         
         # 如果沒有原本題目，使用通用題目模板
-        print(f"⚠️ 沒有原本題目，使用通用模板: TPO {tpo_num} S{section}P{part}")
-        return generate_missing_tpo_questions(tpo_num, section, part, content_type)
+        logging.info(f"⚠️ 沒有原本題目，使用通用模板: TPO {tpo_num} S{section}P{part}")
+        return generate_missing_tpo_questions(tpo_num, section, part, content_type)[:required_count]
     
     def _generate_smallstation_tpo_questions(self, metadata) -> List[Dict]:
         """根據小站TPO的metadata生成對應的問題"""
