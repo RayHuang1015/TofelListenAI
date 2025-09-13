@@ -614,6 +614,23 @@ def simulatetpo():
         )
         content_items = pagination.items
         
+        # 修復 TPO35-75 的音檔 URL - 應用與 practice 路由相同的邏輯
+        import re
+        for content in content_items:
+            if content.type == 'smallstation_tpo':
+                # 解析 TPO 編號
+                tpo_match = re.search(r'TPO (\d+)', content.name)
+                if tpo_match:
+                    tpo_num = int(tpo_match.group(1))
+                    
+                    if tpo_num >= 35 and tpo_num <= 75:
+                        # 使用 Google Docs URLs for TPO35-75
+                        new_url = get_google_docs_tpo_url(content.name)
+                        if new_url:
+                            content.url = new_url
+                            logging.info(f"Simulatetpo: Updated TPO{tpo_num} audio URL to Google Docs source")
+                    # TPO01-34 保持原來的 tikustorage URLs (無需修改)
+        
         # 統計信息 - 只包含小站TPO內容（已更新為tikustorage格式）  
         total_count = ContentSource.query.filter(
             ContentSource.type == 'smallstation_tpo'
