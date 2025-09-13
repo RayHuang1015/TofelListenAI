@@ -9,7 +9,7 @@ import json
 from app import app, db
 from models import DailyEdition, EditionSegment, ProviderSource, ContentSource
 from services.daily_edition_composer import DailyEditionComposer
-from services.offline_news_tts import OfflineNewsAnchorTTS
+# Import TTS conditionally to avoid circular imports
 
 class DailyEditionBackfill:
     """Backfill missing daily editions and ensure all have proper audio"""
@@ -23,7 +23,7 @@ class DailyEditionBackfill:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.composer = DailyEditionComposer()
-        self.tts = OfflineNewsAnchorTTS()
+        self.tts = None  # Initialize when needed to avoid circular imports
         
     def find_missing_dates(self, year: int) -> List[date]:
         """Find all missing dates for a given year"""
