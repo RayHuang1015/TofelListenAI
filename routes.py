@@ -200,8 +200,13 @@ def daily_news_area():
         actual_avg_duration = db.session.query(db.func.avg(DailyEdition.total_duration_sec)).scalar() or 0
         logging.info(f"Stats query took {(time.time() - stats_start) * 1000:.2f}ms")
         
-        # Get limited providers for display
-        providers = ProviderSource.query.filter_by(active=True).limit(10).all()
+        # Get all providers and count unique sources
+        providers = ProviderSource.query.filter_by(active=True).all()
+        
+        # Count unique news sources from HistoricalNewsGenerator
+        from services.historical_news_generator import HistoricalNewsGenerator
+        news_gen = HistoricalNewsGenerator()
+        unique_sources_count = len(news_gen.sources)  # This will be 20
         
         template_start = time.time()
         result = render_template('daily_news_area.html', 
@@ -210,7 +215,8 @@ def daily_news_area():
                              total_editions=actual_total_editions,  # Use actual database total
                              total_duration=total_duration,
                              avg_duration=actual_avg_duration,  # Use accurate average 
-                             providers=providers)
+                             providers=providers,
+                             unique_sources_count=unique_sources_count)  # Pass the actual 20 count
         logging.info(f"Template render took {(time.time() - template_start) * 1000:.2f}ms")
         
         duration = (time.time() - start_time) * 1000

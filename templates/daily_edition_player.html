@@ -88,9 +88,14 @@
                         <div>
                             <strong>Now Playing:</strong> <span id="current-segment-title">-</span>
                         </div>
-                        <button id="stop-tts" class="btn btn-sm btn-outline-danger" onclick="stopTTS()">
-                            <i class="fas fa-stop"></i> Stop
-                        </button>
+                        <div class="btn-group" role="group">
+                            <button id="pause-resume-btn" class="btn btn-sm btn-outline-warning" onclick="pauseResumeTTS()">
+                                <i class="fas fa-pause"></i> Pause
+                            </button>
+                            <button id="stop-tts" class="btn btn-sm btn-outline-danger" onclick="stopTTS()">
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -99,8 +104,11 @@
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-primary" onclick="playAllSegments()">
+                            <button type="button" id="play-pause-btn" class="btn btn-primary" onclick="togglePlayPause()">
                                 <i class="fas fa-play"></i> Play All Segments
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="pauseResumeTTS()">
+                                <i class="fas fa-pause"></i> Pause
                             </button>
                             <button type="button" class="btn btn-danger" onclick="stopTTS()">
                                 <i class="fas fa-stop"></i> Stop
@@ -220,10 +228,15 @@
 // 全局變量
 let currentUtterance = null;
 let isPlaying = false;
+let isPaused = false;
 let playbackStartTime = null;
+let pausedTime = 0;
 let timerInterval = null;
 let totalSegments = 0;
 let currentSegmentIndex = 0;
+let currentText = "";
+let currentTextPosition = 0;
+let segmentTexts = [];
 
 
 // 從按鈕播放段落TTS
@@ -249,23 +262,30 @@ function playSegmentFromButton(button) {
     try {
         // 清理文字，移除多餘的空白和換行
         const cleanText = text.replace(/\s+/g, ' ').trim();
+        currentText = cleanText;  // 記錄當前文本以便暫停/恢復
         const utterance = createNewsAnchorUtterance(cleanText);
         
         utterance.onstart = () => {
             isPlaying = true;
+            isPaused = false;
             showPlaying(title);
+            updatePlayPauseButtons();
             startTimer();
         };
         
         utterance.onend = () => {
             isPlaying = false;
+            isPaused = false;
             hidePlaying();
+            updatePlayPauseButtons();
             stopTimer();
         };
         
         utterance.onerror = (e) => {
             isPlaying = false;
+            isPaused = false;
             hidePlaying();
+            updatePlayPauseButtons();
             stopTimer();
             alert('語音播放出錯: ' + e.error);
         };
@@ -483,6 +503,127 @@ function stopTimer() {
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
+    }
+}
+
+// 暫停/恢復TTS功能
+function pauseResumeTTS() {
+    if (!currentUtterance) {
+        alert('沒有正在播放的語音');
+        return;
+    }
+    
+    if (isPaused) {
+        // 恢復播放
+        resumeTTS();
+    } else {
+        // 暫停播放
+        pauseTTS();
+    }
+}
+
+// 暫停TTS
+function pauseTTS() {
+    if (isPlaying && !isPaused) {
+        speechSynthesis.cancel(); // 停止當前播放
+        isPaused = true;
+        isPlaying = false;
+        pausedTime = Date.now() - playbackStartTime;
+        stopTimer();
+        updatePlayPauseButtons();
+        console.log('TTS paused');
+    }
+}
+
+// 恢復TTS播放
+function resumeTTS() {
+    if (isPaused && currentText) {
+        // 從暫停處繼續播放
+        const remainingText = currentText;
+        const utterance = createNewsAnchorUtterance(remainingText);
+        
+        utterance.onstart = () => {
+            isPlaying = true;
+            isPaused = false;
+            playbackStartTime = Date.now() - pausedTime;
+            startTimer();
+            updatePlayPauseButtons();
+            console.log('TTS resumed');
+        };
+        
+        utterance.onend = () => {
+            isPlaying = false;
+            isPaused = false;
+            hidePlaying();
+            stopTimer();
+            updatePlayPauseButtons();
+        };
+        
+        utterance.onerror = (e) => {
+            isPlaying = false;
+            isPaused = false;
+            hidePlaying();
+            stopTimer();
+            updatePlayPauseButtons();
+            alert('語音播放出錯: ' + e.error);
+        };
+        
+        speechSynthesis.speak(utterance);
+        currentUtterance = utterance;
+    }
+}
+
+// 完全停止TTS
+function stopTTS() {
+    speechSynthesis.cancel();
+    isPlaying = false;
+    isPaused = false;
+    currentUtterance = null;
+    currentText = "";
+    pausedTime = 0;
+    hidePlaying();
+    stopTimer();
+    updatePlayPauseButtons();
+    console.log('TTS stopped');
+}
+
+// 更新播放/暫停按鈕狀態
+function updatePlayPauseButtons() {
+    const pauseResumeBtn = document.getElementById('pause-resume-btn');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    
+    if (pauseResumeBtn) {
+        if (isPaused) {
+            pauseResumeBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+            pauseResumeBtn.className = 'btn btn-sm btn-outline-success';
+        } else if (isPlaying) {
+            pauseResumeBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            pauseResumeBtn.className = 'btn btn-sm btn-outline-warning';
+        } else {
+            pauseResumeBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            pauseResumeBtn.className = 'btn btn-sm btn-outline-warning';
+        }
+    }
+    
+    if (playPauseBtn) {
+        if (isPlaying) {
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause All';
+            playPauseBtn.className = 'btn btn-warning';
+        } else {
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play All Segments';
+            playPauseBtn.className = 'btn btn-primary';
+        }
+    }
+}
+
+// 播放/暫停切換
+function togglePlayPause() {
+    if (isPlaying) {
+        pauseTTS();
+    } else if (isPaused) {
+        resumeTTS();
+    } else {
+        playAllSegments();
     }
 }
 
