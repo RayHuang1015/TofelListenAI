@@ -676,6 +676,13 @@ def practice(content_id):
     
     content = ContentSource.query.get_or_404(content_id)
     
+    # Fix smallstation_tpo audio URLs - replace failed external URLs with offline TTS
+    if content.type == 'smallstation_tpo' and content.url and 'tikustorage' in content.url:
+        # Use offline TTS for smallstation TPO content since external URLs are broken
+        content.url = None  # Force TTS generation
+        content.type = 'ai_tpo_practice'  # Convert to TTS-compatible type
+        logging.info(f"Converting smallstation_tpo content {content_id} to use offline TTS due to broken external URL")
+    
     # Fix AI TPO audio URLs - replace placeholder files with full-length academic content
     if content.type == 'ai_tpo_practice' and content.url and '/static/ai_audio/' in content.url:
         # Full-length TOEFL-style audio sources (lectures and conversations)
