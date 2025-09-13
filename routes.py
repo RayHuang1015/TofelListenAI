@@ -13,6 +13,62 @@ from datetime import datetime
 import logging
 import time
 
+# Google Docs TPO URL mappings for TPO35-75
+GOOGLE_DOCS_TPO_URLS = {
+    # TPO35
+    "TPO 35 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423300/feed4a94202f4c46acb2946d5a5d475d.mp3",
+    "TPO 35 Section 1 Passage 2": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423315/1de2b92010204f94ba2bb810b0e73cc5.mp3",
+    "TPO 35 Section 1 Passage 3": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423328/741f7102c81642d3b952cbe4ba188ea1.mp3",
+    "TPO 35 Section 2 Passage 1": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423339/74b62960e81e4dd0a94265e675aea414.mp3",
+    "TPO 35 Section 2 Passage 2": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423345/8f679b7420554c0290fdee015dac7f50.mp3",
+    "TPO 35 Section 2 Passage 3": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423356/15e3d83cafd844338bc7d48a466aa31c.mp3",
+    
+    # TPO36
+    "TPO 36 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423096/a533b7101b8a4e6a82857ecb6a5c2abe.mp3",
+    "TPO 36 Section 1 Passage 2": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423105/5ca7d3dab4b642d785c81ba0a8707cba.mp3",
+    "TPO 36 Section 1 Passage 3": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423112/84e7cc5c6824454fb82fbd661f4b6ec5.mp3",
+    "TPO 36 Section 2 Passage 1": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423710/7d78a9e9eb304eeea5abc3dfe56be31b.mp3",
+    "TPO 36 Section 2 Passage 2": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423125/7799c8981e8d454e8382ceb106c1d313.mp3",
+    "TPO 36 Section 2 Passage 3": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423132/9448e5ac65bf46a0ba9626925fb4d4ef.mp3",
+    
+    # TPO37-40 (sample, more can be added)
+    "TPO 37 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2423000-2424000/2423047/dc9ab268325f4db0a663b1799416ee55.mp3",
+    "TPO 38 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2422000-2423000/2422930/0da41c0e6d9945b7baabba3e3a9e7642.mp3",
+    "TPO 39 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2422000-2423000/2422905/74ff3ea7ff3d4461ac315c726470e376.mp3",
+    "TPO 40 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334191/2c0985e390d847da920a69a6378fe2f6.mp3",
+    # Note: More URLs can be added from the Google Docs source as needed
+}
+
+def get_google_docs_tpo_url(content_name):
+    """Get Google Docs TPO URL based on content name"""
+    # Try exact match first
+    if content_name in GOOGLE_DOCS_TPO_URLS:
+        return GOOGLE_DOCS_TPO_URLS[content_name]
+    
+    # If no exact match, try partial matching for different naming formats
+    import re
+    tpo_match = re.search(r'TPO (\d+)', content_name)
+    section_match = re.search(r'Section (\d+)', content_name) 
+    passage_match = re.search(r'Passage (\d+)', content_name)
+    
+    if tpo_match and section_match and passage_match:
+        # Try to construct the key
+        tpo_num = tpo_match.group(1)
+        section_num = section_match.group(1)
+        passage_num = passage_match.group(1)
+        
+        # Try different key formats
+        key_formats = [
+            f"TPO {tpo_num} Section {section_num} Passage {passage_num}",
+            f"TPO {int(tpo_num)} Section {int(section_num)} Passage {int(passage_num)}",
+        ]
+        
+        for key in key_formats:
+            if key in GOOGLE_DOCS_TPO_URLS:
+                return GOOGLE_DOCS_TPO_URLS[key]
+    
+    return None
+
 # Health check endpoints  
 @app.route('/_healthz')
 def health_check():
@@ -676,12 +732,21 @@ def practice(content_id):
     
     content = ContentSource.query.get_or_404(content_id)
     
-    # Fix smallstation_tpo audio URLs - replace failed external URLs with offline TTS
-    if content.type == 'smallstation_tpo' and content.url and 'tikustorage' in content.url:
-        # Use offline TTS for smallstation TPO content since external URLs are broken
-        content.url = None  # Force TTS generation
-        content.type = 'ai_tpo_practice'  # Convert to TTS-compatible type
-        logging.info(f"Converting smallstation_tpo content {content_id} to use offline TTS due to broken external URL")
+    # TPO URL routing based on TPO number
+    if content.type == 'smallstation_tpo':
+        # Extract TPO number from content name
+        import re
+        tpo_match = re.search(r'TPO (\d+)', content.name)
+        if tpo_match:
+            tpo_num = int(tpo_match.group(1))
+            
+            if tpo_num >= 35 and tpo_num <= 75:
+                # Use Google Docs URLs for TPO35-75
+                new_url = get_google_docs_tpo_url(content.name)
+                if new_url:
+                    content.url = new_url
+                    logging.info(f"Updated TPO{tpo_num} audio URL to Google Docs source: {new_url}")
+            # TPO01-34 keep original tikustorage URLs (no change needed)
     
     # Fix AI TPO audio URLs - replace placeholder files with full-length academic content
     if content.type == 'ai_tpo_practice' and content.url and '/static/ai_audio/' in content.url:
