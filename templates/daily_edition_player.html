@@ -161,7 +161,7 @@
                                 
                                 <div class="mb-2">
                                     <small class="text-muted">
-                                        <i class="fas fa-clock me-1"></i>Start: {{ "%.0f"|format(segment.start_sec/60) }}:{{ "%02d"|format(segment.start_sec%60) }}
+                                        <i class="fas fa-clock me-1"></i>Start: {{ "%.0f"|format((segment.start_sec or 0)/60) }}:{{ "%02d"|format((segment.start_sec or 0)%60) }}
                                     </small>
                                 </div>
                                 

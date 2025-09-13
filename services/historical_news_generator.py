@@ -29,7 +29,7 @@ class HistoricalNewsGenerator:
             'culture': ['Arts', 'Heritage', 'Festival', 'Education', 'Museum', 'Literature', 'Film']
         }
         
-        # Expanded international news sources
+        # Expanded 20 diverse international news sources for authenticity
         self.sources = [
             'BBC World Service', 'Reuters International', 'AP News International', 'CNN International', 'Bloomberg Global', 'Financial Times',
             'Al Jazeera English', 'Deutsche Welle', 'France 24', 'NHK World', 'CGTN', 'RT International',
