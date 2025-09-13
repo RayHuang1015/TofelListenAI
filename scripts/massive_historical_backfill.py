@@ -131,7 +131,7 @@ class MassiveHistoricalBackfill:
         self.logger.info(f"Total missing dates found: {len(missing_dates)}")
         return missing_dates
     
-    def generate_batch_editions(self, dates: List[date], batch_size: int = 50) -> Dict[str, Any]:
+    def generate_batch_editions(self, dates: List[date], batch_size: int = 15) -> Dict[str, Any]:
         """Generate editions in batches to manage memory and processing"""
         
         total_dates = len(dates)
@@ -208,6 +208,70 @@ class MassiveHistoricalBackfill:
                         'error': str(e)
                     })
                     self.logger.error(f"Failed to process {target_date}: {e}")
+        
+        return batch_results
+    
+    def _process_date_batch_with_retry(self, dates: List[date], max_retries: int = 3) -> Dict[str, Any]:
+        """Process a batch of dates with retry mechanism and timeout handling"""
+        
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError
+        import random
+        
+        batch_results = {
+            'editions_created': 0,
+            'segments_created': 0,
+            'errors': 0,
+            'error_details': []
+        }
+        
+        for target_date in dates:
+            retry_count = 0
+            success = False
+            
+            while retry_count < max_retries and not success:
+                try:
+                    # Use direct processing with app context (avoid threading issues)
+                    with app.app_context():
+                        result = self._create_single_edition(target_date)
+                        
+                        if result.get('status') == 'success':
+                            batch_results['editions_created'] += 1
+                            batch_results['segments_created'] += result.get('segments_created', 0)
+                            success = True
+                            self.logger.debug(f"✅ Successfully processed {target_date}")
+                        else:
+                            raise Exception(result.get('error', 'Unknown error'))
+                        
+                except Exception as e:
+                    retry_count += 1
+                    error_msg = str(e)
+                    
+                    # Check if this is a retryable error
+                    retryable_errors = ['timeout', 'connection', 'temporary', 'deadlock', 'lock']
+                    is_retryable = any(keyword in error_msg.lower() for keyword in retryable_errors)
+                    
+                    if retry_count < max_retries and is_retryable:
+                        # Exponential backoff with jitter
+                        delay = (2 ** retry_count) + random.uniform(0, 1)
+                        self.logger.warning(f"Retry {retry_count}/{max_retries} for {target_date} after {delay:.1f}s: {error_msg}")
+                        time.sleep(delay)
+                        
+                        # Clear any failed transaction state
+                        try:
+                            db.session.rollback()
+                        except:
+                            pass
+                    else:
+                        # Final failure
+                        batch_results['errors'] += 1
+                        batch_results['error_details'].append({
+                            'date': str(target_date),
+                            'error': error_msg,
+                            'retries_attempted': retry_count
+                        })
+                        
+                        self.logger.error(f"❌ Failed to process {target_date} after {retry_count} retries: {error_msg}")
+                        break
         
         return batch_results
     
@@ -345,7 +409,7 @@ class MassiveHistoricalBackfill:
         
         return final_results
     
-    def run_year_backfill(self, year: int, batch_size: int = 50) -> Dict[str, Any]:
+    def run_year_backfill(self, year: int, batch_size: int = 15) -> Dict[str, Any]:
         """Run backfill for a specific year"""
         
         if year not in self.TARGET_YEARS:
@@ -357,6 +421,73 @@ class MassiveHistoricalBackfill:
         self.logger.info(f"Starting backfill for year {year}")
         
         return self.run_full_backfill([year], batch_size)
+    
+    def run_continuous_backfill(self, max_iterations: int = 100, batch_size: int = 15, 
+                               sleep_between_batches: int = 10) -> Dict[str, Any]:
+        """Run backfill continuously until all dates are complete or max iterations reached"""
+        
+        iteration = 0
+        total_processed = 0
+        
+        self.logger.info(f"Starting continuous backfill with max {max_iterations} iterations")
+        
+        while iteration < max_iterations:
+            iteration += 1
+            
+            # Find missing dates for all years
+            missing_dates = self.find_missing_dates()
+            
+            if not missing_dates:
+                self.logger.info("✅ All historical editions completed!")
+                return {
+                    'status': 'completed',
+                    'iterations_run': iteration,
+                    'total_dates_processed': total_processed
+                }
+            
+            # Process only a small batch to maintain stability
+            batch_dates = missing_dates[:batch_size]
+            self.logger.info(f"Iteration {iteration}: Processing {len(batch_dates)} missing dates")
+            
+            try:
+                # Process this small batch
+                with app.app_context():
+                    batch_results = self._process_date_batch_with_retry(batch_dates)
+                    
+                    # Clear SQLAlchemy session to prevent memory buildup
+                    db.session.expunge_all()
+                    db.session.remove()
+                
+                processed_count = batch_results.get('editions_created', 0)
+                total_processed += processed_count
+                
+                self.logger.info(f"Iteration {iteration} completed: {processed_count} editions created, "
+                               f"{batch_results.get('errors', 0)} errors")
+                
+                # If no progress made, increase sleep time
+                if processed_count == 0:
+                    sleep_time = sleep_between_batches * 2
+                    self.logger.warning(f"No progress in iteration {iteration}, sleeping {sleep_time}s")
+                else:
+                    sleep_time = sleep_between_batches
+                
+                # Sleep between iterations to avoid overwhelming the system
+                import random
+                jitter = random.uniform(0.5, 1.5)  # Add randomness to avoid thundering herd
+                time.sleep(sleep_time * jitter)
+                
+            except Exception as e:
+                self.logger.error(f"Error in iteration {iteration}: {e}")
+                time.sleep(sleep_between_batches * 3)  # Longer sleep on error
+                continue
+        
+        self.logger.info(f"Reached max iterations ({max_iterations}), processed {total_processed} total dates")
+        return {
+            'status': 'max_iterations_reached',
+            'iterations_run': iteration,
+            'total_dates_processed': total_processed,
+            'remaining_missing': len(self.find_missing_dates()) if iteration == max_iterations else 0
+        }
     
     def get_backfill_status(self) -> Dict[str, Any]:
         """Get current backfill status across all target years"""
