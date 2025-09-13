@@ -19,8 +19,9 @@ class TikustorageTPOImporter:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
         
-        # TPO音檔格式：https://tikustorage-sh.oss-cn-shanghai.aliyuncs.com/TPO_Audio/tpo{N}/tpo{N}_listening_passage{X}_{Y}.mp3
+        # TPO音檔格式：支援tikustorage和koocdn两种格式
         self.audio_base_url = "https://tikustorage-sh.oss-cn-shanghai.aliyuncs.com/TPO_Audio"
+        self.koocdn_base_url = "https://ti.koocdn.com/upload/ti"
         
         # 小站TPO映射（保持原有內容結構，但使用新音檔格式）
         self.tpo_mapping = {
@@ -69,6 +70,23 @@ class TikustorageTPOImporter:
                 'Con1': {'article_id': '344', 'title': 'Find a building for orientation', 'topic': '師生討論', 'passage': 1, 'part': 1},
                 'Lec1': {'article_id': '345', 'title': 'Geocentric Theory', 'topic': '天文學', 'passage': 2, 'part': 1},
                 'Lec2': {'article_id': '346', 'title': 'Software Development', 'topic': '商業', 'passage': 2, 'part': 2}
+            },
+            # TPO 35-75 with koocdn audio URLs
+            35: {
+                'Con1': {'article_id': '2423300', 'title': 'Campus conversation 1', 'topic': '校園對話', 'passage': 1, 'part': 1, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423300/feed4a94202f4c46acb2946d5a5d475d.mp3'},
+                'Lec1': {'article_id': '2423315', 'title': 'Academic lecture 1', 'topic': '學術講座', 'passage': 1, 'part': 2, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423315/1de2b92010204f94ba2bb810b0e73cc5.mp3'},
+                'Lec2': {'article_id': '2423328', 'title': 'Academic lecture 2', 'topic': '學術講座', 'passage': 1, 'part': 3, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423328/741f7102c81642d3b952cbe4ba188ea1.mp3'},
+                'Con2': {'article_id': '2423339', 'title': 'Campus conversation 2', 'topic': '校園對話', 'passage': 2, 'part': 1, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423339/74b62960e81e4dd0a94265e675aea414.mp3'},
+                'Lec3': {'article_id': '2423345', 'title': 'Academic lecture 3', 'topic': '學術講座', 'passage': 2, 'part': 2, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423345/8f679b7420554c0290fdee015dac7f50.mp3'},
+                'Lec4': {'article_id': '2423356', 'title': 'Academic lecture 4', 'topic': '學術講座', 'passage': 2, 'part': 3, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423356/15e3d83cafd844338bc7d48a466aa31c.mp3'}
+            },
+            36: {
+                'Con1': {'article_id': '2423096', 'title': 'Campus conversation 1', 'topic': '校園對話', 'passage': 1, 'part': 1, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423096/a533b7101b8a4e6a82857ecb6a5c2abe.mp3'},
+                'Lec1': {'article_id': '2423105', 'title': 'Academic lecture 1', 'topic': '學術講座', 'passage': 1, 'part': 2, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423105/5ca7d3dab4b642d785c81ba0a8707cba.mp3'},
+                'Lec2': {'article_id': '2423112', 'title': 'Academic lecture 2', 'topic': '學術講座', 'passage': 1, 'part': 3, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423112/84e7cc5c6824454fb82fbd661f4b6ec5.mp3'},
+                'Con2': {'article_id': '2423710', 'title': 'Campus conversation 2', 'topic': '校園對話', 'passage': 2, 'part': 1, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423710/7d78a9e9eb304eeea5abc3dfe56be31b.mp3'},
+                'Lec3': {'article_id': '2423125', 'title': 'Academic lecture 3', 'topic': '學術講座', 'passage': 2, 'part': 2, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423125/7799c8981e8d454e8382ceb106c1d313.mp3'},
+                'Lec4': {'article_id': '2423132', 'title': 'Academic lecture 4', 'topic': '學術講座', 'passage': 2, 'part': 3, 'url': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423132/9448e5ac65bf46a0ba9626925fb4d4ef.mp3'}
             }
         }
     
@@ -78,6 +96,17 @@ class TikustorageTPOImporter:
         格式：https://tikustorage-sh.oss-cn-shanghai.aliyuncs.com/TPO_Audio/tpo{N}/tpo{N}_listening_passage{X}_{Y}.mp3
         """
         return f"{self.audio_base_url}/tpo{tpo_num}/tpo{tpo_num}_listening_passage{passage}_{part}.mp3"
+    
+    def get_audio_url(self, tpo_num, section_data):
+        """
+        獲取音檔URL - 支援預定義URL或生成tikustorage格式
+        """
+        if 'url' in section_data:
+            # 使用預定義的URL（如koocdn格式）
+            return section_data['url']
+        else:
+            # 生成tikustorage格式URL
+            return self.generate_tikustorage_audio_url(tpo_num, section_data['passage'], section_data['part'])
     
     def get_questions_from_zhan(self, article_id):
         """從zhan.com獲取題目內容"""
@@ -162,8 +191,8 @@ class TikustorageTPOImporter:
                         passage = section_data['passage']
                         part = section_data['part']
                         
-                        # 生成新的音檔URL
-                        audio_url = self.generate_tikustorage_audio_url(tpo_num, passage, part)
+                        # 獲取音檔URL（支援多種格式）
+                        audio_url = self.get_audio_url(tpo_num, section_data)
                         
                         # 創建ContentSource
                         content_name = f"Simulate {tpo_num} {section_name}"
@@ -215,6 +244,99 @@ class TikustorageTPOImporter:
             
         print(f"\n🎉 導入完成！總共導入 {total_imported} 個TPO內容")
         return total_imported
+    
+    def import_koocdn_tpo_range(self, start_tpo=35, end_tpo=36):
+        """導入使用koocdn音檔的TPO 35-75"""
+        print(f"🚀 開始導入koocdn TPO {start_tpo}-{end_tpo}...")
+        
+        # 從Google文檔獲取的TPO 35-36 koocdn URL映射（示例）
+        koocdn_tpo_urls = {
+            35: {
+                1: {'1': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423300/feed4a94202f4c46acb2946d5a5d475d.mp3',
+                    '2': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423315/1de2b92010204f94ba2bb810b0e73cc5.mp3',
+                    '3': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423328/741f7102c81642d3b952cbe4ba188ea1.mp3'},
+                2: {'1': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423339/74b62960e81e4dd0a94265e675aea414.mp3',
+                    '2': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423345/8f679b7420554c0290fdee015dac7f50.mp3',
+                    '3': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423356/15e3d83cafd844338bc7d48a466aa31c.mp3'}
+            },
+            36: {
+                1: {'1': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423096/a533b7101b8a4e6a82857ecb6a5c2abe.mp3',
+                    '2': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423105/5ca7d3dab4b642d785c81ba0a8707cba.mp3',
+                    '3': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423112/84e7cc5c6824454fb82fbd661f4b6ec5.mp3'},
+                2: {'1': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423710/7d78a9e9eb304eeea5abc3dfe56be31b.mp3',
+                    '2': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423125/7799c8981e8d454e8382ceb106c1d313.mp3',
+                    '3': 'https://ti.koocdn.com/upload/ti/2423000-2424000/2423132/9448e5ac65bf46a0ba9626925fb4d4ef.mp3'}
+            }
+        }
+        
+        total_imported = 0
+        
+        with app.app_context():
+            for tpo_num in range(start_tpo, end_tpo + 1):
+                if tpo_num not in koocdn_tpo_urls:
+                    print(f"⚠️ TPO {tpo_num} koocdn URL不存在，跳過")
+                    continue
+                
+                print(f"\n📚 處理 TPO {tpo_num}...")
+                tpo_urls = koocdn_tpo_urls[tpo_num]
+                
+                # 處理每個section (1-2) 和 part (1-3)
+                for section in [1, 2]:
+                    for part in ['1', '2', '3']:
+                        if section in tpo_urls and part in tpo_urls[section]:
+                            try:
+                                audio_url = tpo_urls[section][part]
+                                
+                                # 確定內容類型
+                                if part == '1':
+                                    content_type = '校園對話'
+                                    topic = '校園對話'
+                                else:
+                                    content_type = '學術講座'
+                                    topic = '學術講座'
+                                
+                                # 創建ContentSource
+                                content_name = f"TPO {tpo_num} Section {section} Passage {part}"
+                                
+                                # 檢查是否已存在
+                                existing = ContentSource.query.filter_by(
+                                    name=content_name, 
+                                    type='smallstation_tpo'
+                                ).first()
+                                
+                                if existing:
+                                    print(f"⚠️ {content_name} 已存在，跳過")
+                                    continue
+                                
+                                content = ContentSource(
+                                    name=content_name,
+                                    url=audio_url,
+                                    type='smallstation_tpo',
+                                    description=f"TPO {tpo_num} Section {section} Passage {part}: {content_type} (koocdn音檔)",
+                                    topic=topic,
+                                    difficulty_level='中',
+                                    duration=180,  # 預設3分鐘
+                                    language='英語'
+                                )
+                                
+                                db.session.add(content)
+                                total_imported += 1
+                                print(f"✅ 添加: {content_name}")
+                                
+                            except Exception as e:
+                                print(f"❌ 處理 TPO {tpo_num} S{section}P{part} 失敗: {e}")
+                                continue
+                
+                # 每個TPO處理完後提交
+                try:
+                    db.session.commit()
+                    print(f"✅ TPO {tpo_num} 導入完成")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"❌ TPO {tpo_num} 提交失敗: {e}")
+        
+        print(f"\n🎉 koocdn TPO導入完成！共導入 {total_imported} 個項目")
+        return f"✅ 成功導入 {total_imported} 個koocdn TPO項目"
 
 # 創建全局實例
 tikustorage_importer = TikustorageTPOImporter()
