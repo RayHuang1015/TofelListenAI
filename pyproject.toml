@@ -20,4 +20,5 @@ dependencies = [
     "gtts>=2.5.4",
     "pyttsx3>=2.99",
     "styletts2>=0.1.6",
+    "schedule>=1.2.2",
 ]
