@@ -19,4 +19,5 @@ dependencies = [
     "openai>=1.107.0",
     "gtts>=2.5.4",
     "pyttsx3>=2.99",
+    "styletts2>=0.1.6",
 ]

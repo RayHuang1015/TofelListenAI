@@ -6,6 +6,8 @@ from services.ai_question_generator import AIQuestionGenerator
 from services.scoring_engine import ScoringEngine
 from services.tpo_management_system import TPOManagementSystem
 from services.ai_feedback_service import AIFeedbackService
+from services.daily_edition_backfill import DailyEditionBackfill
+from services.offline_news_tts import OfflineNewsAnchorTTS
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import logging
@@ -1160,3 +1162,93 @@ def premium_tpo_redirect():
 def audio_labs_redirect():
     """Redirect old audio-labs route to new practice-tpo-collection route"""
     return redirect(url_for('practice_tpo_collection'), code=301)
+
+# Daily Edition Backfill Routes
+@app.route('/test_backfill')
+def test_backfill():
+    """Test route to backfill missing daily editions"""
+    try:
+        backfill_service = DailyEditionBackfill()
+        
+        # Get year from query param, default to 2025
+        year = request.args.get('year', 2025, type=int)
+        
+        # Find missing dates
+        missing_dates = backfill_service.find_missing_dates(year)
+        
+        if not missing_dates:
+            return jsonify({
+                'status': 'success',
+                'message': f'No missing dates found for {year}',
+                'year': year,
+                'missing_count': 0
+            })
+        
+        # Limit to first 2 dates for testing to avoid timeout
+        test_dates = missing_dates[:2]
+        created_count = 0
+        results = []
+        
+        for missing_date in test_dates:
+            result = backfill_service.create_edition_for_missing_date(missing_date)
+            results.append({
+                'date': str(missing_date),
+                'status': result['status'],
+                'edition_id': result.get('edition_id'),
+                'message': result.get('message', '')
+            })
+            if result['status'] == 'success':
+                created_count += 1
+        
+        return jsonify({
+            'status': 'success',
+            'year': year,
+            'total_missing': len(missing_dates),
+            'tested_dates': len(test_dates),
+            'created_count': created_count,
+            'results': results
+        })
+        
+    except Exception as e:
+        logging.error(f'Test backfill error: {e}')
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/test_tts')
+def test_tts():
+    """Test route to test offline TTS engines"""
+    try:
+        tts_service = OfflineNewsAnchorTTS()
+        
+        # Test TTS engines
+        test_results = tts_service.test_tts_engines()
+        
+        return jsonify({
+            'status': 'success',
+            'tts_engines': test_results
+        })
+        
+    except Exception as e:
+        logging.error(f'Test TTS error: {e}')
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/backfill_year/<int:year>')
+def backfill_year(year):
+    """Backfill all missing editions for a specific year"""
+    try:
+        backfill_service = DailyEditionBackfill()
+        result = backfill_service.backfill_missing_editions(year)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logging.error(f'Year backfill error: {e}')
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500

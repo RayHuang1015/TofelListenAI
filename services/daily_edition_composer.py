@@ -33,9 +33,9 @@ class ContentRanking:
 class DailyEditionComposer:
     """Composes 5-hour daily international news editions"""
     
-    TARGET_DURATION = 18000  # 5 hours in seconds
-    MIN_DURATION = 16200     # 4h 30min (acceptable minimum)
-    MAX_DURATION = 19800     # 5h 30min (acceptable maximum)
+    TARGET_DURATION = 18000  # 5 hours in seconds (EXACTLY)
+    MIN_DURATION = 18000     # Must be exactly 5 hours
+    MAX_DURATION = 18000     # Must be exactly 5 hours
     
     # Category priorities (higher = more important)
     CATEGORY_PRIORITIES = {
@@ -116,6 +116,9 @@ class DailyEditionComposer:
                 
                 # Create edition segments
                 segments_created = self._create_edition_segments(edition, selected_content)
+                
+                # Ensure EXACT 18000 second duration before finalization
+                self._enforce_exact_duration(selected_content)
                 
                 # Finalize edition
                 self._finalize_edition(edition, selected_content)
