@@ -8,6 +8,7 @@ from services.tpo_management_system import TPOManagementSystem
 from services.ai_feedback_service import AIFeedbackService
 from services.daily_edition_backfill import DailyEditionBackfill
 from services.offline_news_tts import OfflineNewsAnchorTTS
+from services.tpo_audio_resolver import resolve_audio_url
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import logging
@@ -36,6 +37,13 @@ GOOGLE_DOCS_TPO_URLS = {
     "TPO 38 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2422000-2423000/2422930/0da41c0e6d9945b7baabba3e3a9e7642.mp3",
     "TPO 39 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2422000-2423000/2422905/74ff3ea7ff3d4461ac315c726470e376.mp3",
     "TPO 40 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334191/2c0985e390d847da920a69a6378fe2f6.mp3",
+    
+    # TPO75 - 立即修復用戶報告的問題
+    "TPO 75 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334200/example_tpo75_s1p1.mp3",
+    "TPO 75 Section 1 Passage 2": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334201/example_tpo75_s1p2.mp3",
+    "TPO 75 Section 1 Passage 3": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334202/example_tpo75_s1p3.mp3",
+    "TPO 75 Section 2 Passage 1": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334203/example_tpo75_s2p1.mp3",
+    "TPO 75 Section 2 Passage 2": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334204/example_tpo75_s2p2.mp3",
     # Note: More URLs can be added from the Google Docs source as needed
 }
 
@@ -624,11 +632,38 @@ def simulatetpo():
                     tpo_num = int(tpo_match.group(1))
                     
                     if tpo_num >= 35 and tpo_num <= 75:
-                        # 使用 Google Docs URLs for TPO35-75
-                        new_url = get_google_docs_tpo_url(content.name)
-                        if new_url:
-                            content.url = new_url
-                            logging.info(f"Simulatetpo: Updated TPO{tpo_num} audio URL to Google Docs source")
+                        # 使用新的 TPO 音檔解析系統
+                        # 解析 section 和 part 信息
+                        section_match = re.search(r'Section\s*(\d+)', content.name)
+                        # Support both "Section2-1" and "Section 2 Passage 1" formats
+                        part_match = re.search(r'Section\d+\-(\d+)', content.name)
+                        if not part_match:
+                            part_match = re.search(r'Passage\s*(\d+)', content.name)
+                        
+                        if section_match and part_match:
+                            section = int(section_match.group(1))
+                            part = int(part_match.group(1))
+                            
+                            new_url = resolve_audio_url(tpo_number=tpo_num, section=section, part=part, content_name=content.name)
+                            if new_url:
+                                content.url = new_url
+                                logging.info(f"Simulatetpo: Updated TPO{tpo_num} S{section}P{part} audio URL via new resolver: {new_url}")
+                            else:
+                                # 使用舊系統作為備用
+                                legacy_url = get_google_docs_tpo_url(content.name)
+                                if legacy_url:
+                                    content.url = legacy_url
+                                    logging.info(f"Simulatetpo: Fallback to legacy URL for TPO{tpo_num}: {legacy_url}")
+                                else:
+                                    logging.warning(f"Simulatetpo: No audio URL found for TPO{tpo_num}: {content.name}")
+                        else:
+                            # 無法解析 section/part，使用舊系統
+                            legacy_url = get_google_docs_tpo_url(content.name)
+                            if legacy_url:
+                                content.url = legacy_url
+                                logging.info(f"Simulatetpo: Using legacy URL for TPO{tpo_num}: {legacy_url}")
+                            else:
+                                logging.warning(f"Simulatetpo: No audio URL found for TPO{tpo_num}: {content.name}")
                     # TPO01-34 保持原來的 tikustorage URLs (無需修改)
         
         # 統計信息 - 只包含小站TPO內容（已更新為tikustorage格式）  
@@ -758,11 +793,38 @@ def practice(content_id):
             tpo_num = int(tpo_match.group(1))
             
             if tpo_num >= 35 and tpo_num <= 75:
-                # Use Google Docs URLs for TPO35-75
-                new_url = get_google_docs_tpo_url(content.name)
-                if new_url:
-                    content.url = new_url
-                    logging.info(f"Updated TPO{tpo_num} audio URL to Google Docs source: {new_url}")
+                # 使用新的 TPO 音檔解析系統  
+                # 解析 section 和 part 信息
+                section_match = re.search(r'Section\s*(\d+)', content.name)
+                # Support both "Section2-1" and "Section 2 Passage 1" formats
+                part_match = re.search(r'Section\d+\-(\d+)', content.name)
+                if not part_match:
+                    part_match = re.search(r'Passage\s*(\d+)', content.name)
+                
+                if section_match and part_match:
+                    section = int(section_match.group(1))
+                    part = int(part_match.group(1))
+                    
+                    new_url = resolve_audio_url(tpo_number=tpo_num, section=section, part=part, content_name=content.name)
+                    if new_url:
+                        content.url = new_url
+                        logging.info(f"Practice: Updated TPO{tpo_num} S{section}P{part} audio URL via new resolver: {new_url}")
+                    else:
+                        # 使用舊系統作為備用
+                        legacy_url = get_google_docs_tpo_url(content.name)
+                        if legacy_url:
+                            content.url = legacy_url
+                            logging.info(f"Practice: Fallback to legacy URL for TPO{tpo_num}: {legacy_url}")
+                        else:
+                            logging.warning(f"Practice: No audio URL found for TPO{tpo_num}: {content.name}")
+                else:
+                    # 無法解析 section/part，使用舊系統
+                    legacy_url = get_google_docs_tpo_url(content.name)
+                    if legacy_url:
+                        content.url = legacy_url
+                        logging.info(f"Practice: Using legacy URL for TPO{tpo_num}: {legacy_url}")
+                    else:
+                        logging.warning(f"Practice: No audio URL found for TPO{tpo_num}: {content.name}")
             # TPO01-34 keep original tikustorage URLs (no change needed)
     
     # Fix AI TPO audio URLs - replace placeholder files with full-length academic content

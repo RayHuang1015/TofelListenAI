@@ -97,6 +97,56 @@ class Score(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+# TPO Audio URL Management System
+
+class TPOAudioMap(db.Model):
+    """Systematic TPO audio URL mapping to replace fragile dictionary system"""
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # TPO identification fields
+    tpo_number = db.Column(db.Integer, nullable=False)  # 1-200+
+    section = db.Column(db.Integer, nullable=False)     # 1-2
+    part = db.Column(db.Integer, nullable=False)        # 1-3
+    content_type = db.Column(db.String(20), nullable=False)  # 'conversation', 'lecture'
+    
+    # URL management
+    primary_url = db.Column(db.String(500), nullable=False)
+    fallback_urls = db.Column(JSON)  # Array of backup URLs from different sources
+    
+    # Validation and metadata
+    url_status = db.Column(db.String(20), default='pending')  # 'pending', 'valid', 'invalid', 'checking'
+    last_validated = db.Column(db.DateTime)
+    validation_response_code = db.Column(db.Integer)
+    
+    # Content metadata
+    title = db.Column(db.String(200))
+    topic = db.Column(db.String(100))
+    duration = db.Column(db.Integer)  # in seconds
+    
+    # Source tracking
+    source_provider = db.Column(db.String(50))  # 'koocdn', 'tikustorage', 'archive_org', 'zhan'
+    source_metadata = db.Column(JSON)  # Original source info, scraping data, etc.
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Constraints and indexes for efficient lookups
+    __table_args__ = (
+        # Unique constraint: one mapping per TPO+section+part
+        db.UniqueConstraint('tpo_number', 'section', 'part', name='unique_tpo_audio_mapping'),
+        # Index for fast TPO lookups
+        db.Index('idx_tpo_lookup', 'tpo_number', 'section', 'part'),
+        # Index for validation status queries
+        db.Index('idx_tpo_url_status', 'url_status', 'last_validated'),
+        # Index for source provider queries
+        db.Index('idx_tpo_source_provider', 'source_provider'),
+    )
+
+    def __repr__(self):
+        return f'<TPOAudioMap TPO{self.tpo_number} S{self.section}P{self.part} {self.content_type}>'
+
+
 # International News System Models
 
 class ProviderSource(db.Model):
