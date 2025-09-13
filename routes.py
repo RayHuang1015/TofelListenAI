@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, session, flash, jsonify
 from app import app, db
-from models import User, ContentSource, Question, PracticeSession, Answer, Score
+from models import User, ContentSource, Question, PracticeSession, Answer, Score, DailyEdition
 from services.content_integration import ContentIntegrationService
 from services.ai_question_generator import AIQuestionGenerator
 from services.scoring_engine import ScoringEngine
@@ -1211,6 +1211,42 @@ def test_backfill():
         
     except Exception as e:
         logging.error(f'Test backfill error: {e}')
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/create_today_edition', methods=['POST'])
+def create_today_edition():
+    """Create today's daily edition"""
+    try:
+        from datetime import date
+        backfill_service = DailyEditionBackfill()
+        
+        # Get today's date
+        today = date.today()
+        
+        # Check if today's edition already exists
+        existing_edition = DailyEdition.query.filter_by(date=today).first()
+        if existing_edition:
+            return jsonify({
+                'status': 'exists',
+                'message': f'Edition for {today} already exists',
+                'edition_id': existing_edition.id
+            })
+        
+        # Create today's edition
+        result = backfill_service.create_edition_for_missing_date(today)
+        
+        return jsonify({
+            'status': result['status'],
+            'date': str(today),
+            'edition_id': result.get('edition_id'),
+            'message': result.get('message', 'Edition created successfully')
+        })
+        
+    except Exception as e:
+        logging.error(f'Create today edition error: {e}')
         return jsonify({
             'status': 'error',
             'message': str(e)
