@@ -12,7 +12,7 @@ from typing import Dict, List, Any, Optional
 import json
 
 from app import app, db
-from models import DailyEdition, EditionSegment, ContentSource
+from models import DailyEdition, EditionSegment, ContentSource, ProviderSource
 from services.daily_edition_composer import DailyEditionComposer
 from services.historical_news_generator import HistoricalNewsGenerator
 from services.content_integration import ContentIntegrationService
@@ -33,12 +33,34 @@ class DailyAutoGenerator:
         self.news_generator = HistoricalNewsGenerator()
         self.content_integration = ContentIntegrationService()
         
+        # Get or create the Historical News Generator provider
+        with app.app_context():
+            self.historical_provider = self._get_or_create_historical_provider()
+        
         # Initialize TTS engine
         self.tts_engine = self._init_tts_engine()
         self.audio_dir = Path('static/audio/news')
         self.audio_dir.mkdir(parents=True, exist_ok=True)
         
         self.logger.info("Daily Auto Generator initialized")
+    
+    def _get_or_create_historical_provider(self) -> ProviderSource:
+        """Get or create the HistoricalNewsGenerator provider"""
+        provider = ProviderSource.query.filter_by(key='HistoricalNewsGenerator').first()
+        
+        if not provider:
+            provider = ProviderSource()
+            provider.key = 'HistoricalNewsGenerator'
+            provider.name = 'Historical News Generator'
+            provider.type = 'historical'
+            provider.active = True
+            provider.provider_metadata = {}
+            
+            db.session.add(provider)
+            db.session.commit()
+            self.logger.info("Created HistoricalNewsGenerator provider")
+        
+        return provider
     
     def _init_tts_engine(self):
         """Initialize pyttsx3 TTS engine"""
@@ -229,7 +251,7 @@ class DailyAutoGenerator:
                 # Create edition segment
                 segment = EditionSegment()
                 segment.edition_id = edition.id
-                segment.provider_id = 3  # Historical News Generator
+                segment.provider_id = self.historical_provider.id  # Dynamic provider lookup
                 segment.seq = i + 1
                 segment.duration_sec = duration_per_article
                 segment.headline = article_data.get('title', f'News Article {i+1}')

@@ -16,7 +16,7 @@ import time
 sys.path.insert(0, '/home/runner/workspace')
 
 from app import app, db
-from models import DailyEdition, EditionSegment
+from models import DailyEdition, EditionSegment, ProviderSource
 from services.historical_news_generator import HistoricalNewsGenerator
 from services.daily_auto_generator import DailyAutoGenerator
 
@@ -43,6 +43,10 @@ class MassiveHistoricalBackfill:
         self.news_generator = HistoricalNewsGenerator()
         self.auto_generator = DailyAutoGenerator()
         
+        # Get or create the Historical News Generator provider
+        with app.app_context():
+            self.historical_provider = self._get_or_create_historical_provider()
+        
         # Statistics tracking
         self.stats = {
             'total_dates_to_process': 0,
@@ -55,6 +59,24 @@ class MassiveHistoricalBackfill:
         }
         
         self.logger.info("Massive Historical Backfill System initialized")
+    
+    def _get_or_create_historical_provider(self) -> ProviderSource:
+        """Get or create the HistoricalNewsGenerator provider"""
+        provider = ProviderSource.query.filter_by(key='HistoricalNewsGenerator').first()
+        
+        if not provider:
+            provider = ProviderSource()
+            provider.key = 'HistoricalNewsGenerator'
+            provider.name = 'Historical News Generator'
+            provider.type = 'historical'
+            provider.active = True
+            provider.provider_metadata = {}
+            
+            db.session.add(provider)
+            db.session.commit()
+            self.logger.info("Created HistoricalNewsGenerator provider")
+        
+        return provider
     
     def calculate_scope(self) -> Dict[str, int]:
         """Calculate the complete scope of the backfill operation"""
@@ -231,7 +253,7 @@ class MassiveHistoricalBackfill:
                 try:
                     segment = EditionSegment()
                     segment.edition_id = edition.id
-                    segment.provider_id = 3  # Historical News Generator
+                    segment.provider_id = self.historical_provider.id  # Dynamic provider lookup
                     segment.seq = i + 1
                     segment.duration_sec = duration_per_article
                     segment.headline = article_data.get('title', f'Historical News {i+1}')[:200]  # Limit length
