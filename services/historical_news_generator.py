@@ -107,6 +107,19 @@ class HistoricalNewsGenerator:
                 total_duration += article.get('duration', 300)  # Default 5 minutes if not specified
                 article_index += 1
             
+            # Ensure we reach exactly 18000 seconds by adjusting the last article if needed
+            if articles and total_duration != target_duration:
+                shortfall = target_duration - total_duration
+                if shortfall > 0:  # We're short, extend the last article
+                    articles[-1]['duration'] += shortfall
+                    total_duration = target_duration
+                elif shortfall < 0:  # We're over, reduce the last article but keep minimum 180s
+                    excess = -shortfall
+                    last_duration = articles[-1]['duration']
+                    new_duration = max(180, last_duration - excess)
+                    articles[-1]['duration'] = new_duration
+                    total_duration = target_duration - (last_duration - new_duration) + excess
+            
             self.logger.info(f"Generated {len(articles)} historical news articles for {target_date}")
             return articles
             
