@@ -732,27 +732,32 @@ def simulatetpo():
                                 else:
                                     # 使用舊系統作為備用
                                     legacy_url = get_google_docs_tpo_url(content.name)
-                                    if legacy_url:
+                                    if legacy_url and legacy_url != content.url:
                                         content.url = legacy_url
                                         updated_count += 1
                             else:
                                 # 無法解析 section/part，使用舊系統
                                 legacy_url = get_google_docs_tpo_url(content.name)
-                                if legacy_url:
+                                if legacy_url and legacy_url != content.url:
                                     content.url = legacy_url
                                     updated_count += 1
                     # TPO01-34 保持原來的 tikustorage URLs (無需修改)
         
-        # 只記錄一次摘要，而非每個項目都記錄
+        # 批量提交所有 URL 更新到資料庫，避免重複解析
         if updated_count > 0:
-            logging.debug(f"Simulatetpo: Updated {updated_count} TPO URLs on page {page}")
+            try:
+                db.session.commit()
+                logging.info(f"Simulatetpo: Successfully updated and saved {updated_count} TPO URLs to database")
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Simulatetpo: Failed to save URL updates: {e}")
         
         # 統計信息 - 只包含小站TPO內容（已更新為tikustorage格式）  
         total_count = ContentSource.query.filter(
             ContentSource.type == 'smallstation_tpo'
         ).count()
-        logging.info(f"Official TPO total count: {total_count}")
-        logging.info(f"Current page items: {len(content_items)}")
+        # 減少日誌頻率，僅在需要時記錄
+        logging.debug(f"TPO count: {total_count}, page items: {len(content_items)}")
         
         # 獲取過濾選項 - 只包含小站TPO內容
         difficulties = db.session.query(ContentSource.difficulty_level).filter(
