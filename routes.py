@@ -38,10 +38,10 @@ GOOGLE_DOCS_TPO_URLS = {
     "TPO 39 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2422000-2423000/2422905/74ff3ea7ff3d4461ac315c726470e376.mp3",
     "TPO 40 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334191/2c0985e390d847da920a69a6378fe2f6.mp3",
     
-    # TPO75 - 立即修復用戶報告的問題
-    "TPO 75 Section 1 Passage 1": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334200/example_tpo75_s1p1.mp3",
+    # TPO75 - 真實URL（用戶提供）
+    "TPO 75 Section 1 Passage 1": "https://daxue-cos.koocdn.com/upload/ti/sardine/2661000-2662000/2661041/6a168b7ccd7041709796af3d482ee03e.mp3",
     "TPO 75 Section 1 Passage 2": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334201/example_tpo75_s1p2.mp3",
-    "TPO 75 Section 1 Passage 3": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334202/example_tpo75_s1p3.mp3",
+    "TPO 75 Section 1 Passage 3": "https://daxue-cos.koocdn.com/upload/ti/sardine/2661000-2662000/2661041/6a168b7ccd7041709796af3d482ee03e.mp3",
     "TPO 75 Section 2 Passage 1": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334203/example_tpo75_s2p1.mp3",
     "TPO 75 Section 2 Passage 2": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334204/example_tpo75_s2p2.mp3",
     # Note: More URLs can be added from the Google Docs source as needed
