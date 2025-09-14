@@ -109,6 +109,21 @@ GOOGLE_DOCS_TPO_URLS = {
     "TPO 46 Section 1 Passage 3": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334867/5ee8bcc200d84590af5e0841d4d9eb29.mp3",
     "TPO 46 Section 2 Passage 1": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334892/b9f46b9cb0c84afd91f60fc7e31dc5af.mp3",
     
+    # TPO47-58 使用 tikustorage 格式
+    "TPO 47 Section 1 Passage 1": "https://tikustorage-sh.oss-cn-shanghai.aliyuncs.com/TPO_Audio/tpo47/tpo47_listening_passage1_1.mp3",
+    "TPO 47 Section 1 Passage 2": "https://tikustorage-sh.oss-cn-shanghai.aliyuncs.com/TPO_Audio/tpo47/tpo47_listening_passage1_2.mp3",
+    "TPO 47 Section 1 Passage 3": "https://tikustorage-sh.oss-cn-shanghai.aliyuncs.com/TPO_Audio/tpo47/tpo47_listening_passage1_3.mp3",
+    "TPO 47 Section 2 Passage 1": "https://tikustorage-sh.oss-cn-shanghai.aliyuncs.com/TPO_Audio/tpo47/tpo47_listening_passage2_1.mp3",
+    "TPO 47 Section 2 Passage 2": "https://tikustorage-sh.oss-cn-shanghai.aliyuncs.com/TPO_Audio/tpo47/tpo47_listening_passage2_2.mp3",
+    "TPO 47 Section 2 Passage 3": "https://tikustorage-sh.oss-cn-shanghai.aliyuncs.com/TPO_Audio/tpo47/tpo47_listening_passage2_3.mp3",
+
+    # TPO59 使用本地上傳的音檔
+    "TPO 59 Section 1 Passage 1": "/static/audio/tpo59/simulate_tpo59_C1_1757824754937.mp3",
+    "TPO 59 Section 1 Passage 2": "/static/audio/tpo59/simulate_tpo59_C2_1757824754942.mp3", 
+    "TPO 59 Section 2 Passage 1": "/static/audio/tpo59/simulate_tpo59_L1_1757824754942.mp3",
+    "TPO 59 Section 2 Passage 2": "/static/audio/tpo59/simulate_tpo59_L2_1757824754943.mp3",
+    "TPO 59 Section 2 Passage 3": "/static/audio/tpo59/simulate_tpo59_L3_1757824754943.mp3",
+
     # TPO75 - 真實URL（用戶提供）
     "TPO 75 Section 1 Passage 1": "https://daxue-cos.koocdn.com/upload/ti/sardine/2661000-2662000/2661041/6a168b7ccd7041709796af3d482ee03e.mp3",
     "TPO 75 Section 1 Passage 2": "https://ti.koocdn.com/upload/ti/2334000-2335000/2334201/example_tpo75_s1p2.mp3",
