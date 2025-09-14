@@ -693,8 +693,10 @@ def simulatetpo():
         )
         content_items = pagination.items
         
-        # 修復 TPO35-75 的音檔 URL - 應用與 practice 路由相同的邏輯
+        # 智能 TPO35-75 音檔 URL 解析 - 僅對需要更新的項目進行解析，避免重複操作
         import re
+        updated_count = 0
+        
         for content in content_items:
             if content.type == 'smallstation_tpo':
                 # 解析 TPO 編號
@@ -703,39 +705,47 @@ def simulatetpo():
                     tpo_num = int(tpo_match.group(1))
                     
                     if tpo_num >= 35 and tpo_num <= 75:
-                        # 使用新的 TPO 音檔解析系統
-                        # 解析 section 和 part 信息
-                        section_match = re.search(r'Section\s*(\d+)', content.name)
-                        # Support both "Section2-1" and "Section 2 Passage 1" formats
-                        part_match = re.search(r'Section\d+\-(\d+)', content.name)
-                        if not part_match:
-                            part_match = re.search(r'Passage\s*(\d+)', content.name)
+                        # 只有當 URL 為空或是舊格式時才進行解析，避免重複操作
+                        needs_update = (
+                            not content.url or 
+                            'example_tpo' in content.url or 
+                            'placeholder' in content.url or
+                            not content.url.startswith('http')
+                        )
                         
-                        if section_match and part_match:
-                            section = int(section_match.group(1))
-                            part = int(part_match.group(1))
+                        if needs_update:
+                            # 解析 section 和 part 信息
+                            section_match = re.search(r'Section\s*(\d+)', content.name)
+                            # Support both "Section2-1" and "Section 2 Passage 1" formats
+                            part_match = re.search(r'Section\d+\-(\d+)', content.name)
+                            if not part_match:
+                                part_match = re.search(r'Passage\s*(\d+)', content.name)
                             
-                            new_url = resolve_audio_url(tpo_number=tpo_num, section=section, part=part, content_name=content.name)
-                            if new_url:
-                                content.url = new_url
-                                logging.info(f"Simulatetpo: Updated TPO{tpo_num} S{section}P{part} audio URL via new resolver: {new_url}")
+                            if section_match and part_match:
+                                section = int(section_match.group(1))
+                                part = int(part_match.group(1))
+                                
+                                new_url = resolve_audio_url(tpo_number=tpo_num, section=section, part=part, content_name=content.name)
+                                if new_url and new_url != content.url:
+                                    content.url = new_url
+                                    updated_count += 1
+                                else:
+                                    # 使用舊系統作為備用
+                                    legacy_url = get_google_docs_tpo_url(content.name)
+                                    if legacy_url:
+                                        content.url = legacy_url
+                                        updated_count += 1
                             else:
-                                # 使用舊系統作為備用
+                                # 無法解析 section/part，使用舊系統
                                 legacy_url = get_google_docs_tpo_url(content.name)
                                 if legacy_url:
                                     content.url = legacy_url
-                                    logging.info(f"Simulatetpo: Fallback to legacy URL for TPO{tpo_num}: {legacy_url}")
-                                else:
-                                    logging.warning(f"Simulatetpo: No audio URL found for TPO{tpo_num}: {content.name}")
-                        else:
-                            # 無法解析 section/part，使用舊系統
-                            legacy_url = get_google_docs_tpo_url(content.name)
-                            if legacy_url:
-                                content.url = legacy_url
-                                logging.info(f"Simulatetpo: Using legacy URL for TPO{tpo_num}: {legacy_url}")
-                            else:
-                                logging.warning(f"Simulatetpo: No audio URL found for TPO{tpo_num}: {content.name}")
+                                    updated_count += 1
                     # TPO01-34 保持原來的 tikustorage URLs (無需修改)
+        
+        # 只記錄一次摘要，而非每個項目都記錄
+        if updated_count > 0:
+            logging.debug(f"Simulatetpo: Updated {updated_count} TPO URLs on page {page}")
         
         # 統計信息 - 只包含小站TPO內容（已更新為tikustorage格式）  
         total_count = ContentSource.query.filter(
@@ -879,7 +889,8 @@ def practice(content_id):
                     new_url = resolve_audio_url(tpo_number=tpo_num, section=section, part=part, content_name=content.name)
                     if new_url:
                         content.url = new_url
-                        logging.info(f"Practice: Updated TPO{tpo_num} S{section}P{part} audio URL via new resolver: {new_url}")
+                        # 減少日誌輸出，僅在調試時記錄
+                        logging.debug(f"Practice: Updated TPO{tpo_num} S{section}P{part} audio URL")
                     else:
                         # 使用舊系統作為備用
                         legacy_url = get_google_docs_tpo_url(content.name)

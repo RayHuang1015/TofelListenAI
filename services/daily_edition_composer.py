@@ -118,7 +118,7 @@ class DailyEditionComposer:
                 segments_created = self._create_edition_segments(edition, selected_content)
                 
                 # Ensure EXACT 18000 second duration before finalization
-                self._enforce_exact_duration(selected_content)
+                selected_content = self._adjust_to_exact_duration(selected_content, self.TARGET_DURATION)
                 
                 # Finalize edition
                 self._finalize_edition(edition, selected_content)
